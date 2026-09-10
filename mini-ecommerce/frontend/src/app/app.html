@@ -1,0 +1,30 @@
+<div class="app-layout">
+  <!-- Customer Navbar (Hidden on Admin routes) -->
+  <nav class="navbar" *ngIf="!isAdminRoute">
+    <div class="navbar-brand">
+      <a routerLink="/">Mini E-Commerce</a>
+    </div>
+    <div class="navbar-links">
+      <a routerLink="/products">Products</a>
+      
+      <ng-container *ngIf="authService.currentUser$ | async as user; else guestNav">
+        <a routerLink="/cart">Cart</a>
+        <a routerLink="/orders">My Orders</a>
+        <a routerLink="/admin/dashboard" *ngIf="user.role === 'admin'" class="admin-badge-link">Admin Panel</a>
+        <span class="user-greeting">Hi, {{ user.name }}</span>
+        <button (click)="onLogout()" class="btn-logout">Logout</button>
+      </ng-container>
+      
+      <ng-template #guestNav>
+        <a routerLink="/login">Login</a>
+        <a routerLink="/register">Register</a>
+        <a [routerLink]="['/login']" [queryParams]="{ admin: '1' }" class="admin-badge-link">Admin Panel</a>
+      </ng-template>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main [class.main-content]="!isAdminRoute">
+    <router-outlet></router-outlet>
+  </main>
+</div>
