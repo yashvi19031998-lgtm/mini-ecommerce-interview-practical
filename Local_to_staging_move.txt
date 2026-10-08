@@ -1,0 +1,79 @@
+
+
+Lenovo@DESKTOP-C0C2V7A MINGW64 /c/xampp/htdocs/UBSIDI-Projects/ubsidi-financial-customer-panel (yashvi_new_customer_panel_30_09_2026)
+$ ssh root@10.0.1.201
+ssh: connect to host 10.0.1.201 port 22: Connection timed out
+
+Lenovo@DESKTOP-C0C2V7A MINGW64 /c/xampp/htdocs/UBSIDI-Projects/ubsidi-financial-customer-panel (yashvi_new_customer_panel_30_09_2026)
+$ ssh root@10.0.1.201
+ssh: connect to host 10.0.1.201 port 22: Connection timed out
+
+Lenovo@DESKTOP-C0C2V7A MINGW64 /c/xampp/htdocs/UBSIDI-Projects/ubsidi-financial-customer-panel (yashvi_new_customer_panel_30_09_2026)
+$ ^C
+
+Lenovo@DESKTOP-C0C2V7A MINGW64 /c/xampp/htdocs/UBSIDI-Projects/ubsidi-financial-customer-panel (yashvi_new_customer_panel_30_09_2026)
+$ ssh root@185.68.201.13
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+root@185.68.201.13's password:
+Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 7.0.14-19-pve x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+New release '22.04.5 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+You have new mail.
+Last login: Fri Oct  2 10:04:24 2026 from 103.251.216.166
+root@sync:~# ssh root@10.0.1.201
+Last login: Fri Oct  2 05:44:05 2026 from 10.0.9.2
+root@web1:~# cd /var/www/rms/V2
+root@web1:/var/www/rms/V2# ls -all
+total 2424
+drwxr-xr-x 15 www-data www-data    4096 Oct  2 09:35  .
+drwxr-xr-x 10 www-data www-data    4096 Sep 30 13:08  ..
+-rw-r--r--  1 root     root         213 Oct  2 09:35  .editorconfig
+-rwxr-xr-x  1 www-data www-data    3757 Sep 29 11:43  .env
+-rw-r--r--  1 root     root        1641 Oct  2 09:35  .env.example
+-rwxr-xr-x  1 www-data www-data    3047 Mar 19  2026  .env.save
+drwxr-xr-x  7 www-data www-data    4096 Oct  2 10:19  .git
+-rw-r--r--  1 root     root         779 Oct  2 09:35  .gitignore
+-rwxr-xr-x  1 www-data www-data      95 Apr  3 10:11  .htaccess
+-rw-r--r--  1 root     root         139 Oct  2 09:35  .styleci.yml
+drwxr-xr-x  2 www-data www-data    4096 Oct  2 09:35  .vscode
+drwxr-xr-x  2 www-data www-data    4096 Oct  2 09:35 'Development Documentation'
+-rw-r--r--  1 root     root          26 Oct  2 09:35  README.md
+drwxr-xr-x 17 www-data www-data   12288 Oct  2 09:36  app
+-rw-r--r--  1 root     root        1094 Oct  2 09:35  artisan
+-rw-r--r--  1 root     root         530 Oct  2 09:35  bash.exe.stackdump
+drwxr-xr-x  2 www-data www-data    4096 Oct  2 09:35  bootstrap
+-rw-r--r--  1 root     root        2134 Oct  2 09:35  composer.json
+-rw-r--r--  1 root     root      413962 Oct  2 09:35  composer.lock
+-rw-r--r--  1 root     root     1933813 Oct  2 09:35  composer.phar
+drwxr-xr-x  2 www-data www-data    4096 Oct  2 09:35  config
+drwxr-xr-x  6 www-data www-data    4096 Mar 17  2026  database
+-rw-r--r--  1 root     root          27 Oct  2 09:35  package-lock.json
+-rw-r--r--  1 root     root         878 Oct  2 09:35  phpunit.xml
+drwxr-xr-x  5 www-data www-data    4096 Oct  2 09:35  public
+drwxr-xr-x  3 www-data www-data    4096 Mar 17  2026  resources
+drwxr-xr-x  2 www-data www-data    4096 Oct  2 09:36  routes
+drwxr-xr-x  5 www-data www-data    4096 Mar 17  2026  storage
+drwxr-xr-x  2 www-data www-data    4096 Oct  2 09:35  tests
+drwxr-xr-x 71 www-data www-data    4096 Mar 17  2026  vendor
+-rw-r--r--  1 root     root         162 Oct  2 09:35 '~$rst Step.doc'
+root@web1:/var/www/rms/V2# git pull origin development
+Username for 'https://git.ubsidi.com': ^C
+root@web1:/var/www/rms/V2# yashvi
+yashvi: command not found
+root@web1:/var/www/rms/V2# yashvi.8dots@gmail.com
+yashvi.8dots@gmail.com: command not found
+root@web1:/var/www/rms/V2# ^C
+root@web1:/var/www/rms/V2# git pull origin development
+Username for 'https://git.ubsidi.com': yashvi
+Password for 'https://yashvi@git.ubsidi.com':
+From https://git.ubsidi.com/ubsidi-financial/ubsidi-finance-backend
+ * branch            development -> FETCH_HEAD
+Already up to date.
+root@web1:/var/www/rms/V2#

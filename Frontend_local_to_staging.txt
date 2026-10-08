@@ -1,0 +1,29 @@
+ng build --configuration=development / production
+npm run build:rms
+
+File Zilla Connection
+sftp://185.68.201.13
+root
+Ubsidi202120212021
+
+
+/var/www/html/rms/customer-panel -> in panel side selection folder
+C:\xampp\htdocs\UBSIDI-Projects\ubsidi-financial-customer-panel\dist\ ---> local side selection folder
+
+
+then je ng build --configuration=development ni jetli pan build file che ae upload karavani
+
+then aema je index -> ni file che aema customer panel hoy toh -> <base href="/customer-panel/"> aavse
+
+then go to git bash -> cd in customer panel sudhi url ->  
+
+1. ssh root@185.68.201.13 
+2. password : Ubsidi202120212021
+
+then 
+
+rsync -rt --delete /var/www/html/rms/customer-panel/ root@10.0.1.201:/var/www/rms/customer-panel
+
+this command need to add
+
+then it's frontend add into live
