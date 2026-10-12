@@ -13,17 +13,39 @@ Compliance & Ethics Note:
 - Operates within lawful, public demonstration boundaries.
 """
 
+import os
+import sys
 import re
 import time
 import json
 import base64
 import logging
+from datetime import datetime
 from urllib.parse import urljoin, urlparse, unquote, quote_plus
 from typing import List, Dict, Set, Optional, Tuple, Any
+
+# Ensure UTF-8 output on Windows consoles/pipes to avoid UnicodeEncodeError with emojis
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+
+# Email sender & company settings
+try:
+    from email_service import send_smtp_email
+    from settings_manager import load_settings, format_signature
+except ImportError:
+    send_smtp_email = None
+    load_settings = None
+    format_signature = None
 
 # Optional import of googlesearch-python
 try:
@@ -31,23 +53,32 @@ try:
 except ImportError:
     google_search = None
 
+# DuckDuckGo import
+try:
+    from ddgs import DDGS
+except ImportError:
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        DDGS = None
+
 
 # ==============================================================================
 # 1. CONFIGURATION
 # ==============================================================================
 
-# Search queries focused on businesses seeking IT / software services
+# Search queries focused on IT / software companies and service requests
 SEARCH_QUERIES = [
-    '"looking for software development company"',
-    '"need software development company"',
-    '"looking for web development company"',
-    '"need web development company"',
-    '"hire software development company"',
-    '"looking for IT company"',
-    '"need IT company"',
-    '"hire software developer"',
-    '"looking for software developer"',
-    '"need mobile app development company"',
+    'software development company',
+    'web development company',
+    'IT services and software company',
+    'mobile app development company',
+    'hire software development company',
+    'custom software solutions',
+    'looking for software development company',
+    'need web development services',
+    'IT consulting company',
+    'software development agency',
 ]
 
 # Configurable search location (leave as "" if you do not want location filtering)
@@ -55,12 +86,15 @@ SEARCH_LOCATION = "Ahmedabad"
 
 MAX_RESULTS_PER_QUERY = 10     # Max search results to evaluate per query
 REQUEST_TIMEOUT = 10           # HTTP request timeout in seconds
-REQUEST_DELAY = 1.5            # Polite delay between HTTP requests
+REQUEST_DELAY = 3              # Polite delay between HTTP requests
 MIN_LEAD_SCORE = 4             # Quality threshold: minimum score required for leads.csv
 
+# Automated Direct Email Outreach
+AUTO_SEND_EMAIL = True         # Automatically dispatch customized outreach email when a valid lead is found
+
 # Output file paths
-LEADS_CSV = "leads.csv"
-REJECTED_CSV = "rejected_leads.csv"
+LEADS_CSV = "leads_new.csv"
+REJECTED_CSV = "rejected_leads_new.csv"
 
 # Browser User-Agent header
 HEADERS = {
@@ -440,6 +474,181 @@ def validate_and_normalize_indian_phone(phone_str: str) -> Optional[str]:
     return None
 
 
+def clean_address_string(txt: str) -> str:
+    """Cleans raw extracted address text, removing HTML, JSON artifacts and extra spaces."""
+    if not txt:
+        return "N/A"
+    # Remove HTML tags if any
+    txt = re.sub(r"<[^>]+>", " ", txt)
+    # Remove non-ascii emojis (like location pin \U0001f4cd etc.) that can break Windows console printing
+    txt = txt.encode("ascii", "ignore").decode("ascii")
+    # Remove JSON-LD / schema keywords
+    txt = re.sub(r"\b(PostalAddress|@type|streetAddress|addressLocality|addressRegion|postalCode|addressCountry)\b", "", txt, flags=re.I)
+    txt = re.sub(r'["{}[\]:]', ' ', txt)
+    # Normalize punctuation and whitespace
+    txt = re.sub(r"\s+", " ", txt)
+    txt = re.sub(r",\s*,+", ",", txt)
+    txt = re.sub(r"^\s*,\s*", "", txt)
+    txt = re.sub(r"\s*,\s*$", "", txt)
+    cleaned = txt.strip()
+    return cleaned if len(cleaned) >= 5 else "N/A"
+
+
+def extract_address(soup: BeautifulSoup, html_text: str) -> str:
+    """
+    Extracts physical business address from schema.org JSON-LD, <address> tags,
+    address CSS classes, or regex matching location keywords & Indian pin codes.
+    """
+    # 1. JSON-LD structured data (PostalAddress)
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            data = json.loads(script.string or "")
+            items = data if isinstance(data, list) else [data]
+            for item in items:
+                if isinstance(item, dict):
+                    addr = item.get("address")
+                    if isinstance(addr, dict):
+                        parts = [
+                            addr.get("streetAddress", ""),
+                            addr.get("addressLocality", ""),
+                            addr.get("addressRegion", ""),
+                            addr.get("postalCode", ""),
+                            addr.get("addressCountry", "")
+                        ]
+                        valid_parts = [str(p).strip() for p in parts if p and str(p).strip()]
+                        if valid_parts:
+                            res = clean_address_string(", ".join(valid_parts))
+                            if res != "N/A":
+                                return res
+                    elif isinstance(addr, str) and len(addr) > 8:
+                        res = clean_address_string(addr)
+                        if res != "N/A":
+                            return res
+        except Exception:
+            pass
+
+    # 2. HTML <address> tag
+    addr_tag = soup.find("address")
+    if addr_tag:
+        txt = addr_tag.get_text(separator=", ", strip=True)
+        if 10 < len(txt) < 300:
+            res = clean_address_string(txt)
+            if res != "N/A":
+                return res
+
+    # 3. Class or ID with address / office / location keywords
+    for el in soup.find_all(class_=re.compile(r"address|location|office-address|contact-address", re.I)):
+        txt = el.get_text(separator=", ", strip=True)
+        if re.search(r"\b(Ahmedabad|Gujarat|Road|Floor|Tower|Complex|Nagar|\d{6})\b", txt, re.I):
+            if 15 < len(txt) < 250:
+                res = clean_address_string(txt)
+                if res != "N/A":
+                    return res
+
+    # 4. Regex snippet around city / landmark / pin code
+    match = re.search(
+        r"([^.\n\r<>{}\"]{0,60}(?:Ahmedabad|Gujarat|S\.?G\.?\s*Highway|Prahladnagar|Bodakdev|Navrangpura)[^.\n\r<>{}\"]{0,100}\b\d{6}\b[^.\n\r<>{}\"]{0,30})",
+        html_text,
+        re.I
+    )
+    if match:
+        snippet = BeautifulSoup(match.group(1), "html.parser").get_text(strip=True)
+        cleaned = clean_address_string(snippet)
+        if len(cleaned) > 10:
+            return cleaned
+
+    return "N/A"
+
+
+def extract_posted_date(soup: BeautifulSoup, html_text: str) -> str:
+    """
+    Extracts the original posting date / publish date / client inquiry date if present on the page.
+    Checks OpenGraph article:published_time, Schema.org datePublished, <time> tags,
+    meta tags, and date regex patterns. Returns 'N/A' if not found (never rejects the lead).
+    """
+    # 1. Meta tags for publish / creation date
+    meta_keys = [
+        ("meta", {"property": "article:published_time"}),
+        ("meta", {"property": "og:published_time"}),
+        ("meta", {"name": "publication_date"}),
+        ("meta", {"name": "date"}),
+        ("meta", {"name": "DC.date.issued"}),
+        ("meta", {"itemprop": "datePublished"}),
+        ("meta", {"name": "pubdate"}),
+        ("meta", {"name": "posted"}),
+    ]
+    for tag_name, attrs in meta_keys:
+        tag = soup.find(tag_name, attrs=attrs)
+        if tag and tag.get("content"):
+            raw = tag["content"].strip()
+            # If ISO timestamp (e.g. 2026-03-15T08:00:00Z)
+            d_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", raw)
+            if d_match:
+                return d_match.group(1)
+
+    # 2. JSON-LD structured data datePublished / dateCreated / validThrough
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            data = json.loads(script.string or "")
+            items = data if isinstance(data, list) else [data]
+            for item in items:
+                if isinstance(item, dict):
+                    for d_field in ("datePublished", "dateCreated", "datePosted", "uploadDate"):
+                        d_val = item.get(d_field)
+                        if d_val and isinstance(d_val, str):
+                            d_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", d_val)
+                            if d_match:
+                                return d_match.group(1)
+        except Exception:
+            pass
+
+    # 3. HTML <time> tags with datetime attribute
+    for time_tag in soup.find_all("time"):
+        dt = time_tag.get("datetime", "") or time_tag.get_text(strip=True)
+        if dt:
+            d_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", dt)
+            if d_match:
+                return d_match.group(1)
+            # e.g. "March 15, 2026" or "15 March 2026"
+            human_match = re.search(
+                r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4}\b",
+                dt,
+                re.I
+            )
+            if human_match:
+                return human_match.group(0)
+
+    # 4. Elements with class containing 'date', 'posted', 'publish', 'time'
+    for el in soup.find_all(class_=re.compile(r"\b(post-date|publish-date|entry-date|posted-on|job-date|lead-date)\b", re.I)):
+        txt = el.get_text(strip=True)
+        d_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", txt)
+        if d_match:
+            return d_match.group(1)
+        human_match = re.search(
+            r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4}\b",
+            txt,
+            re.I
+        )
+        if human_match:
+            return human_match.group(0)
+
+    # 5. Regex in HTML for posted date text like "Posted on 12-04-2026", "Date: 2026-02-10", "Posted: 3 days ago"
+    regex_posted = re.search(
+        r"(?:Posted(?:\s+on)?|Date|Published(?:\s+on)?):\s*([A-Za-z0-9,\s/-]{4,25})",
+        html_text,
+        re.I
+    )
+    if regex_posted:
+        candidate = regex_posted.group(1).strip()
+        # Ensure it contains a year (2023, 2024, 2025, 2026) or relative time
+        if re.search(r"\b(202\d|yesterday|today|days?\s+ago|hours?\s+ago)\b", candidate, re.I):
+            clean_cand = re.sub(r"<[^>]+>", "", candidate).strip()
+            if len(clean_cand) <= 30:
+                return clean_cand
+
+    return "N/A"
+
+
 def discover_contact_links(soup: BeautifulSoup, base_url: str) -> List[str]:
     """Finds up to 2 public contact or about subpages from homepage navigation."""
     contact_urls: List[str] = []
@@ -645,13 +854,29 @@ def search_public_engine(query: str, max_results: int) -> List[Dict[str, str]]:
 def search_web(query: str, max_results: int) -> List[Dict[str, str]]:
     """
     Search runner:
-    Tries Google via googlesearch-python first. If Google rate-limits
-    or presents an automated verification page, it logs a clean notice and
-    switches to public search without attempting circumvention.
+    Tries DuckDuckGo first (best for bots). Then tries Google.
+    Finally falls back to Yahoo/Bing public search.
     """
     results = []
 
-    if google_search:
+    # 1. Try DuckDuckGo First
+    if DDGS:
+        try:
+            with DDGS() as ddgs:
+                ddg_results = ddgs.text(query, max_results=max_results)
+                for item in ddg_results:
+                    url = item.get("href", "")
+                    title = item.get("title", "")
+                    is_ok, reason = filter_search_result(url, title)
+                    if is_ok:
+                        results.append({"url": url, "title": title, "query": query})
+                    if len(results) >= max_results:
+                        break
+        except Exception as e:
+            pass
+
+    # 2. Try Google if DDG failed
+    if not results and google_search:
         try:
             search_gen = google_search(
                 query,
@@ -670,8 +895,9 @@ def search_web(query: str, max_results: int) -> List[Dict[str, str]]:
         except Exception:
             pass
 
+    # 3. Fallback to Yahoo/Bing
     if not results:
-        logger.info("Google search unavailable/rate limited. Using public search fallback...")
+        logger.info("Search engines rate limited. Using public search fallback (Yahoo/Bing)...")
         results = search_public_engine(query, max_results)
 
     return results
@@ -702,9 +928,12 @@ def crawl_and_evaluate(url: str, initial_title: str, query: str) -> Tuple[Option
     company_name = extract_company_name(soup, url)
     emails = set(extract_clean_emails(html, soup))
     phones = set(extract_clean_indian_phones(html, soup))
+    address = extract_address(soup, html)
+    posted_date = extract_posted_date(soup, html)
+    lead_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # If contact info is missing, search contact / about subpages
-    if not emails or not phones:
+    # If contact info or address is missing, search contact / about subpages
+    if not emails or not phones or address == "N/A":
         subpages = discover_contact_links(soup, url)
         for sub_url in subpages:
             time.sleep(REQUEST_DELAY)
@@ -714,8 +943,20 @@ def crawl_and_evaluate(url: str, initial_title: str, query: str) -> Tuple[Option
                 page_text += " " + sub_soup.get_text(separator=" ", strip=True)
                 emails.update(extract_clean_emails(sub_html, sub_soup))
                 phones.update(extract_clean_indian_phones(sub_html, sub_soup))
-                if emails and phones:
+                if address == "N/A":
+                    sub_addr = extract_address(sub_soup, sub_html)
+                    if sub_addr != "N/A":
+                        address = sub_addr
+                if posted_date == "N/A":
+                    sub_posted = extract_posted_date(sub_soup, sub_html)
+                    if sub_posted != "N/A":
+                        posted_date = sub_posted
+                if emails and phones and address != "N/A":
                     break
+
+    # If specific street address wasn't found, check if search location matches in page
+    if address == "N/A" and SEARCH_LOCATION and SEARCH_LOCATION.lower() in page_text.lower():
+        address = f"{SEARCH_LOCATION}, Gujarat, India"
 
     # Analyze intent and classify lead type
     intent, lead_type, signals = analyze_intent_and_type(page_text, company_name)
@@ -725,10 +966,13 @@ def crawl_and_evaluate(url: str, initial_title: str, query: str) -> Tuple[Option
     score = calculate_lead_score(signals, has_email, has_phone)
 
     lead_record = {
+        "Scraped Date": lead_date,
+        "Posted Date": posted_date,
         "Company Name": company_name,
         "Website URL": url,
         "Email": ", ".join(sorted(emails)) if emails else "N/A",
         "Mobile Number": ", ".join(sorted(phones)) if phones else "N/A",
+        "Address": address,
         "Search Query": query,
         "Intent": intent,
         "Lead Type": lead_type,
@@ -818,13 +1062,16 @@ def main():
             elif lead["Lead Type"] == "IT Service Provider":
                 count_providers += 1
 
-            print(f'  [NAME]   {lead["Company Name"]}')
-            print(f'  [EMAIL]  {lead["Email"]}')
-            print(f'  [PHONE]  {lead["Mobile Number"]}')
-            print(f'  [INTENT] {lead["Intent"]}')
-            print(f'  [TYPE]   {lead["Lead Type"]}')
-            print(f'  [SCORE]  {lead["Lead Score"]}')
-            print(f'  [SAVE]   {lead["Company Name"]}\n')
+            print(f'  [SCRAPED] {lead.get("Scraped Date", "N/A")}')
+            print(f'  [POSTED]  {lead.get("Posted Date", "N/A")}')
+            print(f'  [NAME]    {lead["Company Name"]}')
+            print(f'  [EMAIL]   {lead["Email"]}')
+            print(f'  [PHONE]   {lead["Mobile Number"]}')
+            print(f'  [ADDR]    {lead.get("Address", "N/A")}')
+            print(f'  [INTENT]  {lead["Intent"]}')
+            print(f'  [TYPE]    {lead["Lead Type"]}')
+            print(f'  [SCORE]   {lead["Lead Score"]}')
+            print(f'  [SAVE]    {lead["Company Name"]}\n')
 
             # Deduplicate by domain; combine queries if already seen
             if domain in accepted_leads:
@@ -833,41 +1080,115 @@ def main():
                     accepted_leads[domain]["Search Query"] = f"{existing_q} | {item['query']}"
             else:
                 accepted_leads[domain] = lead
+
+            # ==========================================================
+            # AUTOMATIC DIRECT EMAIL OUTREACH DISPATCH
+            # ==========================================================
+            raw_email = lead.get("Email", "").split(",")[0].strip()
+            if AUTO_SEND_EMAIL and send_smtp_email and raw_email and raw_email != "N/A" and "@" in raw_email:
+                comp_name = lead.get("Company Name", "your company")
+                loc_name = lead.get("Address", "your region")
+                
+                settings = load_settings() if load_settings else {}
+                sig = format_signature(settings) if format_signature else ""
+                
+                sub_tpl = settings.get("defaultSubject", "Web & Software Engineering Collaboration - {company}")
+                msg_tpl = settings.get("defaultMessage", "Hi {name},\n\nI came across {company}...")
+                
+                custom_sub = sub_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+                custom_msg = msg_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+                
+                if sig and sig.strip()[:20] not in custom_msg:
+                    custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
+                
+                print(f'  [AUTO-MAIL] Dispatching outreach to {raw_email}...')
+                mail_res = send_smtp_email(raw_email, custom_sub, custom_msg)
+                if mail_res.get("success"):
+                    lead["Email Status"] = "SENT"
+                    lead["Status"] = "EMAIL_SENT"
+                    lead["Email Sent At"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    print(f'  [AUTO-MAIL] SUCCESS! Email sent via Gmail SMTP.')
+                else:
+                    lead["Email Status"] = "FAILED"
+                    lead["Status"] = "EMAIL_FAILED"
+                    print(f'  [AUTO-MAIL] NOTICE: {mail_res.get("error")}')
+            else:
+                lead["Email Status"] = "NOT_SENT"
+                lead["Status"] = "NEW"
         else:
             print(f'  [REJECT] {rej.get("Rejection Reason", "Disqualified")}\n')
             rejected_leads.append(rej)
 
         time.sleep(REQUEST_DELAY)
 
-    # Step 3: Export leads.csv
-    final_leads_list = list(accepted_leads.values())
-    for i, lead in enumerate(final_leads_list, start=1):
-        lead["No"] = i
-
+    # Step 3: Export leads.csv (Append mode with smart deduplication)
     columns = [
-        "No", "Company Name", "Website URL", "Email",
-        "Mobile Number", "Search Query", "Intent", "Lead Type", "Lead Score"
+        "No", "Scraped Date", "Posted Date", "Company Name", "Website URL", "Email",
+        "Mobile Number", "Address", "Search Query", "Intent", "Lead Type", "Lead Score",
+        "Status", "Email Status", "Email Sent At"
     ]
 
-    if final_leads_list:
-        df_leads = pd.DataFrame(final_leads_list)
-        # Ensure all columns exist
+    new_leads_list = list(accepted_leads.values())
+    combined_leads = []
+    seen_urls_or_names = set()
+
+    # Read existing leads if file exists so past work is preserved
+    if os.path.exists(LEADS_CSV):
+        try:
+            df_old = pd.read_csv(LEADS_CSV)
+            if not df_old.empty:
+                for _, row in df_old.iterrows():
+                    u = str(row.get("Website URL", "")).strip().lower()
+                    n = str(row.get("Company Name", "")).strip().lower()
+                    if u and u != "nan" and u != "n/a":
+                        seen_urls_or_names.add(u)
+                    if n and n != "nan" and n != "n/a":
+                        seen_urls_or_names.add(n)
+                combined_leads = df_old.to_dict(orient="records")
+        except Exception as e:
+            logger.debug(f"Notice reading existing {LEADS_CSV}: {e}")
+
+    added_count = 0
+    for lead in new_leads_list:
+        u = str(lead.get("Website URL", "")).strip().lower()
+        n = str(lead.get("Company Name", "")).strip().lower()
+        if u not in seen_urls_or_names and n not in seen_urls_or_names:
+            seen_urls_or_names.add(u)
+            seen_urls_or_names.add(n)
+            combined_leads.append(lead)
+            added_count += 1
+
+    # Re-number 'No' column sequentially
+    for i, lead in enumerate(combined_leads, start=1):
+        lead["No"] = i
+
+    if combined_leads:
+        df_leads = pd.DataFrame(combined_leads)
         for col in columns:
             if col not in df_leads.columns:
                 df_leads[col] = "N/A"
         df_leads = df_leads[columns]
         df_leads.to_csv(LEADS_CSV, index=False, encoding="utf-8")
-        print(f"[EXPORT] Saved {len(df_leads)} high-quality leads to '{LEADS_CSV}'.")
-    else:
-        # Create empty CSV with columns
+        print(f"[EXPORT] Appended {added_count} new leads! Total saved leads in '{LEADS_CSV}': {len(df_leads)}.")
+    elif not os.path.exists(LEADS_CSV):
         pd.DataFrame(columns=columns).to_csv(LEADS_CSV, index=False, encoding="utf-8")
-        print(f"[EXPORT] No leads met threshold >= {MIN_LEAD_SCORE}. Created empty '{LEADS_CSV}'.")
+        print(f"[EXPORT] Created empty '{LEADS_CSV}'.")
 
-    # Step 4: Export rejected_leads.csv
+    # Step 4: Export rejected_leads.csv (Append mode)
     if rejected_leads:
-        df_rejected = pd.DataFrame(rejected_leads)
-        df_rejected.to_csv(REJECTED_CSV, index=False, encoding="utf-8")
-        print(f"[EXPORT] Saved {len(df_rejected)} rejected candidates to '{REJECTED_CSV}'.")
+        df_new_rej = pd.DataFrame(rejected_leads)
+        if os.path.exists(REJECTED_CSV):
+            try:
+                df_old_rej = pd.read_csv(REJECTED_CSV)
+                df_combined_rej = pd.concat([df_old_rej, df_new_rej], ignore_index=True)
+                if "Website URL" in df_combined_rej.columns:
+                    df_combined_rej = df_combined_rej.drop_duplicates(subset=["Website URL"])
+                df_combined_rej.to_csv(REJECTED_CSV, index=False, encoding="utf-8")
+            except Exception:
+                df_new_rej.to_csv(REJECTED_CSV, index=False, encoding="utf-8")
+        else:
+            df_new_rej.to_csv(REJECTED_CSV, index=False, encoding="utf-8")
+        print(f"[EXPORT] Updated rejected candidates list in '{REJECTED_CSV}'.")
 
     # Step 5: Summary Output
     print("\n" + "=" * 40)
@@ -879,7 +1200,8 @@ def main():
     print(f"Potential buyers:     {count_buyers}")
     print(f"Service providers:    {count_providers}")
     print(f"Rejected:             {len(rejected_leads)}")
-    print(f"Final leads:          {len(final_leads_list)}")
+    print(f"New leads found:      {added_count}")
+    print(f"Total leads saved:    {len(combined_leads)}")
     print("=" * 40 + "\n")
 
 

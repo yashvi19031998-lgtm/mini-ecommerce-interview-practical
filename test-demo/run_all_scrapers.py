@@ -17,6 +17,23 @@ from typing import Dict, Any, List
 from lead_normalizer import MasterLeadRegistry, MASTER_FIELDNAMES
 import scraper_adapters
 
+# Auto-Outreach & Supabase Sync integration
+try:
+    from email_service import send_smtp_email
+    from settings_manager import load_settings, format_signature
+except ImportError:
+    send_smtp_email = None
+    load_settings = None
+    format_signature = None
+
+try:
+    import sync_to_supabase
+except ImportError:
+    sync_to_supabase = None
+
+AUTO_SEND_EMAIL = True  # Automatically dispatch outreach emails to verified emails found
+AUTO_SYNC_SUPABASE = True  # Automatically sync new leads to Supabase database
+
 MASTER_CSV = "all_leads_master.csv"
 RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")
 LOCK_FILE = ".scraper_runner.lock"
@@ -233,13 +250,43 @@ def run_all_scrapers():
         s_duplicates = 0
         s_invalid = 0
 
+        # Load outreach signature & templates
+        settings = load_settings() if load_settings else {}
+        sig = format_signature(settings) if format_signature else ""
+        sub_tpl = settings.get("defaultSubject", "Web & Software Engineering Collaboration - {company}")
+        msg_tpl = settings.get("defaultMessage", "Hi {name},\n\nI came across {company} and your business...")
+
         for raw_lead in scraper_raw_records:
             total_raw_collected += 1
-            outcome, is_new = registry.add_lead(raw_lead, default_source=name)
+            outcome, lead_obj = registry.add_lead(raw_lead, default_source=name)
 
             if outcome == "added":
                 s_added += 1
                 total_new_leads_added += 1
+
+                # Direct Auto Outreach Email Dispatch
+                if AUTO_SEND_EMAIL and send_smtp_email and isinstance(lead_obj, dict):
+                    raw_email = str(lead_obj.get("email", "")).split(",")[0].strip()
+                    if raw_email and raw_email != "N/A" and "@" in raw_email:
+                        comp_name = lead_obj.get("company_name") or lead_obj.get("full_name") or "your company"
+                        loc_name = lead_obj.get("location") or "your region"
+
+                        custom_sub = sub_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+                        custom_msg = msg_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+
+                        if sig and sig.strip()[:20] not in custom_msg:
+                            custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
+
+                        print(f"       -> [AUTO-MAIL] Dispatching outreach to {raw_email} ({comp_name})...")
+                        mail_res = send_smtp_email(raw_email, custom_sub, custom_msg)
+                        if mail_res.get("success"):
+                            lead_obj["email_status"] = "SENT"
+                            lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            print(f"       -> [AUTO-MAIL] [SUCCESS] Delivered via Gmail SMTP.")
+                        else:
+                            lead_obj["email_status"] = "FAILED"
+                            print(f"       -> [AUTO-MAIL] [FAILED] {mail_res.get('error')}")
+
             elif outcome == "updated":
                 s_updated += 1
                 total_leads_updated += 1
@@ -273,6 +320,15 @@ def run_all_scrapers():
         print(f"[*] [OK] Successfully written to '{MASTER_CSV}'.")
     else:
         print(f"[FATAL] Failed to write to '{MASTER_CSV}'!")
+
+    # Step 5b: Direct Sync to Supabase Database
+    if AUTO_SYNC_SUPABASE and sync_to_supabase:
+        print("\n[*] Step 4: Syncing all leads directly to Supabase Database...")
+        try:
+            sync_to_supabase.sync(csv_filepath=MASTER_CSV)
+            print("[*] [OK] Supabase cloud database sync complete!")
+        except Exception as e:
+            print(f"[WARN] Supabase sync notice: {e}")
 
     final_lead_count = len(registry.leads)
     overall_end = datetime.datetime.now()

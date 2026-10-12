@@ -30,6 +30,8 @@ MASTER_FIELDNAMES = [
     "first_seen_at",
     "last_seen_at",
     "last_updated_at",
+    "email_status",
+    "email_sent_at",
 ]
 
 # Blacklisted domain names (social media, search, aggregators, system)
@@ -280,7 +282,8 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     last_seen = clean_text(raw.get("last_seen_at") or now_iso)
     last_updated = clean_text(raw.get("last_updated_at") or now_iso)
 
-    lead_id = clean_text(raw.get("lead_id") or "")
+    email_status = clean_text(raw.get("email_status") or raw.get("Email Status") or "NOT_SENT")
+    email_sent_at = clean_text(raw.get("email_sent_at") or raw.get("Email Sent At") or "")
 
     return {
         "lead_id": lead_id,
@@ -298,6 +301,8 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
         "first_seen_at": first_seen,
         "last_seen_at": last_seen,
         "last_updated_at": last_updated,
+        "email_status": email_status,
+        "email_sent_at": email_sent_at,
     }
 
 
@@ -501,14 +506,14 @@ class MasterLeadRegistry:
         match_idx = self.find_match(lead)
         if match_idx is not None:
             updated = self.merge_and_enrich(match_idx, lead)
-            return ("updated" if updated else "duplicate"), False
+            return ("updated" if updated else "duplicate"), self.leads[match_idx]
 
         # Genuinely new lead
         lead["lead_id"] = f"LEAD-{len(self.leads) + 1:05d}"
         new_idx = len(self.leads)
         self.leads.append(lead)
         self._index_lead(new_idx, lead)
-        return "added", True
+        return "added", lead
 
     def save_master_safely(self) -> bool:
         """

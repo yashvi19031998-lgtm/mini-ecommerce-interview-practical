@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sangeeta Infotech — Lead Generation & Outreach Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --bg-card-hover: rgba(24, 34, 54, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: #3b82f6;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-blue: #2563eb;
+      --accent-cyan: #06b6d4;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --glass-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.12) 0%, transparent 40%);
+    }
+
+    /* Top Navigation */
+    header {
+      background: rgba(10, 15, 28, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+    }
+
+    .brand-info h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-info p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 0.25rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn.active {
+      background: var(--accent-blue);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+    }
+
+    .nav-btn:hover:not(.active) {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.75rem 1.5rem;
+    }
+
+    /* Tabs Content */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.25s ease forwards;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Stats Grid */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .stat-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Action Bar */
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .filters-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .search-input {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.55rem 0.9rem;
+      color: #fff;
+      font-size: 0.85rem;
+      width: 280px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .select-filter {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.55rem 0.85rem;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .select-filter option {
+      background: #111827;
+      color: #fff;
+    }
+
+    .buttons-group {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .btn {
+      padding: 0.55rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    .btn-emerald {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-emerald:hover {
+      background: linear-gradient(135deg, #10b981, #34d399);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    /* Bulk Banner */
+    .bulk-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.8), rgba(67, 56, 202, 0.8));
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      padding: 0.85rem 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 1.25rem;
+      align-items: center;
+      justify-content: space-between;
+      animation: fadeIn 0.2s ease;
+    }
+
+    /* Table Styles */
+    .table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      max-height: 620px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    th {
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    tr.selected td {
+      background: rgba(37, 99, 235, 0.12);
+    }
+
+    .company-title {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.2rem;
+    }
+
+    .location-text {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .badge-high { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-med { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-low { background: rgba(156, 163, 175, 0.15); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.3); }
+
+    .badge-sent { background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4); }
+    .badge-new { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-box {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 650px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      animation: modalScale 0.2s ease;
+    }
+
+    @keyframes modalScale {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .form-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+      display: block;
+    }
+
+    .form-control {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-blue);
+    }
+
+    textarea.form-control {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    /* Live Scraper Console */
+    .console-box {
+      background: #020617;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: #38bdf8;
+      height: 380px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    /* Settings Layout */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .settings-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header>
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-icon">S</div>
+        <div class="brand-info">
+          <h1>Sangeeta Infotech</h1>
+          <p>Autonomous Lead Discovery & Cold Outreach Engine</p>
+        </div>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="nav-btn active" onclick="switchTab('tab-leads')">
+          📋 Leads Database
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-scraper')">
+          ⚡ Live Scraper
+        </button>
+        <button class="nav-btn" onclick="switchTab('tab-settings')">
+          ⚙️ Company & Signature
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==================== TAB 1: LEADS DATABASE ==================== -->
+    <div id="tab-leads" class="tab-content active">
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(37, 99, 235, 0.2); color: #60a5fa;">📁</div>
+          <div>
+            <div class="stat-val" id="stat-total">0</div>
+            <div class="stat-lbl">Total Scraped Leads</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">📧</div>
+          <div>
+            <div class="stat-val" id="stat-emails">0</div>
+            <div class="stat-lbl">With Verified Email</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(139, 92, 246, 0.2); color: #c084fc;">📬</div>
+          <div>
+            <div class="stat-val" id="stat-sent">0</div>
+            <div class="stat-lbl">Outreach Emails Sent</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">⭐</div>
+          <div>
+            <div class="stat-val" id="stat-high">0</div>
+            <div class="stat-lbl">High Intent Buyers</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <div class="filters-group">
+          <input type="text" id="search-input" class="search-input" placeholder="Search company, email, location..." oninput="filterLeads()">
+          
+          <select id="filter-status" class="select-filter" onchange="filterLeads()">
+            <option value="">All Statuses</option>
+            <option value="NEW">Status: NEW</option>
+            <option value="EMAIL_SENT">Status: EMAIL SENT 📬</option>
+            <option value="APPROVED">Status: APPROVED</option>
+          </select>
+
+          <select id="filter-email" class="select-filter" onchange="filterLeads()">
+            <option value="">All Leads</option>
+            <option value="has_email">Has Email Only ✉️</option>
+          </select>
+        </div>
+
+        <div class="buttons-group">
+          <button class="btn btn-secondary" onclick="syncSupabase()">
+            ☁️ Sync Supabase
+          </button>
+          <a href="/api/export-csv" class="btn btn-secondary">
+            📥 Export CSV
+          </a>
+          <button class="btn btn-primary" onclick="loadLeads()">
+            🔄 Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Bulk Selection Banner -->
+      <div id="bulk-banner" class="bulk-banner">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-weight: 700; font-size: 0.9rem;" id="bulk-selected-count">0 Leads Selected</span>
+          <span style="font-size: 0.8rem; color: #cbd5e1;" id="bulk-eligible-count">(0 have emails)</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-emerald" onclick="openBulkEmailModal()">
+            🚀 Send Bulk Outreach Email
+          </button>
+          <button class="btn btn-secondary" onclick="clearSelection()">
+            Deselect
+          </button>
+        </div>
+      </div>
+
+      <!-- Leads Table -->
+      <div class="table-card">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px;">
+                  <input type="checkbox" id="select-all-box" onchange="toggleSelectAll(this.checked)">
+                </th>
+                <th>Company / Domain</th>
+                <th>Email & Phone</th>
+                <th>Location / Address</th>
+                <th>Intent & Type</th>
+                <th>Status</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="leads-tbody">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                  Loading leads...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: LIVE SCRAPER ==================== -->
+    <div id="tab-scraper" class="tab-content">
+      <div class="action-bar">
+        <div>
+          <h2 style="font-size: 1.1rem; font-weight: 700;">Automated Lead Scraper Engine</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Crawls Google, DuckDuckGo, Yahoo & Multi-Platform B2B/Reddit Harvesters with direct email outreach</p>
+        </div>
+        <div class="buttons-group">
+          <button id="btn-run-scraper" class="btn btn-emerald" onclick="startScraper('quick')">
+            ⚡ Quick Live Scraper
+          </button>
+          <button id="btn-run-all-scrapers" class="btn btn-primary" onclick="startScraper('all')">
+            🌐 Run All 10 Harvesters (Deep Sync)
+          </button>
+        </div>
+      </div>
+
+      <div class="table-card" style="padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="scraper-status-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
+            <span id="scraper-status-text">Status: Idle</span>
+          </span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Live Terminal Stream</span>
+        </div>
+        <div id="scraper-console" class="console-box">Click "Start Lead Scraper Now" to run scraper.py...</div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: COMPANY & SIGNATURE SETTINGS ==================== -->
+    <div id="tab-settings" class="tab-content">
+      <div class="settings-grid">
+        <!-- Left: Form -->
+        <div class="table-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+          <h2 style="font-size: 1.05rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+            Sangeeta Infotech Company Profile
+          </h2>
+
+          <div>
+            <label class="form-label">Company Name</label>
+            <input type="text" id="set-company" class="form-control">
+          </div>
+
+          <div>
+            <label class="form-label">Company Tagline</label>
+            <input type="text" id="set-tagline" class="form-control">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div>
+              <label class="form-label">Sender Name</label>
+              <input type="text" id="set-sender-name" class="form-control">
+            </div>
+            <div>
+              <label class="form-label">Sender Role / Title</label>
+              <input type="text" id="set-sender-role" class="form-control">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div>
+              <label class="form-label">Sender Email Address</label>
+              <input type="email" id="set-email" class="form-control">
+            </div>
+            <div>
+              <label class="form-label">Phone / WhatsApp</label>
+              <input type="text" id="set-phone" class="form-control">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div>
+              <label class="form-label">Website</label>
+              <input type="text" id="set-website" class="form-control">
+            </div>
+            <div>
+              <label class="form-label">Address / Location</label>
+              <input type="text" id="set-address" class="form-control">
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Signature Template (Dynamic Tags)</label>
+            <textarea id="set-signature" class="form-control" rows="6"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+            <button class="btn btn-primary" onclick="saveSettings()">
+              💾 Save Profile & Signature
+            </button>
+            <button class="btn btn-emerald" onclick="testSignatureEmail()">
+              ✉️ Send Test Email to Sangeeta Infotech
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Live Preview -->
+        <div class="table-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+          <h2 style="font-size: 1.05rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+            Live Email Signature Preview
+          </h2>
+
+          <p style="font-size: 0.8rem; color: var(--text-muted);">
+            This official signature is automatically attached to every single and bulk proposal email dispatched:
+          </p>
+
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem;">
+            <div style="color: #64748b; font-size: 0.75rem; border-bottom: 1px dashed rgba(255, 255, 255, 0.1); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+              ... [Your proposal message will appear here] ...
+            </div>
+
+            <div id="preview-signature" style="font-family: inherit; font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap; color: #e2e8f0;">
+              Loading signature preview...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== SINGLE EMAIL MODAL ==================== -->
+  <div id="modal-single" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 1rem; font-weight: 700;">Send Outreach Proposal</h3>
+        <button onclick="closeModal('modal-single')" style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <label class="form-label">To Recipient</label>
+          <input type="email" id="single-to" class="form-control" readonly>
+        </div>
+        <div>
+          <label class="form-label">Subject</label>
+          <input type="text" id="single-sub" class="form-control">
+        </div>
+        <div>
+          <label class="form-label">Message Body & Sangeeta Infotech Signature</label>
+          <textarea id="single-msg" class="form-control" rows="10"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-single')">Cancel</button>
+        <button id="btn-send-single" class="btn btn-primary" onclick="submitSingleEmail()">
+          🚀 Send via Gmail SMTP
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== BULK EMAIL MODAL ==================== -->
+  <div id="modal-bulk" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header" style="background: linear-gradient(135deg, rgba(37,99,235,0.2), rgba(6,182,212,0.2));">
+        <div>
+          <h3 style="font-size: 1rem; font-weight: 700;">Bulk Outreach Dispatch</h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted);" id="bulk-modal-subtitle">0 leads selected</p>
+        </div>
+        <button onclick="closeModal('modal-bulk')" style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.25); padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.75rem; color: #93c5fd;">
+          💡 Dynamic tags supported: <code>{name}</code>, <code>{company}</code>, <code>{location}</code>. Each recipient receives a customized email with Sangeeta Infotech signature.
+        </div>
+        <div>
+          <label class="form-label">Subject Template</label>
+          <input type="text" id="bulk-sub" class="form-control">
+        </div>
+        <div>
+          <label class="form-label">Message Template</label>
+          <textarea id="bulk-msg" class="form-control" rows="10"></textarea>
+        </div>
+        <div id="bulk-status-box" style="display:none; padding: 0.75rem; border-radius: 8px; font-size: 0.8rem;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-bulk')">Cancel</button>
+        <button id="btn-send-bulk" class="btn btn-emerald" onclick="submitBulkEmail()">
+          🚀 Start Dispatch
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allLeads = [];
+    let selectedLeadIds = new Set();
+    let currentSingleLead = null;
+    let cachedSettings = {};
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+      if (tabId === 'tab-settings') loadSettings();
+    }
+
+    async function loadLeads() {
+      try {
+        const res = await fetch('/api/leads');
+        const data = await res.json();
+        allLeads = data.leads || [];
+        updateStats();
+        renderLeadsTable(allLeads);
+      } catch (err) {
+        console.error('Error fetching leads:', err);
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('stat-total').textContent = allLeads.length;
+      const withEmails = allLeads.filter(l => l.Email && l.Email !== 'N/A').length;
+      document.getElementById('stat-emails').textContent = withEmails;
+      const sent = allLeads.filter(l => l['Email Status'] === 'SENT' || l['Status'] === 'EMAIL_SENT').length;
+      document.getElementById('stat-sent').textContent = sent;
+      const high = allLeads.filter(l => (l.Intent || '').toLowerCase() === 'high').length;
+      document.getElementById('stat-high').textContent = high;
+    }
+
+    function renderLeadsTable(leads) {
+      const tbody = document.getElementById('leads-tbody');
+      if (leads.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 3rem; color: #64748b;">No leads match your filter.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = leads.map(l => {
+        const isSelected = selectedLeadIds.has(String(l.id));
+        const rawEmail = (l.Email || '').split(',')[0].trim();
+        const hasEmail = rawEmail && rawEmail !== 'N/A' && rawEmail.includes('@');
+        const isSent = (l['Email Status'] === 'SENT' || l.Status === 'EMAIL_SENT');
+
+        return `
+          <tr class="${isSelected ? 'selected' : ''}">
+            <td>
+              <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelectLead('${l.id}', this.checked)">
+            </td>
+            <td>
+              <div class="company-title">${escapeHtml(l['Company Name'] || 'Anonymous Business')}</div>
+              <a href="${l['Website URL']}" target="_blank" style="color: #60a5fa; font-size: 0.72rem; text-decoration: none;">
+                🌐 ${escapeHtml(l['Website URL'])}
+              </a>
+            </td>
+            <td>
+              ${hasEmail ? `<div style="font-family: monospace; font-size: 0.8rem; color: #e2e8f0;">✉️ ${escapeHtml(rawEmail)}</div>` : '<span style="color:#64748b; font-style:italic;">No email</span>'}
+              ${l['Mobile Number'] && l['Mobile Number'] !== 'N/A' ? `<div style="color: #94a3b8; font-size: 0.72rem; margin-top:2px;">📞 ${escapeHtml(l['Mobile Number'])}</div>` : ''}
+            </td>
+            <td>
+              <div class="location-text">📍 ${escapeHtml(l.Address || 'Ahmedabad, Gujarat, India')}</div>
+            </td>
+            <td>
+              <span class="badge ${l.Intent === 'High' ? 'badge-high' : 'badge-med'}">${l.Intent || 'Medium'}</span>
+              <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 3px;">${l['Lead Type'] || 'Business'}</div>
+            </td>
+            <td>
+              <span class="badge ${isSent ? 'badge-sent' : 'badge-new'}">
+                ${isSent ? 'EMAIL SENT 📬' : (l.Status || 'NEW')}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              ${hasEmail ? `
+                <button class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="openSingleEmailModal('${l.id}')">
+                  ✉️ Email
+                </button>
+              ` : '<span style="color: #475569; font-size: 0.75rem;">—</span>'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function toggleSelectLead(id, checked) {
+      if (checked) selectedLeadIds.add(String(id));
+      else selectedLeadIds.delete(String(id));
+      updateBulkBanner();
+      filterLeads();
+    }
+
+    function toggleSelectAll(checked) {
+      const currentFiltered = getFilteredLeads();
+      if (checked) {
+        currentFiltered.forEach(l => {
+          const rawEmail = (l.Email || '').split(',')[0].trim();
+          if (rawEmail && rawEmail.includes('@')) selectedLeadIds.add(String(l.id));
+        });
+      } else {
+        selectedLeadIds.clear();
+      }
+      updateBulkBanner();
+      filterLeads();
+    }
+
+    function clearSelection() {
+      selectedLeadIds.clear();
+      document.getElementById('select-all-box').checked = false;
+      updateBulkBanner();
+      filterLeads();
+    }
+
+    function updateBulkBanner() {
+      const banner = document.getElementById('bulk-banner');
+      if (selectedLeadIds.size > 0) {
+        banner.style.display = 'flex';
+        document.getElementById('bulk-selected-count').textContent = `${selectedLeadIds.size} Leads Selected`;
+        const eligible = allLeads.filter(l => selectedLeadIds.has(String(l.id)) && l.Email && l.Email.includes('@')).length;
+        document.getElementById('bulk-eligible-count').textContent = `(${eligible} ready with verified emails)`;
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
+    function getFilteredLeads() {
+      const query = (document.getElementById('search-input').value || '').toLowerCase();
+      const status = document.getElementById('filter-status').value;
+      const emailOnly = document.getElementById('filter-email').value === 'has_email';
+
+      return allLeads.filter(l => {
+        if (emailOnly && (!l.Email || l.Email === 'N/A' || !l.Email.includes('@'))) return false;
+        if (status === 'EMAIL_SENT' && (l['Email Status'] !== 'SENT' && l.Status !== 'EMAIL_SENT')) return false;
+        if (status && status !== 'EMAIL_SENT' && l.Status !== status) return false;
+
+        if (query) {
+          const matchStr = `${l['Company Name']} ${l['Website URL']} ${l.Email} ${l.Address}`.toLowerCase();
+          return matchStr.includes(query);
+        }
+        return true;
+      });
+    }
+
+    function filterLeads() {
+      renderLeadsTable(getFilteredLeads());
+    }
+
+    function openSingleEmailModal(leadId) {
+      const lead = allLeads.find(l => String(l.id) === String(leadId));
+      if (!lead) return;
+      currentSingleLead = lead;
+
+      const rawEmail = (lead.Email || '').split(',')[0].trim();
+      document.getElementById('single-to').value = rawEmail;
+      
+      const comp = lead['Company Name'] || 'your company';
+      document.getElementById('single-sub').value = `Web & Software Development Collaboration - ${comp}`;
+      
+      const sig = cachedSettings.signature || '';
+      document.getElementById('single-msg').value = 
+`Hi ${comp} Team,
+
+I came across ${comp} and wanted to reach out regarding your digital presence and web/software engineering needs.
+
+At Sangeeta Infotech, we build custom web platforms, mobile apps, and automated software architectures.
+
+Would you be open to a 10-minute discovery call this week?
+
+---
+${sig}`;
+
+      document.getElementById('modal-single').style.display = 'flex';
+    }
+
+    async function submitSingleEmail() {
+      if (!currentSingleLead) return;
+      const btn = document.getElementById('btn-send-single');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        const res = await fetch('/api/leads/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: currentSingleLead.id,
+            to: document.getElementById('single-to').value,
+            subject: document.getElementById('single-sub').value,
+            message: document.getElementById('single-msg').value
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Email delivered successfully via Gmail SMTP!');
+          closeModal('modal-single');
+          loadLeads();
+        } else {
+          alert('❌ Failed to send email: ' + (data.error || 'Check SMTP'));
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Send via Gmail SMTP';
+      }
+    }
+
+    function openBulkEmailModal() {
+      const eligible = allLeads.filter(l => selectedLeadIds.has(String(l.id)) && l.Email && l.Email.includes('@'));
+      if (eligible.length === 0) {
+        alert('Please select leads that have valid emails.');
+        return;
+      }
+
+      document.getElementById('bulk-modal-subtitle').textContent = `Ready to dispatch to ${eligible.length} businesses`;
+      document.getElementById('bulk-sub').value = cachedSettings.defaultSubject || 'Web & Software Engineering Collaboration - {company}';
+      
+      const sig = cachedSettings.signature || '';
+      document.getElementById('bulk-msg').value = (cachedSettings.defaultMessage || '') + '\n\n---\n' + sig;
+      document.getElementById('bulk-status-box').style.display = 'none';
+
+      document.getElementById('modal-bulk').style.display = 'flex';
+    }
+
+    async function submitBulkEmail() {
+      const eligibleIds = allLeads
+        .filter(l => selectedLeadIds.has(String(l.id)) && l.Email && l.Email.includes('@'))
+        .map(l => l.id);
+
+      const btn = document.getElementById('btn-send-bulk');
+      const statusBox = document.getElementById('bulk-status-box');
+      
+      btn.disabled = true;
+      btn.textContent = 'Dispatching Batch...';
+      statusBox.style.display = 'block';
+      statusBox.style.background = 'rgba(37,99,235,0.15)';
+      statusBox.style.color = '#93c5fd';
+      statusBox.textContent = `Sending emails with courteous delay to protect Gmail SMTP health...`;
+
+      try {
+        const res = await fetch('/api/leads/bulk-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lead_ids: eligibleIds,
+            subject: document.getElementById('bulk-sub').value,
+            message: document.getElementById('bulk-msg').value,
+            delay_ms: 1500
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusBox.style.background = 'rgba(16,185,129,0.15)';
+          statusBox.style.color = '#34d399';
+          statusBox.textContent = `✅ Bulk Complete! Delivered: ${data.sent} / ${data.total} successfully.`;
+          clearSelection();
+          loadLeads();
+          setTimeout(() => closeModal('modal-bulk'), 2500);
+        } else {
+          statusBox.style.background = 'rgba(244,63,94,0.15)';
+          statusBox.style.color = '#f87171';
+          statusBox.textContent = `❌ Error: ` + (data.error || 'Failed');
+        }
+      } catch (err) {
+        statusBox.textContent = 'Error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Start Dispatch';
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    // Scraper Handling
+    let scraperTimer = null;
+    async function startScraper(mode = 'quick') {
+      const btnQuick = document.getElementById('btn-run-scraper');
+      const btnAll = document.getElementById('btn-run-all-scrapers');
+      if (btnQuick) btnQuick.disabled = true;
+      if (btnAll) btnAll.disabled = true;
+
+      try {
+        const res = await fetch('/api/scraper/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (!scraperTimer) scraperTimer = setInterval(pollScraperStatus, 2000);
+        } else {
+          alert(data.error);
+        }
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        if (btnQuick) btnQuick.disabled = false;
+        if (btnAll) btnAll.disabled = false;
+      }
+    }
+
+    async function pollScraperStatus() {
+      try {
+        const res = await fetch('/api/scraper/status');
+        const data = await res.json();
+        const consoleEl = document.getElementById('scraper-console');
+        if (data.logs && data.logs.length > 0) {
+          consoleEl.textContent = data.logs.join('\n');
+          consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        const dot = document.getElementById('scraper-status-dot');
+        const text = document.getElementById('scraper-status-text');
+        if (data.running) {
+          dot.style.background = '#10b981';
+          text.textContent = 'Status: Scraping in progress... ⚡';
+        } else {
+          dot.style.background = '#64748b';
+          text.textContent = 'Status: Idle / Finished';
+          loadLeads();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Settings
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        const s = data.settings;
+        cachedSettings = { ...s, signature: data.formattedSignature };
+
+        document.getElementById('set-company').value = s.companyName || '';
+        document.getElementById('set-tagline').value = s.tagline || '';
+        document.getElementById('set-sender-name').value = s.senderName || '';
+        document.getElementById('set-sender-role').value = s.senderRole || '';
+        document.getElementById('set-email').value = s.email || '';
+        document.getElementById('set-phone').value = s.phone || '';
+        document.getElementById('set-website').value = s.website || '';
+        document.getElementById('set-address').value = s.address || '';
+        document.getElementById('set-signature').value = s.signatureTemplate || '';
+
+        document.getElementById('preview-signature').textContent = data.formattedSignature;
+      } catch (err) {
+        console.error('Settings load err:', err);
+      }
+    }
+
+    async function saveSettings() {
+      const payload = {
+        companyName: document.getElementById('set-company').value,
+        tagline: document.getElementById('set-tagline').value,
+        senderName: document.getElementById('set-sender-name').value,
+        senderRole: document.getElementById('set-sender-role').value,
+        email: document.getElementById('set-email').value,
+        phone: document.getElementById('set-phone').value,
+        website: document.getElementById('set-website').value,
+        address: document.getElementById('set-address').value,
+        signatureTemplate: document.getElementById('set-signature').value
+      };
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Sangeeta Infotech Profile & Signature Saved!');
+          loadSettings();
+        }
+      } catch (err) {
+        alert('Save err: ' + err.message);
+      }
+    }
+
+    async function testSignatureEmail() {
+      if (!confirm('Send a live test email to Sangeeta Infotech email to test signature?')) return;
+      try {
+        const res = await fetch('/api/settings/test-email', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) alert('✅ Test email sent to Sangeeta Infotech via Gmail SMTP!');
+        else alert('❌ SMTP Error: ' + data.error);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function syncSupabase() {
+      try {
+        const res = await fetch('/api/sync-supabase', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) alert('✅ ' + data.message);
+        else alert('❌ Sync error: ' + data.error);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Startup
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLeads();
+      loadSettings();
+      setInterval(pollScraperStatus, 3000);
+    });
+  </script>
+</body>
+</html>
