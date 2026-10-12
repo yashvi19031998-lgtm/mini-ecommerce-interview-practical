@@ -9,12 +9,43 @@ A Python demonstration tool for identifying and collecting publicly available IT
 ```text
 lead-scraper/
 │
-├── scraper.py              # Main lead discovery, filtering, crawl & scoring pipeline
-├── leads.csv               # High-quality leads meeting MIN_LEAD_SCORE threshold
-├── rejected_leads.csv      # Disqualified candidates with explicit rejection reasons
-├── requirements.txt        # Python package dependencies
-└── README.md               # Documentation and usage guide
+├── run_all_scrapers.py      # Unified Master Entry Point coordinating all 10 scrapers
+├── all_leads_master.csv     # Authoritative Master Database of all unique leads
+├── lead_normalizer.py       # Normalization, prioritized deduplication & atomic storage
+├── scraper_adapters.py      # Reusable in-memory adapters for all 10 scrapers
+├── migrate_historical_leads.py # Reconciles historical CSV leads into the master file
+├── test_lead_system.py      # Unit test suite verifying deduplication & safe preservation
+├── logs/scraper_runs.csv    # Append-only run telemetry and scraper audit log
+├── backups/pre_migration/   # Automatic backups of all original CSV files
+├── scraper.py               # Main web search & deep crawl pipeline
+├── lead_generation_master.py # RSS & Playwright Justdial multi-source engine
+├── leads.csv                # High-quality leads meeting MIN_LEAD_SCORE threshold
+├── rejected_leads.csv       # Disqualified candidates with explicit rejection reasons
+├── requirements.txt         # Python package dependencies
+└── README.md                # Documentation and usage guide
 ```
+
+---
+
+## 🚀 Unified Master Lead Generation System (`run_all_scrapers.py`)
+
+Run the single unified command to execute all scrapers and incrementally update the master database:
+
+```powershell
+python run_all_scrapers.py
+```
+
+### Key Guarantees:
+1. **Never Loses Old Leads:** Automatically loads [`all_leads_master.csv`](file:///c:/xampp/htdocs/Yashvi-Practical/test-demo/all_leads_master.csv), preserves all existing records, and safely merges new attributes.
+2. **Prioritized Deduplication:** Matches incoming leads against existing records using:
+   - Normalized email address
+   - Normalized Indian/international phone number
+   - Canonical company website domain
+   - Exact source/post URL
+   - Normalized company name + location
+3. **Safe Atomic Writes:** Writes updates to a temporary `.tmp` file and replaces the master file atomically only upon success.
+4. **Execution Telemetry:** Records detailed run history (runtime, raw records, new leads, enriched records, duplicates, errors) into [`logs/scraper_runs.csv`](file:///c:/xampp/htdocs/Yashvi-Practical/test-demo/logs/scraper_runs.csv).
+5. **Run Lock Protection:** Uses `.scraper_runner.lock` to prevent two simultaneous processes from conflicting.
 
 ---
 

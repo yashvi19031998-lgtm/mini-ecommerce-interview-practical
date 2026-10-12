@@ -1,7 +1,7 @@
 import csv
 import re
 import time
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 
 # Expanded queries for each platform
 PLATFORM_QUERIES = [

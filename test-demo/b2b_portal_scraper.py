@@ -1,7 +1,7 @@
 import csv
 import re
 import time
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 import requests
 from bs4 import BeautifulSoup
 
