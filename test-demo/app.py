@@ -11,6 +11,14 @@ from email_service import send_smtp_email
 import sync_to_supabase
 
 app = Flask(__name__)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 LEADS_CSV = "leads_new.csv"
 
@@ -238,7 +246,7 @@ def start_scraper():
     def run_worker():
         global scraper_process, scraper_logs
         with scraper_lock:
-            scraper_logs = [f"[{time.strftime('%H:%M:%S')}] Launching {script_to_run} ({'All 10 Harvesters' if mode == 'all' else 'Live Search Scraper'})..."]
+            scraper_logs = [f"[{time.strftime('%H:%M:%S')}] Launching {script_to_run} ({'All 12 Harvesters (Includes Maps & Telegram)' if mode == 'all' else 'Live Search Scraper'})..."]
         
         proc = subprocess.Popen(
             [sys.executable, script_to_run],

@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sangeeta Infotech — Lead Generation & Outreach Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --bg-dark: #090d16;
@@ -39,7 +42,7 @@
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
-      background-image: 
+      background-image:
         radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.12) 0%, transparent 40%),
         radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.12) 0%, transparent 40%);
     }
@@ -150,8 +153,15 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* Stats Grid */
@@ -391,17 +401,43 @@
       font-weight: 600;
     }
 
-    .badge-high { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-med { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .badge-low { background: rgba(156, 163, 175, 0.15); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.3); }
+    .badge-high {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
 
-    .badge-sent { background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4); }
-    .badge-new { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-med {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .badge-low {
+      background: rgba(156, 163, 175, 0.15);
+      color: #9ca3af;
+      border: 1px solid rgba(156, 163, 175, 0.3);
+    }
+
+    .badge-sent {
+      background: rgba(139, 92, 246, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+    }
+
+    .badge-new {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
 
     /* Modals */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(8px);
       z-index: 50;
@@ -424,8 +460,15 @@
     }
 
     @keyframes modalScale {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
 
     .modal-header {
@@ -507,10 +550,13 @@
     }
 
     @media (max-width: 900px) {
-      .settings-grid { grid-template-columns: 1fr; }
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- Top Navigation -->
@@ -525,13 +571,13 @@
       </div>
 
       <nav class="nav-tabs">
-        <button class="nav-btn active" onclick="switchTab('tab-leads')">
+        <button id="tab-btn-leads" class="nav-btn active" onclick="switchTab('tab-leads', this)">
           📋 Leads Database
         </button>
-        <button class="nav-btn" onclick="switchTab('tab-scraper')">
+        <button id="tab-btn-scraper" class="nav-btn" onclick="switchTab('tab-scraper', this)">
           ⚡ Live Scraper
         </button>
-        <button class="nav-btn" onclick="switchTab('tab-settings')">
+        <button id="tab-btn-settings" class="nav-btn" onclick="switchTab('tab-settings', this)">
           ⚙️ Company & Signature
         </button>
       </nav>
@@ -576,8 +622,9 @@
       <!-- Action Bar -->
       <div class="action-bar">
         <div class="filters-group">
-          <input type="text" id="search-input" class="search-input" placeholder="Search company, email, location..." oninput="filterLeads()">
-          
+          <input type="text" id="search-input" class="search-input" placeholder="Search company, email, location..."
+            oninput="filterLeads()">
+
           <select id="filter-status" class="select-filter" onchange="filterLeads()">
             <option value="">All Statuses</option>
             <option value="NEW">Status: NEW</option>
@@ -592,13 +639,17 @@
         </div>
 
         <div class="buttons-group">
+          <button class="btn btn-primary" onclick="triggerRunAllFromMain()"
+            style="background: linear-gradient(135deg, #2563eb, #06b6d4); font-weight: 700; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">
+            🌐 Run All Harvesters (12 Sources)
+          </button>
           <button class="btn btn-secondary" onclick="syncSupabase()">
             ☁️ Sync Supabase
           </button>
           <a href="/api/export-csv" class="btn btn-secondary">
             📥 Export CSV
           </a>
-          <button class="btn btn-primary" onclick="loadLeads()">
+          <button class="btn btn-secondary" onclick="loadLeads()">
             🔄 Refresh
           </button>
         </div>
@@ -654,22 +705,25 @@
       <div class="action-bar">
         <div>
           <h2 style="font-size: 1.1rem; font-weight: 700;">Automated Lead Scraper Engine</h2>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">Crawls Google, DuckDuckGo, Yahoo & Multi-Platform B2B/Reddit Harvesters with direct email outreach</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Crawls Google Maps, Telegram, Google Search, DuckDuckGo, Yahoo & Multi-Platform
+            B2B/Reddit Harvesters with direct email outreach</p>
         </div>
         <div class="buttons-group">
           <button id="btn-run-scraper" class="btn btn-emerald" onclick="startScraper('quick')">
             ⚡ Quick Live Scraper
           </button>
           <button id="btn-run-all-scrapers" class="btn btn-primary" onclick="startScraper('all')">
-            🌐 Run All 10 Harvesters (Deep Sync)
+            🌐 Run All 12 Harvesters (Maps & Telegram Included)
           </button>
         </div>
       </div>
 
       <div class="table-card" style="padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
-          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-            <span id="scraper-status-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
+          <span
+            style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <span id="scraper-status-dot"
+              style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
             <span id="scraper-status-text">Status: Idle</span>
           </span>
           <span style="font-size: 0.75rem; color: var(--text-muted);">Live Terminal Stream</span>
@@ -683,7 +737,8 @@
       <div class="settings-grid">
         <!-- Left: Form -->
         <div class="table-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-          <h2 style="font-size: 1.05rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+          <h2
+            style="font-size: 1.05rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
             Sangeeta Infotech Company Profile
           </h2>
 
@@ -747,7 +802,8 @@
 
         <!-- Right: Live Preview -->
         <div class="table-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-          <h2 style="font-size: 1.05rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+          <h2
+            style="font-size: 1.05rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
             Live Email Signature Preview
           </h2>
 
@@ -755,12 +811,15 @@
             This official signature is automatically attached to every single and bulk proposal email dispatched:
           </p>
 
-          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem;">
-            <div style="color: #64748b; font-size: 0.75rem; border-bottom: 1px dashed rgba(255, 255, 255, 0.1); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+          <div
+            style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem;">
+            <div
+              style="color: #64748b; font-size: 0.75rem; border-bottom: 1px dashed rgba(255, 255, 255, 0.1); padding-bottom: 0.75rem; margin-bottom: 1rem;">
               ... [Your proposal message will appear here] ...
             </div>
 
-            <div id="preview-signature" style="font-family: inherit; font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap; color: #e2e8f0;">
+            <div id="preview-signature"
+              style="font-family: inherit; font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap; color: #e2e8f0;">
               Loading signature preview...
             </div>
           </div>
@@ -774,7 +833,8 @@
     <div class="modal-box">
       <div class="modal-header">
         <h3 style="font-size: 1rem; font-weight: 700;">Send Outreach Proposal</h3>
-        <button onclick="closeModal('modal-single')" style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
+        <button onclick="closeModal('modal-single')"
+          style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
       <div class="modal-body">
         <div>
@@ -807,11 +867,14 @@
           <h3 style="font-size: 1rem; font-weight: 700;">Bulk Outreach Dispatch</h3>
           <p style="font-size: 0.75rem; color: var(--text-muted);" id="bulk-modal-subtitle">0 leads selected</p>
         </div>
-        <button onclick="closeModal('modal-bulk')" style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
+        <button onclick="closeModal('modal-bulk')"
+          style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
       <div class="modal-body">
-        <div style="background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.25); padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.75rem; color: #93c5fd;">
-          💡 Dynamic tags supported: <code>{name}</code>, <code>{company}</code>, <code>{location}</code>. Each recipient receives a customized email with Sangeeta Infotech signature.
+        <div
+          style="background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.25); padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.75rem; color: #93c5fd;">
+          💡 Dynamic tags supported: <code>{name}</code>, <code>{company}</code>, <code>{location}</code>. Each
+          recipient receives a customized email with Sangeeta Infotech signature.
         </div>
         <div>
           <label class="form-label">Subject Template</label>
@@ -838,12 +901,31 @@
     let currentSingleLead = null;
     let cachedSettings = {};
 
-    function switchTab(tabId) {
+    function switchTab(tabId, btn = null) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      event.currentTarget.classList.add('active');
+
+      const targetTab = document.getElementById(tabId);
+      if (targetTab) targetTab.classList.add('active');
+
+      if (btn) {
+        btn.classList.add('active');
+      } else {
+        const idMap = {
+          'tab-leads': 'tab-btn-leads',
+          'tab-scraper': 'tab-btn-scraper',
+          'tab-settings': 'tab-btn-settings'
+        };
+        const activeNav = document.getElementById(idMap[tabId]);
+        if (activeNav) activeNav.classList.add('active');
+      }
+
       if (tabId === 'tab-settings') loadSettings();
+    }
+
+    function triggerRunAllFromMain() {
+      switchTab('tab-scraper');
+      startScraper('all');
     }
 
     async function loadLeads() {
@@ -989,13 +1071,13 @@
 
       const rawEmail = (lead.Email || '').split(',')[0].trim();
       document.getElementById('single-to').value = rawEmail;
-      
+
       const comp = lead['Company Name'] || 'your company';
       document.getElementById('single-sub').value = `Web & Software Development Collaboration - ${comp}`;
-      
+
       const sig = cachedSettings.signature || '';
-      document.getElementById('single-msg').value = 
-`Hi ${comp} Team,
+      document.getElementById('single-msg').value =
+        `Hi ${comp} Team,
 
 I came across ${comp} and wanted to reach out regarding your digital presence and web/software engineering needs.
 
@@ -1051,7 +1133,7 @@ ${sig}`;
 
       document.getElementById('bulk-modal-subtitle').textContent = `Ready to dispatch to ${eligible.length} businesses`;
       document.getElementById('bulk-sub').value = cachedSettings.defaultSubject || 'Web & Software Engineering Collaboration - {company}';
-      
+
       const sig = cachedSettings.signature || '';
       document.getElementById('bulk-msg').value = (cachedSettings.defaultMessage || '') + '\n\n---\n' + sig;
       document.getElementById('bulk-status-box').style.display = 'none';
@@ -1066,7 +1148,7 @@ ${sig}`;
 
       const btn = document.getElementById('btn-send-bulk');
       const statusBox = document.getElementById('bulk-status-box');
-      
+
       btn.disabled = true;
       btn.textContent = 'Dispatching Batch...';
       statusBox.style.display = 'block';
@@ -1257,4 +1339,5 @@ ${sig}`;
     });
   </script>
 </body>
+
 </html>

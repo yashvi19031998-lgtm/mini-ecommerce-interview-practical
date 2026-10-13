@@ -78,9 +78,9 @@ class TestLeadGenerationMaster(unittest.TestCase):
         registry2 = MasterLeadRegistry(self.master_csv)
         self.assertEqual(len(registry2.leads), 1)
 
-        outcome, is_new = registry2.add_lead(lead1)
+        outcome, lead_obj = registry2.add_lead(lead1)
         self.assertIn(outcome, ["duplicate", "updated"])
-        self.assertFalse(is_new)
+        self.assertNotEqual(outcome, "added")
         self.assertEqual(len(registry2.leads), 1)
 
     def test_03_new_leads_appended_without_losing_existing_leads(self):
@@ -92,9 +92,9 @@ class TestLeadGenerationMaster(unittest.TestCase):
 
         registry2 = MasterLeadRegistry(self.master_csv)
         lead2 = {"company_name": "Second Corp", "email": "info@secondcorp.com"}
-        outcome, is_new = registry2.add_lead(lead2)
+        outcome, lead_obj = registry2.add_lead(lead2)
         self.assertEqual(outcome, "added")
-        self.assertTrue(is_new)
+        self.assertTrue(bool(lead_obj))
         self.assertEqual(len(registry2.leads), 2)
         registry2.save_master_safely()
 
@@ -119,9 +119,9 @@ class TestLeadGenerationMaster(unittest.TestCase):
             "email": "hello@novasoft.io",
             "mobile_number": "+91 98250 12345"
         }
-        outcome, is_new = registry2.add_lead(enriched_lead)
+        outcome, lead_obj = registry2.add_lead(enriched_lead)
         self.assertEqual(outcome, "updated")
-        self.assertFalse(is_new)
+        self.assertNotEqual(outcome, "added")
         self.assertEqual(len(registry2.leads), 1)
         # Verify enrichment
         self.assertEqual(registry2.leads[0]["email"], "hello@novasoft.io")

@@ -38,7 +38,7 @@ MASTER_CSV = "all_leads_master.csv"
 RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")
 LOCK_FILE = ".scraper_runner.lock"
 
-# List of all 10 scrapers to coordinate
+# List of all 12 scrapers to coordinate
 SCRAPERS_CONFIG = [
     {
         "name": "scraper.py (Search Engine IT Hiring Scraper)",
@@ -99,6 +99,18 @@ SCRAPERS_CONFIG = [
         "func": scraper_adapters.run_reddit_rss_scraper_adapter,
         "enabled": True,
         "category": "Subreddit RSS"
+    },
+    {
+        "name": "google_maps_scraper.py (Google Maps Playwright Local Business Engine)",
+        "func": scraper_adapters.run_google_maps_scraper_adapter,
+        "enabled": True,
+        "category": "Google Maps Playwright"
+    },
+    {
+        "name": "telegram_scraper.py (Telegram Client Hiring & Freelance Channels)",
+        "func": scraper_adapters.run_telegram_scraper_adapter,
+        "enabled": True,
+        "category": "Telegram Channels"
     },
 ]
 
@@ -220,13 +232,13 @@ def run_all_scrapers():
         enabled = config["enabled"]
 
         if not enabled:
-            print(f"[{idx:02d}/10] [SKIPPED]  {name} (Disabled in config)")
+            print(f"[{idx:02d}/{scrapers_configured:02d}] [SKIPPED]  {name} (Disabled in config)")
             continue
 
         scrapers_executed += 1
         s_start = datetime.datetime.now()
         s_start_str = s_start.strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{idx:02d}/10] [RUNNING]  {name}...")
+        print(f"[{idx:02d}/{scrapers_configured:02d}] [RUNNING]  {name}...")
 
         scraper_raw_records = []
         status = "Success"
@@ -321,9 +333,18 @@ def run_all_scrapers():
     else:
         print(f"[FATAL] Failed to write to '{MASTER_CSV}'!")
 
+    # Step 5a: Deep Website Contact Enrichment
+    try:
+        import website_contact_extractor
+        print("\n[*] Step 4: Running Deep Website Contact Extractor on leads with missing email/phone...")
+        enriched_leads_count = website_contact_extractor.run_website_enrichment(master_csv_path=MASTER_CSV)
+        total_leads_updated += enriched_leads_count
+    except Exception as e:
+        print(f"[WARN] Website Contact Extractor notice: {e}")
+
     # Step 5b: Direct Sync to Supabase Database
     if AUTO_SYNC_SUPABASE and sync_to_supabase:
-        print("\n[*] Step 4: Syncing all leads directly to Supabase Database...")
+        print("\n[*] Step 5: Syncing all leads directly to Supabase Database...")
         try:
             sync_to_supabase.sync(csv_filepath=MASTER_CSV)
             print("[*] [OK] Supabase cloud database sync complete!")

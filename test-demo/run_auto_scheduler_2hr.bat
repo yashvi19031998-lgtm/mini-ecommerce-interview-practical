@@ -1,6 +1,6 @@
 @echo off
 title Sangeeta Infotech - 2 Hour Automated Lead Engine
-cd /d "E:\MyWork\mini-ecommerce-interview-practical\test-demo"
+cd /d "%~dp0"
 echo ==============================================================
 echo   SANGEETA INFOTECH - AUTONOMOUS 2-HOUR SCRAPER ENGINE
 echo   - Scrapes fresh leads every 2 hours

@@ -1,0 +1,118 @@
+﻿Ah, my apologies for the mix-up! Let's jump right back into our powerful lead generation ecosystem.
+Since we have already successfully integrated Google Maps (google_maps_scraper.py) and built the Website Contact Extractor (website_contact_extractor.py), let's look at the next high-value scraper from our earlier list: Telegram Channels & Groups Scraper (Telethon) or GitHub Public Commit Email Harvester.
+Given that Telegram is a goldmine where clients directly post live requirements (like "Looking for a Python dev" or "Need a web agency"), building a Telegram Lead Scraper is the best next step.
+🚀 Next Step: Telegram Lead Harvester (telegram_scraper.py)
+This script uses the Telethon library to listen to or scan specific public freelance/tech groups on Telegram, searching for keywords and automatically extracting client usernames and messages.
+1. Installation:
+First, install the Telethon library via terminal:
+
+
+
+
+
+
+Bash
+pip install telethon
+
+(Note: You will need a Telegram API ID and API Hash from my.telegram.org to use it.)
+2. Python Script (telegram_scraper.py)
+
+
+
+
+
+
+Python
+import csv
+import os
+import re
+from telethon import TelegramClient
+from telethon.tl.types import Channel
+
+# Telegram API Credentials (Get yours from https://my.telegram.org)
+API_ID = 12345678  # Replace with your API ID
+API_HASH = 'your_api_hash_here'
+SESSION_NAME = 'lead_scraper_session'
+
+CSV_FILE = "telegram_leads.csv"
+
+# Target Public Groups/Channels known for client posts
+TARGET_CHANNELS = [
+   'remote_jobs_bot',       # Example tech job channel
+   'freelance_work_board',  # Example freelance board
+   'python_jobs'            # Python specific channel
+]
+
+# Keywords to filter high-intent client messages
+KEYWORDS = ['looking for', 'hiring', 'need a developer', 'budget', 'freelancer', 'project']
+
+def init_csv():
+   """Initializes CSV file if not exists."""
+   if not os.path.exists(CSV_FILE):
+       with open(CSV_FILE, mode="w", newline="", encoding="utf-8-sig") as f:
+           writer = csv.DictWriter(f, fieldnames=[
+               "Channel/Group",
+               "Sender Username",
+               "Message",
+               "Found Keywords",
+               "Date"
+           ])
+           writer.writeheader()
+
+def save_to_csv(lead_data):
+   """Appends a lead to the CSV."""
+   with open(CSV_FILE, mode="a", newline="", encoding="utf-8-sig") as f:
+       writer = csv.DictWriter(f, fieldnames=lead_data.keys())
+       writer.writerow(lead_data)
+
+async def scrape_telegram_leads():
+   init_csv()
+   print("[INFO] Initializing Telegram Client...")
+   
+   client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+   await client.start()
+
+   print("[SUCCESS] Connected to Telegram successfully!")
+   total_saved = 0
+
+   for channel_username in TARGET_CHANNELS:
+       try:
+           print(f"\n[INFO] Scanning channel: @{channel_username}...")
+           entity = await client.get_entity(channel_username)
+           
+           # Fetch recent messages (e.g., last 100 messages)
+           async for message in client.iter_messages(entity, limit=100):
+               if not message.text:
+                   continue
+               
+               text_lower = message.text.lower()
+               matched_keywords = [kw for kw in KEYWORDS if kw in text_lower]
+
+               if matched_keywords:
+                   sender = await message.get_sender()
+                   username = f"@{sender.username}" if sender and sender.username else (getattr(sender, 'first_name', 'Unknown'))
+                   
+                   lead = {
+                       "Channel/Group": f"@{channel_username}",
+                       "Sender Username": username,
+                       "Message": message.text.replace("\n", " ")[:300], # Truncate for clean CSV
+                       "Found Keywords": ", ".join(matched_keywords),
+                       "Date": str(message.date)
+                   }
+                   
+                   save_to_csv(lead)
+                   total_saved += 1
+                   print(f"  [FOUND] Lead from {username} in @{channel_username}")
+
+       except Exception as e:
+           print(f"  [ERROR] Could not scan @{channel_username}: {e}")
+
+   print(f"\n[SUCCESS] Telegram scraping complete! Saved {total_saved} potential leads to '{CSV_FILE}'.")
+   await client.disconnect()
+
+if __name__ == "__main__":
+   import asyncio
+   asyncio.run(scrape_telegram_leads())
+
+What's next?
+Shu tame aa Telegram scraper ne test karva mate ready cho, ke pachi aane pan tamara master runner (run_all_scrapers.py) ma integrate karvo che? Mane kjo!

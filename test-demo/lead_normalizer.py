@@ -173,6 +173,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     company = clean_text(
         raw.get("company_name") or
         raw.get("Company Name") or
+        raw.get("Business Name") or
         raw.get("Business Name/Title") or
         raw.get("Title_Requirement") or
         raw.get("Title") or
@@ -182,6 +183,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     # 2. Contact Name
     full_name = clean_text(
         raw.get("full_name") or
+        raw.get("Sender Username") or
         raw.get("Client Name / Handle") or ""
     )
 
@@ -228,6 +230,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     source_url = clean_url(
         raw.get("source_url") or
         raw.get("URL") or
+        raw.get("Google Maps URL") or
         raw.get("Direct_URL") or
         raw.get("Post_URL") or
         raw.get("Portal_URL") or
@@ -242,6 +245,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     source = clean_text(
         raw.get("source") or
         raw.get("Source") or
+        raw.get("Channel/Group") or
         raw.get("Portal_Source") or
         raw.get("Platform") or
         raw.get("Search Query") or
@@ -252,6 +256,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     # 8. Description / Snippet
     description = clean_text(
         raw.get("description") or
+        raw.get("Message") or
         raw.get("Snippet") or
         raw.get("Description_Snippet") or ""
     )
@@ -259,6 +264,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     # 9. Location
     location = clean_text(
         raw.get("location") or
+        raw.get("Address") or
         raw.get("City") or ""
     )
     if not location and "Ahmedabad" in source:
@@ -282,6 +288,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     last_seen = clean_text(raw.get("last_seen_at") or now_iso)
     last_updated = clean_text(raw.get("last_updated_at") or now_iso)
 
+    lead_id = clean_text(raw.get("lead_id") or raw.get("Lead ID") or "")
     email_status = clean_text(raw.get("email_status") or raw.get("Email Status") or "NOT_SENT")
     email_sent_at = clean_text(raw.get("email_sent_at") or raw.get("Email Sent At") or "")
 
@@ -490,12 +497,12 @@ class MasterLeadRegistry:
 
         return modified
 
-    def add_lead(self, raw_lead: Dict[str, Any], default_source: str = "Unknown") -> Tuple[str, bool]:
+    def add_lead(self, raw_lead: Dict[str, Any], default_source: str = "Unknown") -> Tuple[str, Any]:
         """
         Processes a single raw lead record:
-        - If invalid, skips.
-        - If duplicate, enriches existing and returns ('updated' or 'duplicate', False).
-        - If new, appends and returns ('added', True).
+        - If invalid, skips and returns ('skipped_invalid', False).
+        - If duplicate, enriches existing and returns ('updated' or 'duplicate', existing_lead).
+        - If new, appends and returns ('added', new_lead).
         """
         lead = normalize_lead_record(raw_lead, default_source)
 

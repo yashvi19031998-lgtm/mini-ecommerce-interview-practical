@@ -509,3 +509,127 @@ def run_reddit_rss_scraper_adapter() -> List[Dict[str, Any]]:
             print(f"  [reddit_rss_scraper on r/{sub} error] {e}")
 
     return leads
+
+
+# ==============================================================================
+# 11. GOOGLE_MAPS_SCRAPER.PY ADAPTER (Playwright Google Maps Local Business Scraper)
+# ==============================================================================
+def run_google_maps_scraper_adapter() -> List[Dict[str, Any]]:
+    """Runs Playwright Google Maps scraper and loads historical Google Maps CSV leads."""
+    leads = []
+
+    # 1. Harvest existing leads from google_maps_leads.csv if present
+    if os.path.exists("google_maps_leads.csv"):
+        try:
+            with open("google_maps_leads.csv", mode="r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    b_name = row.get("Business Name")
+                    if b_name:
+                        leads.append({
+                            "company_name": b_name,
+                            "mobile_number": row.get("Phone", ""),
+                            "website": row.get("Website", ""),
+                            "location": row.get("Address") or row.get("City", "Ahmedabad"),
+                            "source": f"Google Maps ({row.get('Category', 'Business')} in {row.get('City', 'Ahmedabad')})",
+                            "source_url": row.get("Google Maps URL", ""),
+                            "lead_type": row.get("Category", "Local Business"),
+                            "intent_score": "7" if row.get("Rating") and row.get("Rating") != "N/A" else "5",
+                            "description": f"Rating: {row.get('Rating', 'N/A')} ({row.get('Reviews Count', '0')} reviews) | {row.get('Address', '')}"
+                        })
+        except Exception as e:
+            print(f"  [google_maps_scraper CSV read notice] {e}")
+
+    # 2. Live Playwright Google Maps Scraping
+    try:
+        import google_maps_scraper
+        live_results = google_maps_scraper.scrape_google_maps(
+            search_query="Software Development Company",
+            location="Ahmedabad",
+            max_results=15,
+            headless=True
+        )
+        for r in live_results:
+            b_name = r.get("Business Name")
+            if b_name:
+                leads.append({
+                    "company_name": b_name,
+                    "mobile_number": r.get("Phone", ""),
+                    "website": r.get("Website", ""),
+                    "location": r.get("Address") or r.get("City", "Ahmedabad"),
+                    "source": f"Google Maps ({r.get('Category', 'Business')} in {r.get('City', 'Ahmedabad')})",
+                    "source_url": r.get("Google Maps URL", ""),
+                    "lead_type": r.get("Category", "Local Business"),
+                    "intent_score": "7" if r.get("Rating") and r.get("Rating") != "N/A" else "5",
+                    "description": f"Rating: {r.get('Rating', 'N/A')} ({r.get('Reviews Count', '0')} reviews) | {r.get('Address', '')}"
+                })
+    except Exception as e:
+        print(f"  [google_maps_scraper execution notice] {e}")
+
+    return leads
+
+
+# ==============================================================================
+# 12. TELEGRAM_SCRAPER.PY ADAPTER (Telegram Client Job / Freelance Channels)
+# ==============================================================================
+def run_telegram_scraper_adapter() -> List[Dict[str, Any]]:
+    """Runs Telegram channel scraper and loads historical telegram_leads.csv leads."""
+    leads = []
+
+    # 1. Harvest existing leads from telegram_leads.csv if present
+    if os.path.exists("telegram_leads.csv"):
+        try:
+            with open("telegram_leads.csv", mode="r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    msg = row.get("Message", "")
+                    sender = row.get("Sender Username", "")
+                    channel = row.get("Channel/Group", "")
+                    if msg:
+                        # Extract any emails or phones from the message text
+                        emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', msg)
+                        phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', msg)
+                        leads.append({
+                            "company_name": f"{sender} ({channel})",
+                            "full_name": sender,
+                            "email": ", ".join(set(emails)) if emails else "",
+                            "mobile_number": phones[0].strip() if phones else "",
+                            "description": msg[:300].strip(),
+                            "source": f"Telegram ({channel})",
+                            "source_url": f"https://t.me/{channel.replace('@', '')}" if channel else "",
+                            "lead_type": "Telegram Client Hiring",
+                            "intent_score": "8",
+                            "location": "Remote"
+                        })
+        except Exception as e:
+            print(f"  [telegram_scraper CSV read notice] {e}")
+
+    # 2. Live Telegram Client Scan
+    try:
+        import telegram_scraper
+        live_results = telegram_scraper.run_telegram_scraper_sync()
+        for r in live_results:
+            msg = r.get("Message", "")
+            sender = r.get("Sender Username", "")
+            channel = r.get("Channel/Group", "")
+            if msg:
+                emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', msg)
+                phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', msg)
+                leads.append({
+                    "company_name": f"{sender} ({channel})",
+                    "full_name": sender,
+                    "email": ", ".join(set(emails)) if emails else "",
+                    "mobile_number": phones[0].strip() if phones else "",
+                    "description": msg[:300].strip(),
+                    "source": f"Telegram ({channel})",
+                    "source_url": f"https://t.me/{channel.replace('@', '')}" if channel else "",
+                    "lead_type": "Telegram Client Hiring",
+                    "intent_score": "8",
+                    "location": "Remote"
+                })
+    except Exception as e:
+        print(f"  [telegram_scraper execution notice] {e}")
+
+    return leads
+
+
