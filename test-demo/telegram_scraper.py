@@ -1,5 +1,6 @@
 import csv
 import os
+import sys
 import re
 from typing import List, Dict, Any
 
@@ -96,10 +97,21 @@ async def scrape_telegram_leads() -> List[Dict[str, Any]]:
 
     client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
     try:
-        if BOT_TOKEN:
-            await client.start(bot_token=BOT_TOKEN)
-        else:
-            await client.start()
+        await client.connect()
+        is_auth = await client.is_user_authorized()
+        if not is_auth:
+            if BOT_TOKEN:
+                start_coro = client.start(bot_token=BOT_TOKEN)
+                if hasattr(start_coro, "__await__"):
+                    await start_coro
+            elif not sys.stdin or not sys.stdin.isatty():
+                print("[WARN] Non-interactive environment detected (e.g. GitHub Actions). Telegram session is not authenticated. Skipping Telegram scraping.")
+                await client.disconnect()
+                return collected_leads
+            else:
+                start_coro = client.start()
+                if hasattr(start_coro, "__await__"):
+                    await start_coro
         print("[SUCCESS] Connected to Telegram successfully!")
     except Exception as e:
         print(f"[ERROR] Could not start Telegram client: {e}")
