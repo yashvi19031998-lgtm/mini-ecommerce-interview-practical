@@ -12,21 +12,29 @@ except ImportError:
 
 # Telegram API Credentials
 # Replace with your API ID and HASH from https://my.telegram.org, or set TELEGRAM_API_ID & TELEGRAM_API_HASH environment variables
-API_ID = int(os.environ.get("TELEGRAM_API_ID", "12345678"))
-API_HASH = os.environ.get("TELEGRAM_API_HASH", "your_api_hash_here")
+API_ID = int(os.environ.get("TELEGRAM_API_ID", "30353212"))
+API_HASH = os.environ.get("TELEGRAM_API_HASH", "f8c329a35f17c590f3873a47ade224e0")
+# Paste your Bot Token here from @BotFather (keep exact case)
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 SESSION_NAME = os.environ.get("TELEGRAM_SESSION_NAME", "lead_scraper_session")
-
 CSV_FILE = "telegram_leads.csv"
+
+# Regex for extracting contacts from message text
+EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
+PHONE_REGEX = r"(\+?\d[\d\s\-\(\)]{8,15}\d)"
+URL_REGEX = r"(https?://[^\s]+)"
+TELEGRAM_HANDLE_REGEX = r"(@[a-zA-Z0-9_]{4,32})"
 
 # Target Public Groups/Channels known for client posts
 TARGET_CHANNELS = [
-    'remote_jobs_bot',       # Example tech job channel
-    'freelance_work_board',  # Example freelance board
-    'python_jobs'            # Python specific channel
+    'remotework',
+    'python_jobs',
+    'freelance_projects',
+    'it_jobs_remote'
 ]
 
 # Keywords to filter high-intent client messages
-KEYWORDS = ['looking for', 'hiring', 'need a developer', 'budget', 'freelancer', 'project']
+KEYWORDS = ['looking for', 'hiring', 'need a developer', 'budget', 'freelancer', 'project', 'developer', 'frontend', 'backend', 'fullstack', 'react', 'python', 'wordpress', 'contract']
 
 
 def init_csv():
@@ -36,6 +44,12 @@ def init_csv():
             writer = csv.DictWriter(f, fieldnames=[
                 "Channel/Group",
                 "Sender Username",
+                "Contact Email",
+                "Contact Phone",
+                "WhatsApp Link",
+                "Telegram DM Link",
+                "Contact Handle",
+                "Project URL",
                 "Message",
                 "Found Keywords",
                 "Date"
@@ -47,7 +61,19 @@ def save_to_csv(lead_data: Dict[str, Any]):
     """Appends a lead to the CSV."""
     init_csv()
     with open(CSV_FILE, mode="a", newline="", encoding="utf-8-sig") as f:
-        writer = csv.DictWriter(f, fieldnames=lead_data.keys())
+        writer = csv.DictWriter(f, fieldnames=[
+            "Channel/Group",
+            "Sender Username",
+            "Contact Email",
+            "Contact Phone",
+            "WhatsApp Link",
+            "Telegram DM Link",
+            "Contact Handle",
+            "Project URL",
+            "Message",
+            "Found Keywords",
+            "Date"
+        ])
         writer.writerow(lead_data)
 
 
@@ -70,7 +96,10 @@ async def scrape_telegram_leads() -> List[Dict[str, Any]]:
 
     client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
     try:
-        await client.start()
+        if BOT_TOKEN:
+            await client.start(bot_token=BOT_TOKEN)
+        else:
+            await client.start()
         print("[SUCCESS] Connected to Telegram successfully!")
     except Exception as e:
         print(f"[ERROR] Could not start Telegram client: {e}")
@@ -95,9 +124,58 @@ async def scrape_telegram_leads() -> List[Dict[str, Any]]:
                     sender = await message.get_sender()
                     username = f"@{sender.username}" if sender and getattr(sender, 'username', None) else getattr(sender, 'first_name', 'Unknown')
 
+                    # 1. Email extraction
+                    emails = re.findall(EMAIL_REGEX, message.text)
+                    valid_emails = [e for e in emails if not e.endswith(('.png', '.jpg', '.jpeg', '.webp'))]
+
+                    # 2. Phone extraction (clean numbers only)
+                    raw_phones = re.findall(PHONE_REGEX, message.text)
+                    valid_phones = []
+                    for p in raw_phones:
+                        cleaned = re.sub(r'[\s\-\(\)]', '', p)
+                        # Valid mobile phone length (10 to 14 digits)
+                        if 10 <= len(cleaned.replace('+', '')) <= 14:
+                            valid_phones.append(p.strip())
+
+                    # 3. URL extraction
+                    urls = re.findall(URL_REGEX, message.text)
+                    project_urls = [u for u in urls if not ('t.me/' in u and u.count('/') <= 4)]
+
+                    # 4. Telegram Handle extraction (filter out email domains and channel itself)
+                    raw_handles = re.findall(TELEGRAM_HANDLE_REGEX, message.text)
+                    clean_handles = []
+                    for h in raw_handles:
+                        h_lower = h.lower()
+                        if h_lower in (f"@{channel_username}".lower(), "@gmail", "@yahoo", "@outlook", "@mail", "@proton", "@yandex"):
+                            continue
+                        clean_handles.append(h)
+
+                    # Primary handle
+                    primary_handle = clean_handles[0] if clean_handles else (username if username != "Unknown" and username != f"@{channel_username}" else "")
+                    
+                    # 5. Direct Action Links
+                    # Telegram Direct DM Link
+                    tg_dm_link = f"https://t.me/{primary_handle.replace('@', '')}" if primary_handle and primary_handle != f"@{channel_username}" else ""
+                    
+                    # WhatsApp Direct Click-to-Chat Link
+                    primary_phone = valid_phones[0] if valid_phones else ""
+                    clean_phone_digits = re.sub(r'\D', '', primary_phone)
+                    wa_link = f"https://wa.me/{clean_phone_digits}" if len(clean_phone_digits) >= 10 else ""
+
+                    email_str = ", ".join(set(valid_emails)) if valid_emails else ""
+                    phone_str = primary_phone
+                    url_str = project_urls[0] if project_urls else (urls[0] if urls else "")
+                    handle_str = ", ".join(set(clean_handles)) if clean_handles else primary_handle
+
                     lead = {
                         "Channel/Group": f"@{channel_username}",
                         "Sender Username": username,
+                        "Contact Email": email_str,
+                        "Contact Phone": phone_str,
+                        "WhatsApp Link": wa_link,
+                        "Telegram DM Link": tg_dm_link,
+                        "Contact Handle": handle_str,
+                        "Project URL": url_str,
                         "Message": message.text.replace("\n", " ")[:300],
                         "Found Keywords": ", ".join(matched_keywords),
                         "Date": str(message.date)
@@ -106,7 +184,9 @@ async def scrape_telegram_leads() -> List[Dict[str, Any]]:
                     save_to_csv(lead)
                     collected_leads.append(lead)
                     total_saved += 1
-                    print(f"  [FOUND] Lead from {username} in @{channel_username}")
+                    
+                    lead_label = email_str or handle_str or tg_dm_link or "Post"
+                    print(f"  [SAVED] {lead_label} | Channel: @{channel_username}")
 
         except Exception as e:
             print(f"  [ERROR] Could not scan @{channel_username}: {e}")

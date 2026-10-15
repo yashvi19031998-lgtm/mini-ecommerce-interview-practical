@@ -1,0 +1,52 @@
+name: 1-Hour Auto Lead Scraper
+
+on:
+  schedule:
+    # Runs every 1 hour (at minute 0 of every hour)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f test-demo/requirements.txt ]; then
+            pip install -r test-demo/requirements.txt
+          fi
+
+      - name: Run All Scrapers & Lead Harvester
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          cd test-demo
+          python run_all_scrapers.py
+
+      - name: Commit & Push Updated Leads CSVs
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add test-demo/*.csv test-demo/*.session 2>/dev/null || true
+          
+          if git diff --staged --quiet; then
+            echo "No new leads found to commit."
+          else
+            git commit -m "Auto-update leads: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git push origin master
+          fi
