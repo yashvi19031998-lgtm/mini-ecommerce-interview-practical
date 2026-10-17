@@ -318,6 +318,24 @@
       color: #fff;
     }
 
+    .btn-whatsapp {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+      border: none;
+    }
+
+    .btn-whatsapp:hover {
+      background: linear-gradient(135deg, #22c55e, #4ade80);
+      color: #fff;
+    }
+
+    .badge-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
     /* Bulk Banner */
     .bulk-banner {
       display: none;
@@ -841,21 +859,21 @@
           <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">📧</div>
           <div>
             <div class="stat-val" id="stat-emails">0</div>
-            <div class="stat-lbl">With Verified Email</div>
+            <div class="stat-lbl">With Email</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(139, 92, 246, 0.2); color: #c084fc;">📬</div>
+          <div class="stat-icon" style="background: rgba(139, 92, 246, 0.2); color: #c084fc;">✅</div>
           <div>
             <div class="stat-val" id="stat-sent">0</div>
-            <div class="stat-lbl">Outreach Emails Sent</div>
+            <div class="stat-lbl">Completed (Sent)</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">⭐</div>
+          <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">⏳</div>
           <div>
-            <div class="stat-val" id="stat-high">0</div>
-            <div class="stat-lbl">High Intent Buyers</div>
+            <div class="stat-val" id="stat-pending">0</div>
+            <div class="stat-lbl">Pending Emails</div>
           </div>
         </div>
       </div>
@@ -874,14 +892,16 @@
 
           <select id="filter-status" class="select-filter" onchange="currentPage=1; filterLeads()">
             <option value="">All Lead Statuses</option>
+            <option value="PENDING">⏳ Email Pending</option>
+            <option value="EMAIL_SENT">✅ Email Completed / Sent</option>
             <option value="NEW">Status: NEW</option>
-            <option value="EMAIL_SENT">Status: EMAIL SENT 📬</option>
             <option value="APPROVED">Status: APPROVED</option>
           </select>
 
           <select id="filter-email" class="select-filter" onchange="currentPage=1; filterLeads()">
             <option value="">All Leads</option>
             <option value="has_email">Has Email Only ✉️</option>
+            <option value="has_phone">Has Phone / WhatsApp 💬</option>
           </select>
         </div>
 
@@ -1326,12 +1346,12 @@
 
     function updateStats() {
       document.getElementById('stat-total').textContent = allLeads.length;
-      const withEmails = allLeads.filter(l => l.Email && l.Email !== 'N/A').length;
+      const withEmails = allLeads.filter(l => l.Email && l.Email !== 'N/A' && l.Email.includes('@')).length;
       document.getElementById('stat-emails').textContent = withEmails;
       const sent = allLeads.filter(l => l['Email Status'] === 'SENT' || l['Status'] === 'EMAIL_SENT').length;
       document.getElementById('stat-sent').textContent = sent;
-      const high = allLeads.filter(l => (l.Intent || '').toLowerCase() === 'high').length;
-      document.getElementById('stat-high').textContent = high;
+      const pending = Math.max(0, withEmails - sent);
+      document.getElementById('stat-pending').textContent = pending;
     }
 
     function formatSource(source) {
@@ -1415,6 +1435,14 @@
         const rawSource = l.Source || l.source || l['Search Query'] || 'Google Search';
         const formattedSource = formatSource(rawSource);
         const sourceIcon = getSourceIcon(rawSource);
+        
+        // WhatsApp preparation
+        const rawPhone = (l['Mobile Number'] || '').trim();
+        const cleanDigits = rawPhone.replace(/\D/g, '');
+        const hasWhatsApp = cleanDigits.length >= 10;
+        const compName = l['Company Name'] || 'your company';
+        const waMsg = encodeURIComponent(`Hi ${compName} Team, I came across your business and wanted to connect from Sangeeta Infotech regarding custom software/web development support.`);
+        const waUrl = `https://wa.me/${cleanDigits}?text=${waMsg}`;
 
         return `
           <tr id="lead-row-${l.id}" class="${isSelected ? 'selected' : ''}">
@@ -1422,10 +1450,11 @@
               <input type="checkbox" id="cb-lead-${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleSelectLead('${l.id}', this.checked)">
             </td>
             <td>
-              <div class="company-title">${escapeHtml(l['Company Name'] || 'Anonymous Business')}</div>
+              <div class="company-title">${escapeHtml(compName)}</div>
+              ${l['Website URL'] ? `
               <a href="${l['Website URL']}" target="_blank" style="color: #60a5fa; font-size: 0.72rem; text-decoration: none;">
                 🌐 ${escapeHtml(l['Website URL'])}
-              </a>
+              </a>` : ''}
             </td>
             <td>
               <span class="source-badge" title="${escapeHtml(rawSource)}">
@@ -1435,7 +1464,10 @@
             </td>
             <td>
               ${hasEmail ? `<div style="font-family: monospace; font-size: 0.8rem; color: #e2e8f0;">✉️ ${escapeHtml(rawEmail)}</div>` : '<span style="color:#64748b; font-style:italic;">No email</span>'}
-              ${l['Mobile Number'] && l['Mobile Number'] !== 'N/A' ? `<div style="color: #94a3b8; font-size: 0.72rem; margin-top:2px;">📞 ${escapeHtml(l['Mobile Number'])}</div>` : ''}
+              ${rawPhone && rawPhone !== 'N/A' ? `
+                <div style="color: #94a3b8; font-size: 0.72rem; margin-top:2px;">
+                  📞 ${escapeHtml(rawPhone)}
+                </div>` : ''}
             </td>
             <td>
               <div class="location-text">📍 ${escapeHtml(l.Address || 'Ahmedabad, Gujarat, India')}</div>
@@ -1445,16 +1477,34 @@
               <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 3px;">${l['Lead Type'] || 'Business'}</div>
             </td>
             <td>
-              <span class="badge ${isSent ? 'badge-sent' : 'badge-pending'}">
-                ${isSent ? 'EMAIL SENT 📬' : 'EMAIL PENDING ⏳'}
-              </span>
+              ${isSent ? `
+                <span class="badge badge-sent">
+                  EMAIL SENT 📬
+                </span>
+              ` : (hasEmail ? `
+                <span class="badge badge-pending">
+                  EMAIL PENDING ⏳
+                </span>
+              ` : `
+                <span class="badge badge-new">
+                  ${escapeHtml(l.Status || 'NEW')}
+                </span>
+              `)}
             </td>
             <td style="text-align: right;">
-              ${hasEmail ? `
-                <button class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="openSingleEmailModal('${l.id}')">
-                  ✉️ Email
-                </button>
-              ` : '<span style="color: #475569; font-size: 0.75rem;">—</span>'}
+              <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+                ${hasWhatsApp ? `
+                  <a href="${waUrl}" target="_blank" class="btn btn-whatsapp" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" title="Send Direct WhatsApp Message">
+                    💬 WhatsApp
+                  </a>
+                ` : ''}
+                ${hasEmail ? `
+                  <button class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="openSingleEmailModal('${l.id}')">
+                    ✉️ Email
+                  </button>
+                ` : ''}
+                ${!hasWhatsApp && !hasEmail ? '<span style="color: #475569; font-size: 0.75rem;">—</span>' : ''}
+              </div>
             </td>
           </tr>
         `;
@@ -1603,21 +1653,34 @@
       const query = (document.getElementById('search-input').value || '').toLowerCase();
       const outreachFilter = document.getElementById('filter-outreach') ? document.getElementById('filter-outreach').value : '';
       const status = document.getElementById('filter-status').value;
-      const emailOnly = document.getElementById('filter-email').value === 'has_email';
+      const emailFilter = document.getElementById('filter-email').value;
 
       return allLeads.filter(l => {
+        const rawEmail = (l.Email || '').split(',')[0].trim();
+        const hasEmail = rawEmail && rawEmail !== 'N/A' && rawEmail.includes('@');
+        const rawPhone = (l['Mobile Number'] || '').replace(/\D/g, '');
+        const hasPhone = rawPhone.length >= 10;
         const isSent = (l['Email Status'] === 'SENT' || l.Status === 'EMAIL_SENT');
 
         // Outreach Filter: Email Sent vs Email Pending
         if (outreachFilter === 'SENT' && !isSent) return false;
         if (outreachFilter === 'PENDING' && isSent) return false;
 
-        if (emailOnly && (!l.Email || l.Email === 'N/A' || !l.Email.includes('@'))) return false;
-        if (status === 'EMAIL_SENT' && !isSent) return false;
-        if (status && status !== 'EMAIL_SENT' && l.Status !== status) return false;
+        if (emailFilter === 'has_email' && !hasEmail) return false;
+        if (emailFilter === 'has_phone' && !hasPhone) return false;
+
+        if (status === 'EMAIL_SENT') {
+          if (!isSent) return false;
+        } else if (status === 'PENDING') {
+          if (!hasEmail || isSent) return false;
+        } else if (status && status !== 'EMAIL_SENT' && status !== 'PENDING') {
+          if (l.Status !== status) return false;
+        }
 
         if (query) {
-          const matchStr = `${l['Company Name']} ${l['Website URL']} ${l.Email} ${l.Address} ${l.Source || ''} ${l['Lead Type'] || ''}`.toLowerCase();
+          const matchStr = `${l['Company Name']} ${l['Website URL']} ${l.Email} ${l['Mobile Number']} ${l.Address} ${l.Source || ''} ${l['Lead Type'] || ''}`.toLowerCase();
+          return matchStr.includes(query);
+        }
           return matchStr.includes(query);
         }
         return true;

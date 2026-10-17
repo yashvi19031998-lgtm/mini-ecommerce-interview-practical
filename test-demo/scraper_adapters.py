@@ -585,18 +585,28 @@ def run_telegram_scraper_adapter() -> List[Dict[str, Any]]:
                     msg = row.get("Message", "")
                     sender = row.get("Sender Username", "")
                     channel = row.get("Channel/Group", "")
-                    if msg:
-                        # Extract any emails or phones from the message text
+                    c_email = row.get("Contact Email", "")
+                    c_phone = row.get("Contact Phone", "")
+                    c_handle = row.get("Contact Handle", "")
+                    c_url = row.get("Project URL", "")
+                    
+                    if not c_email and msg:
                         emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', msg)
+                        c_email = ", ".join(set(emails)) if emails else ""
+                    if not c_phone and msg:
                         phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', msg)
+                        c_phone = phones[0].strip() if phones else ""
+
+                    if msg:
                         leads.append({
-                            "company_name": f"{sender} ({channel})",
-                            "full_name": sender,
-                            "email": ", ".join(set(emails)) if emails else "",
-                            "mobile_number": phones[0].strip() if phones else "",
+                            "company_name": f"{c_handle or sender} ({channel})",
+                            "full_name": c_handle or sender,
+                            "email": c_email,
+                            "mobile_number": c_phone,
+                            "website": c_url,
                             "description": msg[:300].strip(),
                             "source": f"Telegram ({channel})",
-                            "source_url": f"https://t.me/{channel.replace('@', '')}" if channel else "",
+                            "source_url": c_url or (f"https://t.me/{channel.replace('@', '')}" if channel else ""),
                             "lead_type": "Telegram Client Hiring",
                             "intent_score": "8",
                             "location": "Remote"
