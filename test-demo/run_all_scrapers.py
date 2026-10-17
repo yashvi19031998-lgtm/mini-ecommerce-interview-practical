@@ -33,6 +33,7 @@ except ImportError:
 
 AUTO_SEND_EMAIL = True  # Automatically dispatch outreach emails to verified emails found
 AUTO_SYNC_SUPABASE = True  # Automatically sync new leads to Supabase database
+MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "10"))  # Dispatch backlog of uncontacted leads
 
 MASTER_CSV = "all_leads_master.csv"
 RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")
@@ -189,6 +190,100 @@ def release_run_lock():
             pass
 
 
+def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: int = 10, delay_sec: float = 2.0) -> int:
+    """
+    Scans the master registry for leads that have not received outreach emails yet
+    (email_status != 'SENT'), cross-references with sent history and blacklist domains,
+    and dispatches personalized outreach emails in controlled batches.
+    """
+    if not AUTO_SEND_EMAIL or not send_smtp_email:
+        print("       [AUTO-MAIL-PENDING] Auto-email dispatch is disabled or email_service is unavailable.")
+        return 0
+
+    settings = load_settings() if load_settings else {}
+    sig = format_signature(settings) if format_signature else ""
+
+    sub_tpl = settings.get("defaultSubject", "Web & Software Engineering Collaboration - {company}")
+    msg_tpl = settings.get("defaultMessage", "Hi {name},\n\nI came across {company}...")
+
+    # Cross-reference with emails already marked SENT in leads_new.csv to prevent duplicates
+    sent_emails_seen = set()
+    if os.path.exists("leads_new.csv"):
+        try:
+            import pandas as pd
+            df_new = pd.read_csv("leads_new.csv")
+            if "Email Status" in df_new.columns and "Email" in df_new.columns:
+                sent_leads = df_new[df_new["Email Status"] == "SENT"]["Email"].dropna()
+                for em_str in sent_leads:
+                    for em in str(em_str).split(","):
+                        e_clean = em.strip().lower()
+                        if e_clean:
+                            sent_emails_seen.add(e_clean)
+        except Exception as e:
+            pass
+
+    # Also record emails already marked SENT in registry.leads
+    for l in registry.leads:
+        if str(l.get("email_status", "")).strip().upper() == "SENT":
+            for em in str(l.get("email", "")).split(","):
+                e_clean = em.strip().lower()
+                if e_clean:
+                    sent_emails_seen.add(e_clean)
+
+    dispatched = 0
+    from lead_normalizer import EMAIL_BLACKLIST_DOMAINS
+
+    for lead_obj in registry.leads:
+        if dispatched >= max_batch:
+            break
+
+        status = str(lead_obj.get("email_status", "")).strip().upper()
+        if status == "SENT":
+            continue
+
+        raw_emails = str(lead_obj.get("email", "")).split(",")
+        raw_email = raw_emails[0].strip() if raw_emails else ""
+
+        if not raw_email or "@" not in raw_email or raw_email.upper() in ("N/A", "NONE"):
+            continue
+
+        email_lower = raw_email.lower()
+        if email_lower in sent_emails_seen:
+            # Already received email previously, update status to avoid retry
+            lead_obj["email_status"] = "SENT"
+            continue
+
+        domain_part = email_lower.split("@")[-1]
+        if domain_part in EMAIL_BLACKLIST_DOMAINS or "ingest" in domain_part or "sentry" in domain_part:
+            lead_obj["email_status"] = "INVALID"
+            continue
+
+        comp_name = lead_obj.get("company_name") or lead_obj.get("full_name") or "your company"
+        loc_name = lead_obj.get("location") or "your region"
+
+        custom_sub = sub_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+        custom_msg = msg_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+
+        if sig and sig.strip()[:20] not in custom_msg:
+            custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
+
+        print(f"       -> [AUTO-MAIL-PENDING] Dispatching outreach to {raw_email} ({comp_name})...")
+        mail_res = send_smtp_email(raw_email, custom_sub, custom_msg)
+        if mail_res.get("success"):
+            lead_obj["email_status"] = "SENT"
+            lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            sent_emails_seen.add(email_lower)
+            print(f"       -> [AUTO-MAIL-PENDING] [SUCCESS] Delivered via Gmail SMTP.")
+            dispatched += 1
+            if delay_sec > 0:
+                time.sleep(delay_sec)
+        else:
+            lead_obj["email_status"] = "FAILED"
+            print(f"       -> [AUTO-MAIL-PENDING] [FAILED] {mail_res.get('error')}")
+
+    return dispatched
+
+
 def run_all_scrapers():
     """Main orchestration workflow."""
     if not acquire_run_lock():
@@ -324,6 +419,15 @@ def run_all_scrapers():
             duplicates=s_duplicates,
             error_summary=error_msg
         )
+
+    # Step 2b: Dispatch Outreach to Backlog of Pending Leads (NOT_SENT / FAILED)
+    if AUTO_SEND_EMAIL and send_smtp_email and MAX_PENDING_EMAILS_PER_RUN > 0:
+        print(f"\n[*] Step 2b: Checking backlog for pending outreach emails (Batch limit: {MAX_PENDING_EMAILS_PER_RUN})...")
+        pending_sent = dispatch_pending_outreach_emails(registry, max_batch=MAX_PENDING_EMAILS_PER_RUN)
+        if pending_sent > 0:
+            print(f"[*] [OK] Successfully dispatched {pending_sent} pending outreach emails!")
+        else:
+            print("[*] No pending uncontacted leads required outreach at this time.")
 
     # Step 5: Save Master Database Safely
     print("\n[*] Step 3: Performing safe atomic commit to master database...")
