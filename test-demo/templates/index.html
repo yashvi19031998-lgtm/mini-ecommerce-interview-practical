@@ -333,11 +333,53 @@
 
     /* Table Styles */
     .table-card {
-      background: var(--bg-card);
+      background: #0f172a;
       border: 1px solid var(--border-color);
       border-radius: 16px;
       overflow: hidden;
-      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid var(--border-color);
+      background: rgba(15, 23, 42, 0.7);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-page {
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-page:hover:not(:disabled) {
+      background: rgba(37, 99, 235, 0.25);
+      color: #fff;
+      border-color: #3b82f6;
+    }
+
+    .btn-page:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
     }
 
     .table-responsive {
@@ -429,6 +471,29 @@
       background: rgba(245, 158, 11, 0.15);
       color: #fbbf24;
       border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .source-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.22rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      background: rgba(14, 165, 233, 0.12);
+      color: #38bdf8;
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      max-width: 175px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* Modals */
@@ -554,6 +619,179 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* Live Pulse Badge on Nav */
+    .nav-live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(16, 185, 129, 0.25);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      margin-left: 6px;
+      letter-spacing: 0.03em;
+    }
+
+    .live-dot-pulse {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+      animation: pulseAnim 1.4s infinite;
+    }
+
+    @keyframes pulseAnim {
+      0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Background Mode Banner in Scraper Tab */
+    .bg-mode-banner {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.25), rgba(14, 116, 144, 0.2));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      padding: 0.85rem 1.15rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* Floating Background Task Widget */
+    .bg-widget-card {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 380px;
+      max-width: calc(100vw - 32px);
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.2);
+      border-radius: 14px;
+      backdrop-filter: blur(16px);
+      z-index: 9999;
+      overflow: hidden;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bg-widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: rgba(30, 41, 59, 0.85);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .bg-widget-body {
+      padding: 0.85rem 1rem;
+      transition: max-height 0.25s ease;
+    }
+
+    .bg-widget-body.minimized {
+      display: none;
+    }
+
+    .bg-widget-log {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.73rem;
+      color: #38bdf8;
+      background: #020617;
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 0.75rem;
+    }
+
+    .bg-widget-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .bg-widget-btn-icon {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    .bg-widget-btn-icon:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    /* Toast Notification Container */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .app-toast {
+      pointer-events: auto;
+      min-width: 280px;
+      max-width: 420px;
+      padding: 0.85rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: toastSlideIn 0.3s ease;
+    }
+
+    @keyframes toastSlideIn {
+      from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .toast-info {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #e0f2fe;
+    }
+
+    .toast-success {
+      background: rgba(6, 78, 59, 0.95);
+      border: 1px solid rgba(52, 211, 153, 0.5);
+      color: #ecfdf5;
+    }
+
+    .toast-error {
+      background: rgba(136, 19, 55, 0.95);
+      border: 1px solid rgba(251, 113, 133, 0.5);
+      color: #ffe4e6;
+    }
   </style>
 </head>
 
@@ -576,6 +814,9 @@
         </button>
         <button id="tab-btn-scraper" class="nav-btn" onclick="switchTab('tab-scraper', this)">
           ⚡ Live Scraper
+          <span id="nav-scraper-badge" class="nav-live-badge" style="display: none;">
+            <span class="live-dot-pulse"></span> RUNNING
+          </span>
         </button>
         <button id="tab-btn-settings" class="nav-btn" onclick="switchTab('tab-settings', this)">
           ⚙️ Company & Signature
@@ -622,23 +863,33 @@
       <!-- Action Bar -->
       <div class="action-bar">
         <div class="filters-group">
-          <input type="text" id="search-input" class="search-input" placeholder="Search company, email, location..."
-            oninput="filterLeads()">
+          <input type="text" id="search-input" class="search-input" placeholder="Search company, email, location, source..."
+            oninput="debouncedFilterLeads()">
 
-          <select id="filter-status" class="select-filter" onchange="filterLeads()">
-            <option value="">All Statuses</option>
+          <select id="filter-outreach" class="select-filter" onchange="currentPage=1; filterLeads()">
+            <option value="">All Outreach (Sent & Pending)</option>
+            <option value="SENT">📬 Email Sent</option>
+            <option value="PENDING">⏳ Email Pending</option>
+          </select>
+
+          <select id="filter-status" class="select-filter" onchange="currentPage=1; filterLeads()">
+            <option value="">All Lead Statuses</option>
             <option value="NEW">Status: NEW</option>
             <option value="EMAIL_SENT">Status: EMAIL SENT 📬</option>
             <option value="APPROVED">Status: APPROVED</option>
           </select>
 
-          <select id="filter-email" class="select-filter" onchange="filterLeads()">
+          <select id="filter-email" class="select-filter" onchange="currentPage=1; filterLeads()">
             <option value="">All Leads</option>
             <option value="has_email">Has Email Only ✉️</option>
           </select>
         </div>
 
         <div class="buttons-group">
+          <button class="btn btn-emerald" onclick="handleBulkEmailClick()"
+            style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700; box-shadow: 0 4px 14px rgba(16,185,129,0.35);">
+            ✉️ Bulk Outreach Email
+          </button>
           <button class="btn btn-primary" onclick="triggerRunAllFromMain()"
             style="background: linear-gradient(135deg, #2563eb, #06b6d4); font-weight: 700; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">
             🌐 Run All Harvesters (12 Sources)
@@ -657,16 +908,19 @@
 
       <!-- Bulk Selection Banner -->
       <div id="bulk-banner" class="bulk-banner">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <span style="font-weight: 700; font-size: 0.9rem;" id="bulk-selected-count">0 Leads Selected</span>
-          <span style="font-size: 0.8rem; color: #cbd5e1;" id="bulk-eligible-count">(0 have emails)</span>
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <span style="font-weight: 700; font-size: 0.92rem; color: #fff;" id="bulk-selected-count">0 Leads Selected</span>
+          <span style="font-size: 0.8rem; color: #93c5fd; background: rgba(59,130,246,0.2); padding: 0.2rem 0.65rem; border-radius: 9999px;" id="bulk-eligible-count">0 ready with verified emails</span>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
-          <button class="btn btn-emerald" onclick="openBulkEmailModal()">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+          <button class="btn btn-emerald" onclick="openBulkEmailModal()" style="font-weight: 700; box-shadow: 0 2px 10px rgba(16,185,129,0.3);">
             🚀 Send Bulk Outreach Email
           </button>
-          <button class="btn btn-secondary" onclick="clearSelection()">
-            Deselect
+          <button class="btn btn-secondary" style="font-size: 0.8rem; border-color: rgba(56,189,248,0.4);" onclick="selectAllPendingLeads()">
+            ⚡ Select All Pending (With Email)
+          </button>
+          <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="clearSelection()">
+            ✕ Clear Selection
           </button>
         </div>
       </div>
@@ -678,30 +932,69 @@
             <thead>
               <tr>
                 <th style="width: 40px;">
-                  <input type="checkbox" id="select-all-box" onchange="toggleSelectAll(this.checked)">
+                  <input type="checkbox" id="select-all-box" title="Select / Deselect All Visible Leads" onchange="toggleSelectAll(this.checked)">
                 </th>
                 <th>Company / Domain</th>
+                <th>Lead Source</th>
                 <th>Email & Phone</th>
                 <th>Location / Address</th>
                 <th>Intent & Type</th>
-                <th>Status</th>
+                <th>Outreach Status</th>
                 <th style="text-align: right;">Action</th>
               </tr>
             </thead>
             <tbody id="leads-tbody">
               <tr>
-                <td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-muted);">
                   Loading leads...
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+        <!-- Pagination Controls Bar -->
+        <div class="pagination-bar" id="pagination-bar">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <span id="pagination-info">Showing 0–0 of 0 leads</span>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span style="font-size: 0.75rem; color: #94a3b8;">Per page:</span>
+              <select id="page-size-select" class="select-filter" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem;" onchange="changePageSize(this.value)">
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="999999">All</option>
+              </select>
+            </div>
+          </div>
+          <div class="pagination-controls">
+            <button class="btn-page" id="btn-page-prev" onclick="changePage(-1)">◀ Previous</button>
+            <span id="pagination-current-page" style="font-weight: 700; color: #fff; padding: 0 0.5rem;">Page 1 of 1</span>
+            <button class="btn-page" id="btn-page-next" onclick="changePage(1)">Next ▶</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- ==================== TAB 2: LIVE SCRAPER ==================== -->
     <div id="tab-scraper" class="tab-content">
+      <!-- Background Mode Multi-Tasking Banner -->
+      <div class="bg-mode-banner">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 1.35rem;">⚡</span>
+          <div>
+            <div style="font-weight: 700; font-size: 0.88rem; color: #93c5fd;">
+              Autonomous Background Execution Enabled
+            </div>
+            <div style="font-size: 0.77rem; color: #cbd5e1; margin-top: 2px;">
+              The scraper runs continuously in the background on the server. You can freely switch to <strong>Leads Database</strong> or <strong>Company Settings</strong> to view leads, send emails, or do any other work without interrupting!
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.95rem; white-space: nowrap; border-color: rgba(56,189,248,0.4);" onclick="switchTab('tab-leads')">
+          📋 Browse Leads Database
+        </button>
+      </div>
+
       <div class="action-bar">
         <div>
           <h2 style="font-size: 1.1rem; font-weight: 700;">Automated Lead Scraper Engine</h2>
@@ -715,6 +1008,9 @@
           <button id="btn-run-all-scrapers" class="btn btn-primary" onclick="startScraper('all')">
             🌐 Run All 12 Harvesters (Maps & Telegram Included)
           </button>
+          <button id="btn-stop-scraper" class="btn btn-secondary" style="display: none; color: #f87171; border-color: rgba(248,113,113,0.4);" onclick="stopScraper()">
+            🛑 Stop Scraper
+          </button>
         </div>
       </div>
 
@@ -724,7 +1020,7 @@
             style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
             <span id="scraper-status-dot"
               style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
-            <span id="scraper-status-text">Status: Idle</span>
+            <span id="scraper-status-text">Status: Stopped (Idle)</span>
           </span>
           <span style="font-size: 0.75rem; color: var(--text-muted);">Live Terminal Stream</span>
         </div>
@@ -861,35 +1157,94 @@
 
   <!-- ==================== BULK EMAIL MODAL ==================== -->
   <div id="modal-bulk" class="modal-overlay">
-    <div class="modal-box">
-      <div class="modal-header" style="background: linear-gradient(135deg, rgba(37,99,235,0.2), rgba(6,182,212,0.2));">
+    <div class="modal-box" style="max-width: 700px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(16,185,129,0.2));">
         <div>
-          <h3 style="font-size: 1rem; font-weight: 700;">Bulk Outreach Dispatch</h3>
-          <p style="font-size: 0.75rem; color: var(--text-muted);" id="bulk-modal-subtitle">0 leads selected</p>
+          <h3 style="font-size: 1.05rem; font-weight: 700;">🚀 Bulk Email Outreach Campaign</h3>
+          <p style="font-size: 0.78rem; color: #94a3b8;" id="bulk-modal-subtitle">Ready to dispatch to 0 leads</p>
         </div>
         <button onclick="closeModal('modal-bulk')"
-          style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
+          style="background:none; border:none; color:#9ca3af; font-size:1.3rem; cursor:pointer;">✕</button>
       </div>
       <div class="modal-body">
-        <div
-          style="background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.25); padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.75rem; color: #93c5fd;">
-          💡 Dynamic tags supported: <code>{name}</code>, <code>{company}</code>, <code>{location}</code>. Each
-          recipient receives a customized email with Sangeeta Infotech signature.
+        <!-- Recipient List Preview -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 0.85rem 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-weight: 600; font-size: 0.82rem; color: #38bdf8;">👥 Target Recipients Preview (<span id="bulk-recipients-count">0</span> businesses)</span>
+            <span style="font-size: 0.72rem; color: #94a3b8;">Verified Email Deliveries</span>
+          </div>
+          <div id="bulk-recipients-chips" style="display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 85px; overflow-y: auto; padding: 2px;">
+            <!-- Chips rendered dynamically -->
+          </div>
         </div>
+
+        <div style="background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.25); padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.75rem; color: #93c5fd;">
+          💡 <strong>Dynamic tags supported:</strong> <code>{name}</code>, <code>{company}</code>, <code>{location}</code>. Each recipient receives a customized email with your Sangeeta Infotech signature.
+        </div>
+
         <div>
           <label class="form-label">Subject Template</label>
           <input type="text" id="bulk-sub" class="form-control">
         </div>
+
         <div>
-          <label class="form-label">Message Template</label>
-          <textarea id="bulk-msg" class="form-control" rows="10"></textarea>
+          <label class="form-label">Message Body Template</label>
+          <textarea id="bulk-msg" class="form-control" rows="8"></textarea>
         </div>
+
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <label style="font-size: 0.8rem; color: #94a3b8;">Dispatch Interval:</label>
+          <select id="bulk-delay" class="select-filter" style="width: auto; padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+            <option value="1500">1.5s (Recommended - Protects SMTP)</option>
+            <option value="2500">2.5s (Cautious)</option>
+            <option value="800">0.8s (Fast)</option>
+          </select>
+        </div>
+
+        <!-- Live Progress Container -->
+        <div id="bulk-progress-container" style="display: none;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.35rem;">
+            <span id="bulk-progress-status" style="color: #93c5fd; font-weight: 600;">Sending emails...</span>
+            <span id="bulk-progress-percent" style="color: #fff; font-weight: 700;">0%</span>
+          </div>
+          <div style="background: rgba(255,255,255,0.08); border-radius: 9999px; height: 8px; overflow: hidden;">
+            <div id="bulk-progress-bar" style="background: linear-gradient(90deg, #2563eb, #10b981); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+
         <div id="bulk-status-box" style="display:none; padding: 0.75rem; border-radius: 8px; font-size: 0.8rem;"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modal-bulk')">Cancel</button>
-        <button id="btn-send-bulk" class="btn btn-emerald" onclick="submitBulkEmail()">
-          🚀 Start Dispatch
+        <button id="btn-send-bulk" class="btn btn-emerald" onclick="submitBulkEmail()" style="font-weight: 700;">
+          🚀 Dispatch Bulk Outreach
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Floating Global Background Scraper Task Widget (Visible on any tab) -->
+  <div id="bg-scraper-widget" class="bg-widget-card" style="display: none;">
+    <div class="bg-widget-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="live-dot-pulse"></span>
+        <span style="font-weight: 700; font-size: 0.82rem; color: #fff;">⚡ Scraper Running in Background</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button onclick="toggleWidgetMinimize()" title="Minimize / Expand" class="bg-widget-btn-icon" id="btn-widget-toggle">−</button>
+      </div>
+    </div>
+    <div id="bg-widget-body" class="bg-widget-body">
+      <div class="bg-widget-log" id="bg-widget-latest-log">Initializing background harvester...</div>
+      <div class="bg-widget-actions">
+        <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; border-color: rgba(56,189,248,0.4);" onclick="switchTab('tab-scraper')">
+          👁️ View Live Terminal
+        </button>
+        <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; color: #f87171; border-color: rgba(248,113,113,0.35);" onclick="stopScraper()">
+          🛑 Stop Scraper
         </button>
       </div>
     </div>
@@ -900,6 +1255,35 @@
     let selectedLeadIds = new Set();
     let currentSingleLead = null;
     let cachedSettings = {};
+    let currentPage = 1;
+    let pageSize = 25;
+    let lastFilteredLeads = [];
+    let searchDebounceTimer = null;
+
+    function debouncedFilterLeads() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        currentPage = 1;
+        filterLeads();
+      }, 160);
+    }
+
+    function changePage(delta) {
+      const totalPages = Math.ceil(lastFilteredLeads.length / pageSize) || 1;
+      const newPage = currentPage + delta;
+      if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        renderLeadsTable(lastFilteredLeads);
+        const tr = document.querySelector('.table-responsive');
+        if (tr) tr.scrollTop = 0;
+      }
+    }
+
+    function changePageSize(size) {
+      pageSize = parseInt(size) || 25;
+      currentPage = 1;
+      renderLeadsTable(lastFilteredLeads);
+    }
 
     function switchTab(tabId, btn = null) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -924,8 +1308,8 @@
     }
 
     function triggerRunAllFromMain() {
-      switchTab('tab-scraper');
       startScraper('all');
+      showToast('🚀 Background Multi-Source Harvester launched! You can continue exploring leads while it runs.', 'info');
     }
 
     async function loadLeads() {
@@ -934,7 +1318,7 @@
         const data = await res.json();
         allLeads = data.leads || [];
         updateStats();
-        renderLeadsTable(allLeads);
+        filterLeads(false);
       } catch (err) {
         console.error('Error fetching leads:', err);
       }
@@ -950,29 +1334,104 @@
       document.getElementById('stat-high').textContent = high;
     }
 
+    function formatSource(source) {
+      if (!source) return 'Google Search';
+      let s = String(source).trim().replace(/^"+|"+$/g, '').trim();
+      const lower = s.toLowerCase();
+      if (lower.includes('google maps') || lower.includes('maps')) return 'Google Maps';
+      if (lower.includes('telegram')) return 'Telegram';
+      if (lower.includes('reddit')) return 'Reddit';
+      if (lower.includes('linkedin')) return 'LinkedIn';
+      if (lower.includes('indiamart')) return 'IndiaMART';
+      if (lower.includes('justdial')) return 'Justdial';
+      if (lower.includes('tradeindia')) return 'TradeIndia';
+      if (lower.includes('weworkremotely') || lower.includes('rss')) return 'Remote RSS';
+      if (lower.includes('b2b')) return 'B2B Portal';
+      if (lower.includes('search engine') || lower.includes('duckduckgo') || lower.includes('google')) {
+        const parts = s.split('|');
+        if (parts.length > 0 && parts[0].trim().length > 0) {
+          s = parts[0].trim();
+        }
+      }
+      if (s.length > 25) return s.substring(0, 23) + '...';
+      return s;
+    }
+
+    function getSourceIcon(source) {
+      const s = String(source || '').toLowerCase();
+      if (s.includes('map')) return '📍';
+      if (s.includes('telegram')) return '✈️';
+      if (s.includes('reddit')) return '👾';
+      if (s.includes('linkedin')) return '💼';
+      if (s.includes('indiamart') || s.includes('b2b') || s.includes('tradeindia')) return '🏢';
+      if (s.includes('justdial')) return '📞';
+      if (s.includes('rss') || s.includes('feed') || s.includes('weworkremotely')) return '📡';
+      return '🔍';
+    }
+
     function renderLeadsTable(leads) {
+      lastFilteredLeads = leads || [];
       const tbody = document.getElementById('leads-tbody');
-      if (leads.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 3rem; color: #64748b;">No leads match your filter.</td></tr>';
+      const totalLeads = lastFilteredLeads.length;
+
+      const paginationInfo = document.getElementById('pagination-info');
+      const paginationCurrentPage = document.getElementById('pagination-current-page');
+      const btnPrev = document.getElementById('btn-page-prev');
+      const btnNext = document.getElementById('btn-page-next');
+
+      if (totalLeads === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 3rem; color: #64748b;">No leads match your filter.</td></tr>';
+        if (paginationInfo) paginationInfo.textContent = 'Showing 0 of 0 leads';
+        if (paginationCurrentPage) paginationCurrentPage.textContent = 'Page 1 of 1';
+        if (btnPrev) btnPrev.disabled = true;
+        if (btnNext) btnNext.disabled = true;
+        updateSelectAllBox();
+        updateBulkBanner();
         return;
       }
 
-      tbody.innerHTML = leads.map(l => {
+      const totalPages = Math.ceil(totalLeads / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalLeads);
+      const pageLeads = lastFilteredLeads.slice(startIndex, endIndex);
+
+      if (paginationInfo) {
+        paginationInfo.textContent = `Showing ${startIndex + 1}–${endIndex} of ${totalLeads} leads`;
+      }
+      if (paginationCurrentPage) {
+        paginationCurrentPage.textContent = `Page ${currentPage} of ${totalPages}`;
+      }
+      if (btnPrev) btnPrev.disabled = (currentPage <= 1);
+      if (btnNext) btnNext.disabled = (currentPage >= totalPages);
+
+      tbody.innerHTML = pageLeads.map(l => {
         const isSelected = selectedLeadIds.has(String(l.id));
         const rawEmail = (l.Email || '').split(',')[0].trim();
         const hasEmail = rawEmail && rawEmail !== 'N/A' && rawEmail.includes('@');
         const isSent = (l['Email Status'] === 'SENT' || l.Status === 'EMAIL_SENT');
+        const rawSource = l.Source || l.source || l['Search Query'] || 'Google Search';
+        const formattedSource = formatSource(rawSource);
+        const sourceIcon = getSourceIcon(rawSource);
 
         return `
-          <tr class="${isSelected ? 'selected' : ''}">
+          <tr id="lead-row-${l.id}" class="${isSelected ? 'selected' : ''}">
             <td>
-              <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelectLead('${l.id}', this.checked)">
+              <input type="checkbox" id="cb-lead-${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleSelectLead('${l.id}', this.checked)">
             </td>
             <td>
               <div class="company-title">${escapeHtml(l['Company Name'] || 'Anonymous Business')}</div>
               <a href="${l['Website URL']}" target="_blank" style="color: #60a5fa; font-size: 0.72rem; text-decoration: none;">
                 🌐 ${escapeHtml(l['Website URL'])}
               </a>
+            </td>
+            <td>
+              <span class="source-badge" title="${escapeHtml(rawSource)}">
+                <span>${sourceIcon}</span>
+                <span>${escapeHtml(formattedSource)}</span>
+              </span>
             </td>
             <td>
               ${hasEmail ? `<div style="font-family: monospace; font-size: 0.8rem; color: #e2e8f0;">✉️ ${escapeHtml(rawEmail)}</div>` : '<span style="color:#64748b; font-style:italic;">No email</span>'}
@@ -986,8 +1445,8 @@
               <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 3px;">${l['Lead Type'] || 'Business'}</div>
             </td>
             <td>
-              <span class="badge ${isSent ? 'badge-sent' : 'badge-new'}">
-                ${isSent ? 'EMAIL SENT 📬' : (l.Status || 'NEW')}
+              <span class="badge ${isSent ? 'badge-sent' : 'badge-pending'}">
+                ${isSent ? 'EMAIL SENT 📬' : 'EMAIL PENDING ⏳'}
               </span>
             </td>
             <td style="text-align: right;">
@@ -1000,34 +1459,132 @@
           </tr>
         `;
       }).join('');
+
+      updateSelectAllBox();
+      updateBulkBanner();
     }
 
     function toggleSelectLead(id, checked) {
       if (checked) selectedLeadIds.add(String(id));
       else selectedLeadIds.delete(String(id));
+
+      const row = document.getElementById(`lead-row-${id}`);
+      if (row) {
+        if (checked) row.classList.add('selected');
+        else row.classList.remove('selected');
+      }
+
+      updateSelectAllBox();
       updateBulkBanner();
-      filterLeads();
     }
 
     function toggleSelectAll(checked) {
       const currentFiltered = getFilteredLeads();
-      if (checked) {
-        currentFiltered.forEach(l => {
-          const rawEmail = (l.Email || '').split(',')[0].trim();
-          if (rawEmail && rawEmail.includes('@')) selectedLeadIds.add(String(l.id));
-        });
-      } else {
-        selectedLeadIds.clear();
-      }
+      currentFiltered.forEach(l => {
+        if (checked) {
+          selectedLeadIds.add(String(l.id));
+        } else {
+          selectedLeadIds.delete(String(l.id));
+        }
+
+        const cb = document.getElementById(`cb-lead-${l.id}`);
+        const row = document.getElementById(`lead-row-${l.id}`);
+        if (cb) cb.checked = checked;
+        if (row) {
+          if (checked) row.classList.add('selected');
+          else row.classList.remove('selected');
+        }
+      });
+
+      updateSelectAllBox();
       updateBulkBanner();
-      filterLeads();
+    }
+
+    function updateSelectAllBox() {
+      const box = document.getElementById('select-all-box');
+      if (!box) return;
+      const filtered = getFilteredLeads();
+      if (filtered.length === 0) {
+        box.checked = false;
+        box.indeterminate = false;
+        return;
+      }
+      const selectedFilteredCount = filtered.filter(l => selectedLeadIds.has(String(l.id))).length;
+      if (selectedFilteredCount === 0) {
+        box.checked = false;
+        box.indeterminate = false;
+      } else if (selectedFilteredCount === filtered.length) {
+        box.checked = true;
+        box.indeterminate = false;
+      } else {
+        box.checked = false;
+        box.indeterminate = true;
+      }
+    }
+
+    function selectAllPendingLeads() {
+      const pendingLeads = allLeads.filter(l => {
+        const isSent = (l['Email Status'] === 'SENT' || l.Status === 'EMAIL_SENT');
+        const hasEmail = l.Email && l.Email !== 'N/A' && l.Email.includes('@');
+        return !isSent && hasEmail;
+      });
+
+      if (pendingLeads.length === 0) {
+        showToast('No pending leads with valid emails found.', 'info');
+        return;
+      }
+
+      pendingLeads.forEach(l => selectedLeadIds.add(String(l.id)));
+
+      // Update visible rows
+      getFilteredLeads().forEach(l => {
+        const isSel = selectedLeadIds.has(String(l.id));
+        const cb = document.getElementById(`cb-lead-${l.id}`);
+        const row = document.getElementById(`lead-row-${l.id}`);
+        if (cb) cb.checked = isSel;
+        if (row) {
+          if (isSel) row.classList.add('selected');
+          else row.classList.remove('selected');
+        }
+      });
+
+      updateSelectAllBox();
+      updateBulkBanner();
+      showToast(`⚡ Selected ${pendingLeads.length} pending leads with verified emails!`, 'info');
     }
 
     function clearSelection() {
       selectedLeadIds.clear();
-      document.getElementById('select-all-box').checked = false;
+      const box = document.getElementById('select-all-box');
+      if (box) {
+        box.checked = false;
+        box.indeterminate = false;
+      }
+      document.querySelectorAll('#leads-tbody tr').forEach(tr => tr.classList.remove('selected'));
+      document.querySelectorAll('#leads-tbody input[type="checkbox"]').forEach(cb => cb.checked = false);
       updateBulkBanner();
-      filterLeads();
+    }
+
+    function handleBulkEmailClick() {
+      const eligibleSelected = allLeads.filter(l => selectedLeadIds.has(String(l.id)) && l.Email && l.Email.includes('@'));
+      if (eligibleSelected.length > 0) {
+        openBulkEmailModal();
+        return;
+      }
+
+      // If no leads are currently selected, auto-select all pending leads with emails
+      const pendingWithEmail = allLeads.filter(l => {
+        const isSent = (l['Email Status'] === 'SENT' || l.Status === 'EMAIL_SENT');
+        return !isSent && l.Email && l.Email !== 'N/A' && l.Email.includes('@');
+      });
+
+      if (pendingWithEmail.length === 0) {
+        alert('No pending leads with valid emails found in database.');
+        return;
+      }
+
+      selectAllPendingLeads();
+      openBulkEmailModal();
     }
 
     function updateBulkBanner() {
@@ -1036,7 +1593,7 @@
         banner.style.display = 'flex';
         document.getElementById('bulk-selected-count').textContent = `${selectedLeadIds.size} Leads Selected`;
         const eligible = allLeads.filter(l => selectedLeadIds.has(String(l.id)) && l.Email && l.Email.includes('@')).length;
-        document.getElementById('bulk-eligible-count').textContent = `(${eligible} ready with verified emails)`;
+        document.getElementById('bulk-eligible-count').textContent = `${eligible} ready with verified emails`;
       } else {
         banner.style.display = 'none';
       }
@@ -1044,23 +1601,31 @@
 
     function getFilteredLeads() {
       const query = (document.getElementById('search-input').value || '').toLowerCase();
+      const outreachFilter = document.getElementById('filter-outreach') ? document.getElementById('filter-outreach').value : '';
       const status = document.getElementById('filter-status').value;
       const emailOnly = document.getElementById('filter-email').value === 'has_email';
 
       return allLeads.filter(l => {
+        const isSent = (l['Email Status'] === 'SENT' || l.Status === 'EMAIL_SENT');
+
+        // Outreach Filter: Email Sent vs Email Pending
+        if (outreachFilter === 'SENT' && !isSent) return false;
+        if (outreachFilter === 'PENDING' && isSent) return false;
+
         if (emailOnly && (!l.Email || l.Email === 'N/A' || !l.Email.includes('@'))) return false;
-        if (status === 'EMAIL_SENT' && (l['Email Status'] !== 'SENT' && l.Status !== 'EMAIL_SENT')) return false;
+        if (status === 'EMAIL_SENT' && !isSent) return false;
         if (status && status !== 'EMAIL_SENT' && l.Status !== status) return false;
 
         if (query) {
-          const matchStr = `${l['Company Name']} ${l['Website URL']} ${l.Email} ${l.Address}`.toLowerCase();
+          const matchStr = `${l['Company Name']} ${l['Website URL']} ${l.Email} ${l.Address} ${l.Source || ''} ${l['Lead Type'] || ''}`.toLowerCase();
           return matchStr.includes(query);
         }
         return true;
       });
     }
 
-    function filterLeads() {
+    function filterLeads(resetPage = true) {
+      if (resetPage) currentPage = 1;
       renderLeadsTable(getFilteredLeads());
     }
 
@@ -1127,16 +1692,45 @@ ${sig}`;
     function openBulkEmailModal() {
       const eligible = allLeads.filter(l => selectedLeadIds.has(String(l.id)) && l.Email && l.Email.includes('@'));
       if (eligible.length === 0) {
-        alert('Please select leads that have valid emails.');
-        return;
+        const pendingWithEmail = allLeads.filter(l => {
+          const isSent = (l['Email Status'] === 'SENT' || l.Status === 'EMAIL_SENT');
+          return !isSent && l.Email && l.Email !== 'N/A' && l.Email.includes('@');
+        });
+        if (pendingWithEmail.length > 0) {
+          selectAllPendingLeads();
+          openBulkEmailModal();
+          return;
+        } else {
+          alert('Please select leads that have valid emails.');
+          return;
+        }
       }
 
-      document.getElementById('bulk-modal-subtitle').textContent = `Ready to dispatch to ${eligible.length} businesses`;
+      document.getElementById('bulk-modal-subtitle').textContent = `Ready to dispatch to ${eligible.length} verified businesses`;
+      const countEl = document.getElementById('bulk-recipients-count');
+      if (countEl) countEl.textContent = eligible.length;
+
+      // Render recipients chips preview
+      const chipsContainer = document.getElementById('bulk-recipients-chips');
+      if (chipsContainer) {
+        chipsContainer.innerHTML = eligible.map(l => {
+          const rawEmail = (l.Email || '').split(',')[0].trim();
+          const comp = l['Company Name'] || 'Business';
+          return `<span style="font-size: 0.72rem; background: rgba(56,189,248,0.12); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.25); border-radius: 4px; padding: 0.15rem 0.45rem; display: inline-flex; align-items: center; gap: 4px;">
+            🏢 <strong>${escapeHtml(comp)}</strong> (${escapeHtml(rawEmail)})
+          </span>`;
+        }).join('');
+      }
+
       document.getElementById('bulk-sub').value = cachedSettings.defaultSubject || 'Web & Software Engineering Collaboration - {company}';
 
       const sig = cachedSettings.signature || '';
       document.getElementById('bulk-msg').value = (cachedSettings.defaultMessage || '') + '\n\n---\n' + sig;
-      document.getElementById('bulk-status-box').style.display = 'none';
+      
+      const statusBox = document.getElementById('bulk-status-box');
+      if (statusBox) statusBox.style.display = 'none';
+      const prog = document.getElementById('bulk-progress-container');
+      if (prog) prog.style.display = 'none';
 
       document.getElementById('modal-bulk').style.display = 'flex';
     }
@@ -1146,15 +1740,43 @@ ${sig}`;
         .filter(l => selectedLeadIds.has(String(l.id)) && l.Email && l.Email.includes('@'))
         .map(l => l.id);
 
+      if (eligibleIds.length === 0) return;
+
       const btn = document.getElementById('btn-send-bulk');
       const statusBox = document.getElementById('bulk-status-box');
+      const progContainer = document.getElementById('bulk-progress-container');
+      const progBar = document.getElementById('bulk-progress-bar');
+      const progStatus = document.getElementById('bulk-progress-status');
+      const progPercent = document.getElementById('bulk-progress-percent');
+      const delayMs = parseInt(document.getElementById('bulk-delay').value) || 1500;
 
       btn.disabled = true;
-      btn.textContent = 'Dispatching Batch...';
-      statusBox.style.display = 'block';
-      statusBox.style.background = 'rgba(37,99,235,0.15)';
-      statusBox.style.color = '#93c5fd';
-      statusBox.textContent = `Sending emails with courteous delay to protect Gmail SMTP health...`;
+      btn.textContent = '⏳ Dispatching Campaign...';
+
+      if (progContainer) {
+        progContainer.style.display = 'block';
+        if (progBar) progBar.style.width = '10%';
+        if (progPercent) progPercent.textContent = '10%';
+        if (progStatus) progStatus.textContent = 'Connecting to Gmail SMTP...';
+      }
+
+      if (statusBox) {
+        statusBox.style.display = 'block';
+        statusBox.style.background = 'rgba(37,99,235,0.15)';
+        statusBox.style.color = '#93c5fd';
+        statusBox.textContent = `Dispatching ${eligibleIds.length} personalized emails via Gmail SMTP (${delayMs / 1000}s interval)...`;
+      }
+
+      let currentPct = 15;
+      const progressTimer = setInterval(() => {
+        if (currentPct < 90) {
+          currentPct += Math.min(15, Math.floor(75 / (eligibleIds.length || 1)));
+          if (currentPct > 90) currentPct = 90;
+          if (progBar) progBar.style.width = currentPct + '%';
+          if (progPercent) progPercent.textContent = currentPct + '%';
+          if (progStatus) progStatus.textContent = `Delivering emails to recipients...`;
+        }
+      }, Math.max(700, delayMs));
 
       try {
         const res = await fetch('/api/leads/bulk-email', {
@@ -1164,27 +1786,44 @@ ${sig}`;
             lead_ids: eligibleIds,
             subject: document.getElementById('bulk-sub').value,
             message: document.getElementById('bulk-msg').value,
-            delay_ms: 1500
+            delay_ms: delayMs
           })
         });
+        clearInterval(progressTimer);
         const data = await res.json();
+
         if (data.success) {
-          statusBox.style.background = 'rgba(16,185,129,0.15)';
-          statusBox.style.color = '#34d399';
-          statusBox.textContent = `✅ Bulk Complete! Delivered: ${data.sent} / ${data.total} successfully.`;
+          if (progBar) progBar.style.width = '100%';
+          if (progPercent) progPercent.textContent = '100%';
+          if (progStatus) progStatus.textContent = 'Complete!';
+
+          if (statusBox) {
+            statusBox.style.background = 'rgba(16,185,129,0.15)';
+            statusBox.style.color = '#34d399';
+            statusBox.textContent = `🎉 Campaign Complete! Successfully delivered: ${data.sent} / ${data.total} emails.`;
+          }
+
+          showToast(`🚀 Successfully dispatched ${data.sent} bulk emails!`, 'success');
           clearSelection();
           loadLeads();
           setTimeout(() => closeModal('modal-bulk'), 2500);
         } else {
-          statusBox.style.background = 'rgba(244,63,94,0.15)';
-          statusBox.style.color = '#f87171';
-          statusBox.textContent = `❌ Error: ` + (data.error || 'Failed');
+          if (statusBox) {
+            statusBox.style.background = 'rgba(244,63,94,0.15)';
+            statusBox.style.color = '#f87171';
+            statusBox.textContent = `❌ Error: ` + (data.error || 'Failed');
+          }
         }
       } catch (err) {
-        statusBox.textContent = 'Error: ' + err.message;
+        clearInterval(progressTimer);
+        if (statusBox) {
+          statusBox.style.background = 'rgba(244,63,94,0.15)';
+          statusBox.style.color = '#f87171';
+          statusBox.textContent = 'Error: ' + err.message;
+        }
       } finally {
         btn.disabled = false;
-        btn.textContent = '🚀 Start Dispatch';
+        btn.textContent = '🚀 Dispatch Bulk Outreach';
       }
     }
 
@@ -1192,13 +1831,57 @@ ${sig}`;
       document.getElementById(id).style.display = 'none';
     }
 
-    // Scraper Handling
+    // Toast Notification System
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `app-toast toast-${type}`;
+
+      let icon = 'ℹ️';
+      if (type === 'success') icon = '✅';
+      else if (type === 'error') icon = '❌';
+
+      toast.innerHTML = `<span style="font-size:1.15rem; flex-shrink:0;">${icon}</span><div>${message}</div>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-12px) scale(0.96)';
+        setTimeout(() => toast.remove(), 350);
+      }, 4500);
+    }
+
+    // Toggle Floating Background Widget Minimization
+    function toggleWidgetMinimize() {
+      const body = document.getElementById('bg-widget-body');
+      const btn = document.getElementById('btn-widget-toggle');
+      if (!body) return;
+      if (body.classList.contains('minimized')) {
+        body.classList.remove('minimized');
+        if (btn) btn.textContent = '−';
+      } else {
+        body.classList.add('minimized');
+        if (btn) btn.textContent = '+';
+      }
+    }
+
+    // Background Scraper Handling
     let scraperTimer = null;
+    let wasRunningScraper = false;
+    let pollCount = 0;
+
     async function startScraper(mode = 'quick') {
       const btnQuick = document.getElementById('btn-run-scraper');
       const btnAll = document.getElementById('btn-run-all-scrapers');
+      const btnStop = document.getElementById('btn-stop-scraper');
+      const dot = document.getElementById('scraper-status-dot');
+      const text = document.getElementById('scraper-status-text');
+
       if (btnQuick) btnQuick.disabled = true;
       if (btnAll) btnAll.disabled = true;
+      if (dot) dot.style.background = '#10b981';
+      if (text) text.textContent = 'Status: Starting scraper... ⚡';
 
       try {
         const res = await fetch('/api/scraper/start', {
@@ -1208,15 +1891,47 @@ ${sig}`;
         });
         const data = await res.json();
         if (data.success) {
-          if (!scraperTimer) scraperTimer = setInterval(pollScraperStatus, 2000);
+          wasRunningScraper = true;
+          showToast(`⚡ Started ${mode === 'all' ? 'All 12 Harvesters' : 'Quick Scraper'} in background!`, 'info');
+          pollScraperStatus();
+          if (scraperTimer) clearInterval(scraperTimer);
+          scraperTimer = setInterval(pollScraperStatus, 2000);
         } else {
-          alert(data.error);
+          showToast(data.error || 'Failed to start scraper', 'error');
+          if (btnQuick) btnQuick.disabled = false;
+          if (btnAll) btnAll.disabled = false;
+          if (dot) dot.style.background = '#64748b';
+          if (text) text.textContent = 'Status: Stopped (Idle)';
         }
       } catch (err) {
-        alert(err.message);
-      } finally {
+        showToast('Error: ' + err.message, 'error');
         if (btnQuick) btnQuick.disabled = false;
         if (btnAll) btnAll.disabled = false;
+        if (dot) dot.style.background = '#64748b';
+        if (text) text.textContent = 'Status: Stopped (Idle)';
+      }
+    }
+
+    async function stopScraper() {
+      if (!confirm('Are you sure you want to stop the background scraper?')) return;
+      try {
+        const res = await fetch('/api/scraper/stop', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🛑 Background scraper stopped.', 'info');
+          if (scraperTimer) {
+            clearInterval(scraperTimer);
+            scraperTimer = null;
+          }
+          wasRunningScraper = false;
+          const bgWidget = document.getElementById('bg-scraper-widget');
+          if (bgWidget) bgWidget.style.display = 'none';
+          pollScraperStatus();
+        } else {
+          showToast(data.error || 'Failed to stop', 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
       }
     }
 
@@ -1224,24 +1939,65 @@ ${sig}`;
       try {
         const res = await fetch('/api/scraper/status');
         const data = await res.json();
-        const consoleEl = document.getElementById('scraper-console');
-        if (data.logs && data.logs.length > 0) {
-          consoleEl.textContent = data.logs.join('\n');
-          consoleEl.scrollTop = consoleEl.scrollHeight;
-        }
 
+        const consoleEl = document.getElementById('scraper-console');
         const dot = document.getElementById('scraper-status-dot');
         const text = document.getElementById('scraper-status-text');
+        const btnQuick = document.getElementById('btn-run-scraper');
+        const btnAll = document.getElementById('btn-run-all-scrapers');
+        const btnStop = document.getElementById('btn-stop-scraper');
+        const navBadge = document.getElementById('nav-scraper-badge');
+        const bgWidget = document.getElementById('bg-scraper-widget');
+        const bgLog = document.getElementById('bg-widget-latest-log');
+
+        if (data.logs && data.logs.length > 0) {
+          if (consoleEl) {
+            consoleEl.textContent = data.logs.join('\n');
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+          }
+          if (bgLog) {
+            bgLog.textContent = data.logs[data.logs.length - 1];
+          }
+        }
+
         if (data.running) {
-          dot.style.background = '#10b981';
-          text.textContent = 'Status: Scraping in progress... ⚡';
+          wasRunningScraper = true;
+          if (dot) dot.style.background = '#10b981';
+          if (text) text.textContent = 'Status: Scraping in background... ⚡';
+          if (btnQuick) btnQuick.disabled = true;
+          if (btnAll) btnAll.disabled = true;
+          if (btnStop) btnStop.style.display = 'inline-flex';
+          if (navBadge) navBadge.style.display = 'inline-flex';
+          if (bgWidget) bgWidget.style.display = 'block';
+
+          // Every ~8 seconds, quietly update leads in database tab so user sees new leads arriving
+          pollCount++;
+          if (pollCount % 4 === 0) {
+            loadLeads();
+          }
         } else {
-          dot.style.background = '#64748b';
-          text.textContent = 'Status: Idle / Finished';
-          loadLeads();
+          if (dot) dot.style.background = '#64748b';
+          if (text) text.textContent = 'Status: Stopped (Idle)';
+          if (btnQuick) btnQuick.disabled = false;
+          if (btnAll) btnAll.disabled = false;
+          if (btnStop) btnStop.style.display = 'none';
+          if (navBadge) navBadge.style.display = 'none';
+          if (bgWidget) bgWidget.style.display = 'none';
+
+          if (wasRunningScraper) {
+            wasRunningScraper = false;
+            showToast('✅ Background scraping completed! Engine stopped by default.', 'success');
+            loadLeads();
+          }
+
+          // Automatically shut down active polling interval when stopped
+          if (scraperTimer) {
+            clearInterval(scraperTimer);
+            scraperTimer = null;
+          }
         }
       } catch (err) {
-        console.error(err);
+        console.error('Poll status error:', err);
       }
     }
 
@@ -1335,7 +2091,28 @@ ${sig}`;
     window.addEventListener('DOMContentLoaded', () => {
       loadLeads();
       loadSettings();
-      setInterval(pollScraperStatus, 3000);
+
+      // Check scraper status on startup
+      fetch('/api/scraper/status')
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.running) {
+            wasRunningScraper = true;
+            pollScraperStatus();
+            scraperTimer = setInterval(pollScraperStatus, 2000);
+          } else {
+            // Keep scraper engine stopped / idle by default
+            const dot = document.getElementById('scraper-status-dot');
+            const text = document.getElementById('scraper-status-text');
+            const bgWidget = document.getElementById('bg-scraper-widget');
+            const navBadge = document.getElementById('nav-scraper-badge');
+            if (dot) dot.style.background = '#64748b';
+            if (text) text.textContent = 'Status: Stopped (Idle)';
+            if (bgWidget) bgWidget.style.display = 'none';
+            if (navBadge) navBadge.style.display = 'none';
+          }
+        })
+        .catch(err => console.error('Initial scraper status check err:', err));
     });
   </script>
 </body>

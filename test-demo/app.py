@@ -49,7 +49,10 @@ def ensure_csv_status_column():
 
 ensure_csv_status_column()
 
+_cached_leads_data = {}
+
 def read_leads(source_file=None):
+    global _cached_leads_data
     target = source_file or LEADS_CSV
     if not os.path.exists(target):
         # Fallback to all_leads_master.csv if leads_new.csv is absent
@@ -58,6 +61,11 @@ def read_leads(source_file=None):
         else:
             return []
     try:
+        current_mtime = os.path.getmtime(target)
+        cache_entry = _cached_leads_data.get(target)
+        if cache_entry and cache_entry.get("mtime") == current_mtime:
+            return [dict(x) for x in cache_entry["leads"]]
+
         df = pd.read_csv(target)
         df = df.fillna("")
         leads = df.to_dict(orient="records")
@@ -80,32 +88,74 @@ def read_leads(source_file=None):
                 item["Lead Type"] = item["lead_type"]
             if not item.get("Status"):
                 item["Status"] = "NEW"
-            if not item.get("Email Status"):
-                item["Email Status"] = item.get("email_status") or "NOT_SENT"
-        return leads
+
+            # Standardize Lead Source
+            raw_src = item.get("Source") or item.get("source") or item.get("Search Query") or "Google Search"
+            clean_src = str(raw_src).strip().strip('"').strip("'")
+            if "Search Engine" in clean_src:
+                parts = clean_src.split("|")
+                clean_src = parts[0].strip().strip('"') if parts else "Google Search"
+            item["Source"] = clean_src or "Google Search"
+
+            # Standardize Email Status (SENT vs PENDING)
+            curr_email_status = str(item.get("Email Status") or item.get("email_status") or "").strip().upper()
+            curr_status = str(item.get("Status", "")).strip().upper()
+            if curr_email_status in ("SENT", "EMAIL_SENT") or curr_status == "EMAIL_SENT":
+                item["Email Status"] = "SENT"
+            else:
+                item["Email Status"] = "PENDING"
+
+        _cached_leads_data[target] = {"mtime": current_mtime, "leads": leads}
+        return [dict(x) for x in leads]
     except Exception as e:
         print(f"Error reading leads: {e}")
         return []
 
 def update_lead_record(lead_id, updates):
-    if not os.path.exists(LEADS_CSV):
-        return False
-    try:
-        df = pd.read_csv(LEADS_CSV)
-        matched = False
-        for idx, row in df.iterrows():
-            curr_id = str(row.get("No") or (idx + 1))
-            if curr_id == str(lead_id):
-                for k, v in updates.items():
-                    df.at[idx, k] = v
-                matched = True
-                break
-        if matched:
-            df.to_csv(LEADS_CSV, index=False, encoding="utf-8")
-            return True
-    except Exception as e:
-        print(f"Error updating lead record: {e}")
-    return False
+    global _cached_leads_data
+    updated = False
+    if os.path.exists(LEADS_CSV):
+        try:
+            df = pd.read_csv(LEADS_CSV)
+            matched = False
+            for idx, row in df.iterrows():
+                curr_id = str(row.get("No") or (idx + 1))
+                if curr_id == str(lead_id):
+                    for k, v in updates.items():
+                        if k not in df.columns:
+                            df[k] = ""
+                        df.at[idx, k] = v
+                    matched = True
+                    break
+            if matched:
+                df.to_csv(LEADS_CSV, index=False, encoding="utf-8")
+                updated = True
+        except Exception as e:
+            print(f"Error updating {LEADS_CSV}: {e}")
+
+    if os.path.exists("all_leads_master.csv"):
+        try:
+            mdf = pd.read_csv("all_leads_master.csv")
+            m_matched = False
+            for idx, row in mdf.iterrows():
+                curr_id = str(row.get("lead_id") or row.get("No") or (idx + 1))
+                if curr_id == str(lead_id):
+                    if "Email Status" in updates and "email_status" in mdf.columns:
+                        mdf.at[idx, "email_status"] = updates["Email Status"]
+                    if "Email Sent At" in updates and "email_sent_at" in mdf.columns:
+                        mdf.at[idx, "email_sent_at"] = updates["Email Sent At"]
+                    m_matched = True
+                    break
+            if m_matched:
+                mdf.to_csv("all_leads_master.csv", index=False, encoding="utf-8")
+                updated = True
+        except Exception as e:
+            print(f"Error updating all_leads_master.csv: {e}")
+
+    if updated:
+        _cached_leads_data.clear()
+
+    return updated
 
 @app.route("/")
 def index():
@@ -279,9 +329,29 @@ def start_scraper():
             with scraper_lock:
                 scraper_logs.append(f"[{time.strftime('%H:%M:%S')}] Supabase sync notice: {e}")
 
+        with scraper_lock:
+            scraper_logs.append(f"[{time.strftime('%H:%M:%S')}] 🛑 Scraper engine automatically stopped & finished.")
+        scraper_process = None
+
     t = threading.Thread(target=run_worker, daemon=True)
     t.start()
     return jsonify({"success": True, "message": f"{script_to_run} started in background!", "mode": mode})
+
+@app.route("/api/scraper/stop", methods=["POST"])
+def stop_scraper():
+    global scraper_process, scraper_logs
+    if scraper_process is not None and scraper_process.poll() is None:
+        try:
+            scraper_process.terminate()
+            scraper_process = None
+            with scraper_lock:
+                scraper_logs.append(f"[{time.strftime('%H:%M:%S')}] 🛑 Background scraper stopped by user.")
+            return jsonify({"success": True, "message": "Scraper stopped successfully."})
+        except Exception as e:
+            scraper_process = None
+            return jsonify({"success": False, "error": str(e)}), 500
+    scraper_process = None
+    return jsonify({"success": True, "message": "Scraper is already stopped."})
 
 @app.route("/api/sync-supabase", methods=["POST"])
 def trigger_supabase_sync():
@@ -327,6 +397,7 @@ if __name__ == "__main__":
     port = 5000
     print("\n" + "=" * 60)
     print("SANGEETA INFOTECH - ALL-IN-ONE LEAD & OUTREACH HUB")
-    print(f"Local URL: http://localhost:{port}")
+    print(f">> ULTRA-FAST LOCAL URL: http://127.0.0.1:{port}")
+    print(f">> Network / Hostname:   http://localhost:{port}")
     print("=" * 60 + "\n")
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
