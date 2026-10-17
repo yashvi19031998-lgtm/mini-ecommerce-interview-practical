@@ -19,6 +19,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
+          ref: master
           fetch-depth: 0
 
       - name: Set up Python
@@ -59,5 +60,7 @@ jobs:
             echo "No new leads found to commit."
           else
             git commit -m "Auto-update leads: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git pull --rebase origin master
             git push origin master
           fi
+
