@@ -1,4 +1,4 @@
-﻿name: 1-Hour Auto Lead Scraper
+name: 1-Hour Auto Lead Scraper
 
 on:
   schedule:
