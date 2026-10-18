@@ -1681,8 +1681,6 @@
           const matchStr = `${l['Company Name']} ${l['Website URL']} ${l.Email} ${l['Mobile Number']} ${l.Address} ${l.Source || ''} ${l['Lead Type'] || ''}`.toLowerCase();
           return matchStr.includes(query);
         }
-          return matchStr.includes(query);
-        }
         return true;
       });
     }
