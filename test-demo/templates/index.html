@@ -1243,6 +1243,64 @@
     </div>
   </div>
 
+  <!-- ==================== DIRECT WHATSAPP MODAL ==================== -->
+  <div id="modal-whatsapp" class="modal-overlay">
+    <div class="modal-box" style="max-width: 580px; border: 1px solid rgba(34, 197, 94, 0.35);">
+      <div class="modal-header" style="background: linear-gradient(135deg, rgba(22,163,74,0.3), rgba(34,197,94,0.15)); border-bottom: 1px solid rgba(34,197,94,0.25);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">💬</span>
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #4ade80;">Direct WhatsApp Message Outreach</h3>
+            <p style="font-size: 0.78rem; color: #86efac;" id="wa-modal-subtitle">Instant Click-to-Chat with Client</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-whatsapp')"
+          style="background:none; border:none; color:#9ca3af; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label class="form-label">Client / Company Name</label>
+            <input type="text" id="wa-company" class="form-control" readonly style="background: rgba(15,23,42,0.6);">
+          </div>
+          <div>
+            <label class="form-label">Target WhatsApp Number</label>
+            <input type="text" id="wa-phone" class="form-control" placeholder="e.g. +91 9876543210">
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Quick Outreach Template</label>
+          <select id="wa-template-select" class="form-control" onchange="changeWhatsAppTemplate()">
+            <option value="web">💼 Full-Stack Web Development & Custom Portals</option>
+            <option value="app">📱 Mobile App Development (iOS & Android)</option>
+            <option value="quick">⚡ Quick 1-to-1 Partnership Discovery</option>
+            <option value="custom">✏️ Custom Message</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">WhatsApp Pitch Message Body</label>
+          <textarea id="wa-msg" class="form-control" rows="8" style="font-family: monospace; font-size: 0.82rem; line-height: 1.5;"></textarea>
+        </div>
+
+        <div style="font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(34,197,94,0.08); border-radius: 6px; border: 1px dashed rgba(34,197,94,0.25);">
+          <span>💡</span>
+          <span>Clicking <strong>Open WhatsApp Chat</strong> opens WhatsApp Web or App directly with this recipient and message pre-filled.</span>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.08);">
+        <button class="btn btn-secondary" onclick="closeModal('modal-whatsapp')">Cancel</button>
+        <button class="btn btn-secondary" onclick="copyWhatsAppMessage()" style="color: #60a5fa; border-color: rgba(96,165,250,0.3);">
+          📋 Copy Text
+        </button>
+        <button id="btn-open-wa" class="btn btn-whatsapp" onclick="launchWhatsAppChat()" style="padding: 0.5rem 1.1rem; font-weight: 700;">
+          💬 Open WhatsApp Chat 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
@@ -1436,13 +1494,17 @@
         const formattedSource = formatSource(rawSource);
         const sourceIcon = getSourceIcon(rawSource);
         
-        // WhatsApp preparation
-        const rawPhone = (l['Mobile Number'] || '').trim();
-        const cleanDigits = rawPhone.replace(/\D/g, '');
-        const hasWhatsApp = cleanDigits.length >= 10;
-        const compName = l['Company Name'] || 'your company';
-        const waMsg = encodeURIComponent(`Hi ${compName} Team, I came across your business and wanted to connect from Sangeeta Infotech regarding custom software/web development support.`);
-        const waUrl = `https://wa.me/${cleanDigits}?text=${waMsg}`;
+        // Smart WhatsApp Phone Normalization
+        const rawPhone = String(l['Mobile Number'] || l.mobile_number || l.Phone || l.phone || '').trim();
+        const firstPhone = rawPhone ? rawPhone.split(',')[0].trim() : '';
+        let cleanDigits = firstPhone.replace(/\D/g, '');
+        if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) {
+          cleanDigits = '91' + cleanDigits.slice(1);
+        } else if (cleanDigits.length === 10) {
+          cleanDigits = '91' + cleanDigits;
+        }
+        const hasWhatsApp = cleanDigits.length >= 10 && cleanDigits.length <= 15;
+        const compName = l['Company Name'] || l.company_name || 'your company';
 
         return `
           <tr id="lead-row-${l.id}" class="${isSelected ? 'selected' : ''}">
@@ -1465,8 +1527,11 @@
             <td>
               ${hasEmail ? `<div style="font-family: monospace; font-size: 0.8rem; color: #e2e8f0;">✉️ ${escapeHtml(rawEmail)}</div>` : '<span style="color:#64748b; font-style:italic;">No email</span>'}
               ${rawPhone && rawPhone !== 'N/A' ? `
-                <div style="color: #94a3b8; font-size: 0.72rem; margin-top:2px;">
-                  📞 ${escapeHtml(rawPhone)}
+                <div style="color: #94a3b8; font-size: 0.72rem; margin-top:2px; display: flex; align-items: center; gap: 4px;">
+                  <span>📞 ${escapeHtml(rawPhone)}</span>
+                  ${hasWhatsApp ? `
+                    <span onclick="openWhatsAppModal('${l.id}')" title="Quick WhatsApp Chat" style="cursor: pointer; font-size: 0.8rem;" role="button">💬</span>
+                  ` : ''}
                 </div>` : ''}
             </td>
             <td>
@@ -1494,9 +1559,9 @@
             <td style="text-align: right;">
               <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
                 ${hasWhatsApp ? `
-                  <a href="${waUrl}" target="_blank" class="btn btn-whatsapp" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" title="Send Direct WhatsApp Message">
+                  <button class="btn btn-whatsapp" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="openWhatsAppModal('${l.id}')" title="Send Direct WhatsApp Message">
                     💬 WhatsApp
-                  </a>
+                  </button>
                 ` : ''}
                 ${hasEmail ? `
                   <button class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="openSingleEmailModal('${l.id}')">
@@ -1658,7 +1723,7 @@
       return allLeads.filter(l => {
         const rawEmail = (l.Email || '').split(',')[0].trim();
         const hasEmail = rawEmail && rawEmail !== 'N/A' && rawEmail.includes('@');
-        const rawPhone = (l['Mobile Number'] || '').replace(/\D/g, '');
+        const rawPhone = String(l['Mobile Number'] || l.mobile_number || l.Phone || l.phone || '').replace(/\D/g, '');
         const hasPhone = rawPhone.length >= 10;
         const isSent = (l['Email Status'] === 'SENT' || l.Status === 'EMAIL_SENT');
 
@@ -1748,6 +1813,90 @@ ${sig}`;
         btn.disabled = false;
         btn.textContent = '🚀 Send via Gmail SMTP';
       }
+    }
+
+    /* ==========================================================
+       DIRECT WHATSAPP MESSAGING SYSTEM
+       ========================================================== */
+    let currentWhatsAppLead = null;
+
+    function openWhatsAppModal(leadId) {
+      const lead = allLeads.find(l => String(l.id) === String(leadId));
+      if (!lead) return;
+      currentWhatsAppLead = lead;
+
+      const comp = lead['Company Name'] || lead.company_name || 'your company';
+      const rawPhoneStr = String(lead['Mobile Number'] || lead.mobile_number || lead.Phone || lead.phone || '').trim();
+      const firstPhone = rawPhoneStr ? rawPhoneStr.split(',')[0].trim() : '';
+      let cleanDigits = firstPhone.replace(/\D/g, '');
+
+      if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) {
+        cleanDigits = '91' + cleanDigits.slice(1);
+      } else if (cleanDigits.length === 10) {
+        cleanDigits = '91' + cleanDigits;
+      }
+
+      document.getElementById('wa-company').value = comp;
+      document.getElementById('wa-phone').value = cleanDigits ? `+${cleanDigits}` : firstPhone;
+      document.getElementById('wa-modal-subtitle').textContent = `Direct outreach to ${comp} (${firstPhone || 'Clean Contact'})`;
+
+      changeWhatsAppTemplate();
+      document.getElementById('modal-whatsapp').style.display = 'flex';
+    }
+
+    function changeWhatsAppTemplate() {
+      if (!currentWhatsAppLead) return;
+      const comp = currentWhatsAppLead['Company Name'] || currentWhatsAppLead.company_name || 'your team';
+      const loc = currentWhatsAppLead.Address || currentWhatsAppLead.location || 'your area';
+      const tplType = document.getElementById('wa-template-select').value;
+      const myCompany = cachedSettings.companyName || 'Sangeeta Infotech';
+      const myPhone = cachedSettings.phone || '+91 9106060400';
+      const mySite = cachedSettings.website || 'https://sangeetainfotech.co.in';
+
+      let msg = '';
+      if (tplType === 'web') {
+        msg = `Hi ${comp} Team 👋,\n\nI came across your business presence in ${loc} and wanted to connect.\n\nAt ${myCompany}, we build high-performance custom web applications, portals, and software systems. We help companies accelerate engineering velocity with dedicated developers.\n\nKey expertise:\n• Full-Stack Web Portals (Python, React, Node)\n• Custom CRM, ERP & Automation Systems\n• Cloud Backend & Database Architecture\n\nWould you be open to a quick 5-minute chat to explore if we can support your tech development?\n\nBest regards,\n${myCompany}\n🌐 ${mySite}\n📞 ${myPhone}`;
+      } else if (tplType === 'app') {
+        msg = `Hello ${comp} Team 👋,\n\nHope you are doing well!\n\nAre you currently exploring any mobile app development (iOS & Android) or digital product upgrades for your business?\n\nAt ${myCompany}, we develop sleek, high-speed mobile apps using Flutter and React Native with clean UI/UX and seamless backend integration.\n\nLet me know if you would like to see a few live case studies!\n\nWarm regards,\n${myCompany}\n🌐 ${mySite}`;
+      } else if (tplType === 'quick') {
+        msg = `Hi ${comp} Team! 👋\n\nI was reviewing your company profile and wanted to reach out from ${myCompany}.\n\nWe provide reliable, cost-effective full-stack software and web engineering solutions. Are you open for a brief discovery chat this week?\n\n${mySite}`;
+      }
+
+      if (tplType !== 'custom') {
+        document.getElementById('wa-msg').value = msg;
+      }
+    }
+
+    function launchWhatsAppChat() {
+      const phoneInput = document.getElementById('wa-phone').value;
+      let cleanDigits = phoneInput.replace(/\D/g, '');
+      if (cleanDigits.length === 11 && cleanDigits.startsWith('0')) {
+        cleanDigits = '91' + cleanDigits.slice(1);
+      } else if (cleanDigits.length === 10) {
+        cleanDigits = '91' + cleanDigits;
+      }
+
+      if (!cleanDigits || cleanDigits.length < 10) {
+        alert('Please enter a valid phone number with country code (e.g. +91 9876543210)');
+        return;
+      }
+
+      const msg = document.getElementById('wa-msg').value;
+      const encodedMsg = encodeURIComponent(msg);
+      const waUrl = `https://wa.me/${cleanDigits}?text=${encodedMsg}`;
+
+      window.open(waUrl, '_blank');
+      closeModal('modal-whatsapp');
+      showToast(`💬 Opened WhatsApp Chat with ${cleanDigits}`, 'success');
+    }
+
+    function copyWhatsAppMessage() {
+      const msg = document.getElementById('wa-msg').value;
+      navigator.clipboard.writeText(msg).then(() => {
+        showToast('📋 WhatsApp pitch copied to clipboard!', 'success');
+      }).catch(() => {
+        alert('Failed to copy text.');
+      });
     }
 
     function openBulkEmailModal() {
