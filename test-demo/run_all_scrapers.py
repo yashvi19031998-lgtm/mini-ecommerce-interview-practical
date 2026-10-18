@@ -31,9 +31,9 @@ try:
 except ImportError:
     sync_to_supabase = None
 
-AUTO_SEND_EMAIL = True  # Automatically dispatch outreach emails to verified emails found
-AUTO_SYNC_SUPABASE = True  # Automatically sync new leads to Supabase database
-MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "10"))  # Dispatch backlog of uncontacted leads
+AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "false").lower() in ("true", "1", "yes")  # Disabled by default for safety!
+AUTO_SYNC_SUPABASE = os.getenv("AUTO_SYNC_SUPABASE", "true").lower() in ("true", "1", "yes")
+MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "0"))  # Disabled by default
 
 MASTER_CSV = "all_leads_master.csv"
 RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")
@@ -190,14 +190,14 @@ def release_run_lock():
             pass
 
 
-def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: int = 10, delay_sec: float = 2.0) -> int:
+def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: int = 0, delay_sec: float = 2.0) -> int:
     """
     Scans the master registry for leads that have not received outreach emails yet
-    (email_status != 'SENT'), cross-references with sent history and blacklist domains,
+    (email_status != 'SENT'), cross-references with permanent sent history and blacklist domains,
     and dispatches personalized outreach emails in controlled batches.
     """
-    if not AUTO_SEND_EMAIL or not send_smtp_email:
-        print("       [AUTO-MAIL-PENDING] Auto-email dispatch is disabled or email_service is unavailable.")
+    if not AUTO_SEND_EMAIL or not send_smtp_email or max_batch <= 0:
+        print("       [AUTO-MAIL-PENDING] Auto-email dispatch is disabled for safety. Use Dashboard UI to send outreach emails.")
         return 0
 
     settings = load_settings() if load_settings else {}
@@ -206,8 +206,13 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
     sub_tpl = settings.get("defaultSubject", "Web & Software Engineering Collaboration - {company}")
     msg_tpl = settings.get("defaultMessage", "Hi {name},\n\nI came across {company}...")
 
-    # Cross-reference with emails already marked SENT in leads_new.csv to prevent duplicates
+    # Load permanent sent history from email_service
     sent_emails_seen = set()
+    try:
+        from email_service import get_already_sent_emails
+        sent_emails_seen.update(get_already_sent_emails())
+    except Exception:
+        pass
     if os.path.exists("leads_new.csv"):
         try:
             import pandas as pd
