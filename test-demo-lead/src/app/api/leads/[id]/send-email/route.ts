@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { sendLeadEmail } from '@/lib/email/emailService';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const leadId = params.id;
+    const { id: leadId } = await params;
     const body = await request.json();
     const { to, subject, message } = body;
 
@@ -18,8 +18,8 @@ export async function POST(
       );
     }
 
-    // 1. Verify lead exists and is APPROVED
-    const { data: lead, error: leadError } = await supabase
+    // 1. Verify lead exists
+    const { data: lead, error: leadError } = await supabaseAdmin
       .from('leads')
       .select('*')
       .eq('id', leadId)
@@ -32,14 +32,8 @@ export async function POST(
       );
     }
 
-    if (lead.status !== 'APPROVED') {
-      return NextResponse.json(
-        { success: false, error: { code: 'EMAIL_FAILED', message: 'Lead must be APPROVED before sending email' } },
-        { status: 400 }
-      );
-    }
-
-    if (!lead.email) {
+    const recipientEmail = to || lead.email;
+    if (!recipientEmail) {
       return NextResponse.json(
         { success: false, error: { code: 'NO_PUBLIC_EMAIL', message: 'No email address available for this lead' } },
         { status: 400 }
@@ -47,8 +41,8 @@ export async function POST(
     }
 
     // 2. Send Email
-    console.log(`[EMAIL] Attempting to send email for lead ${leadId}`);
-    const emailResult = await sendLeadEmail(to, subject, message);
+    console.log(`[EMAIL] Attempting to send email for lead ${leadId} to ${recipientEmail}`);
+    const emailResult = await sendLeadEmail(recipientEmail, subject, message);
 
     if (!emailResult.success) {
       return NextResponse.json(
@@ -58,9 +52,9 @@ export async function POST(
     }
 
     // 3. Update status to EMAIL_SENT
-    await supabase
+    await supabaseAdmin
       .from('leads')
-      .update({ status: 'EMAIL_SENT', updated_at: new Date().toISOString() })
+      .update({ lead_status: 'EMAIL_SENT', status: 'EMAIL_SENT', updated_at: new Date().toISOString() })
       .eq('id', leadId);
 
     console.log(`[EMAIL] Successfully processed email for lead ${leadId}`);
