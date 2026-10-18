@@ -186,7 +186,8 @@ def send_single_lead_email():
     if not to_email or not subject or not message:
         return jsonify({"success": False, "error": "to, subject, and message required"}), 400
 
-    result = send_smtp_email(to_email, subject, message)
+    # User manually clicked Send in UI: allow manual test/send with bypass_duplicate_check=True
+    result = send_smtp_email(to_email, subject, message, bypass_duplicate_check=True)
     if result.get("success"):
         now_str = time.strftime("%Y-%m-%d %H:%M:%S")
         update_lead_record(lead_id, {

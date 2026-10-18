@@ -45,8 +45,8 @@ jobs:
           SMTP_FROM_EMAIL: ${{ secrets.SMTP_FROM_EMAIL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          AUTO_SEND_EMAIL: 'false'
-          MAX_PENDING_EMAILS_PER_RUN: '0'
+          AUTO_SEND_EMAIL: 'true'
+          MAX_PENDING_EMAILS_PER_RUN: '5'
         run: |
           cd test-demo
           python run_all_scrapers.py

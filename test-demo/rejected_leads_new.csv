@@ -86,3 +86,6 @@ HireToday,https://www.hiretoday.in/home,Score -4 below threshold 4 (Type: Blog/A
 Icegate-Ui-Prod.Apps.Prod.Icegate.Gov.In,https://icegate-ui-prod.apps.prod.icegate.gov.in/,Website unreachable / timeout,,
 CCHAA,https://www.cchaakolkata.org/,Score 3 below threshold 4 (Type: Unknown),Unknown,3.0
 Feedbax.Ai,https://feedbax.ai/software-development/ahmedabad,Website unreachable / timeout,,
+Employer.Jobhai.Com,https://employer.jobhai.com/hire,Website unreachable / timeout,,
+MSME,https://msmeonline.tn.gov.in/needs/index.php,Score -3 below threshold 4 (Type: Blog/Article),Blog/Article,-3.0
+Needs Of Public,https://www.needsofpublic.in/,Score 3 below threshold 4 (Type: Unknown),Unknown,3.0

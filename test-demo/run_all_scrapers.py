@@ -31,9 +31,9 @@ try:
 except ImportError:
     sync_to_supabase = None
 
-AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "false").lower() in ("true", "1", "yes")  # Disabled by default for safety!
+AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "true").lower() in ("true", "1", "yes")
 AUTO_SYNC_SUPABASE = os.getenv("AUTO_SYNC_SUPABASE", "true").lower() in ("true", "1", "yes")
-MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "0"))  # Disabled by default
+MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "5"))  # Safe batch of 5 new leads per run
 
 MASTER_CSV = "all_leads_master.csv"
 RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")
@@ -190,7 +190,7 @@ def release_run_lock():
             pass
 
 
-def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: int = 0, delay_sec: float = 2.0) -> int:
+def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: int = 5, delay_sec: float = 2.0) -> int:
     """
     Scans the master registry for leads that have not received outreach emails yet
     (email_status != 'SENT'), cross-references with permanent sent history and blacklist domains,
