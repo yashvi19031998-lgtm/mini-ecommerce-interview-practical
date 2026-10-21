@@ -836,6 +836,9 @@
             <span class="live-dot-pulse"></span> RUNNING
           </span>
         </button>
+        <button id="tab-btn-import" class="nav-btn" onclick="switchTab('tab-import', this)">
+          📥 Import Leads & Engine
+        </button>
         <button id="tab-btn-settings" class="nav-btn" onclick="switchTab('tab-settings', this)">
           ⚙️ Company & Signature
         </button>
@@ -1151,6 +1154,198 @@
               Loading signature preview...
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: IMPORT LEADS & AUTOMATION ENGINE ==================== -->
+    <div id="tab-import" class="tab-content">
+      <!-- Import Header Banner -->
+      <div class="table-card" style="padding: 1.5rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.8));">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem; color: #fff;">
+              📥 Automated Lead Import & Multi-Source Engine
+            </h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.35rem; max-width: 750px; line-height: 1.5;">
+              Import leads from any source: <strong>Live Web/LinkedIn Search</strong>, <strong>WhatsApp Chat Exports (.txt)</strong>, or <strong>Pasted Job Descriptions & URLs</strong>. Automatically extracts contacts, validates against master database, prevents duplicates, and syncs directly to Supabase.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; background: rgba(0,0,0,0.3); padding: 0.3rem; border-radius: 10px; border: 1px solid var(--border-color);">
+            <button id="import-subtab-search" class="nav-btn active" onclick="switchImportSubTab('search')">
+              🔍 Live Search Scraper
+            </button>
+            <button id="import-subtab-chat" class="nav-btn" onclick="switchImportSubTab('chat')">
+              💬 WhatsApp Chat Export
+            </button>
+            <button id="import-subtab-raw" class="nav-btn" onclick="switchImportSubTab('raw')">
+              📋 Paste Text / URLs
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Import Inputs Grid -->
+      <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <!-- Left: Input Method Forms -->
+        <div class="table-card" style="padding: 1.5rem;">
+          <!-- METHOD 1: LIVE SEARCH -->
+          <div id="import-panel-search">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #38bdf8; display: flex; align-items: center; gap: 0.5rem;">
+              <span>🔍</span> Targeted Live Web & LinkedIn Scraper
+            </h3>
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+              <div>
+                <label class="form-label">Search Keyword / Requirement / Role</label>
+                <input type="text" id="import-search-kw" class="form-control" placeholder="e.g. Python Developer, Shopify Agency, React Native">
+              </div>
+              <div>
+                <label class="form-label">City / Region (or leave blank)</label>
+                <input type="text" id="import-search-loc" class="form-control" placeholder="e.g. Ahmedabad, Surat, Mumbai, Remote">
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 1.25rem;">
+              <div>
+                <label class="form-label">Target Lead Type</label>
+                <select id="import-search-type" class="form-control">
+                  <option value="all">🌐 All Web Leads & Clients</option>
+                  <option value="clients">💼 Client Hiring / Freelance Projects</option>
+                  <option value="b2b">🏢 B2B IT & Software Companies (Directories)</option>
+                  <option value="linkedin">👔 LinkedIn Company & Job Profiles</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Max Results</label>
+                <select id="import-search-max" class="form-control">
+                  <option value="5">5 Results (Ultra Fast)</option>
+                  <option value="10" selected>10 Results (Standard)</option>
+                  <option value="15">15 Results (Deep Discovery)</option>
+                  <option value="20">20 Results (Maximum)</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-run-import-search" onclick="executeImportSearch()" style="width: 100%; justify-content: center; padding: 0.75rem;">
+              🚀 Start Live Discovery Scraper
+            </button>
+          </div>
+
+          <!-- METHOD 2: WHATSAPP CHAT EXPORT -->
+          <div id="import-panel-chat" style="display: none;">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: #34d399; display: flex; align-items: center; gap: 0.5rem;">
+              <span>💬</span> WhatsApp / Telegram Chat Export Parser
+            </h3>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Export chat from any WhatsApp recruiter/developer group (without media) and upload the exported <code>.txt</code> file, or paste chat messages below:
+            </p>
+            <div style="margin-bottom: 1rem;">
+              <label class="form-label">Upload Exported .txt Chat File</label>
+              <input type="file" id="import-chat-file" accept=".txt" class="form-control" onchange="handleChatFileUpload(this)" style="padding: 0.45rem;">
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+              <label class="form-label">Or Paste Raw WhatsApp Chat Text</label>
+              <textarea id="import-chat-text" class="form-control" rows="6" placeholder="12/10/24, 10:30 am - Client Name: We are hiring a Senior React Developer in Ahmedabad. Budget 45k. Contact: hr@company.com or +91 9876543210..."></textarea>
+            </div>
+            <button class="btn btn-emerald" id="btn-run-import-chat" onclick="executeImportChat()" style="width: 100%; justify-content: center; padding: 0.75rem;">
+              ⚡ Extract Client Leads from Chat
+            </button>
+          </div>
+
+          <!-- METHOD 3: PASTE RAW TEXT / URLS -->
+          <div id="import-panel-raw" style="display: none;">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: #a78bfa; display: flex; align-items: center; gap: 0.5rem;">
+              <span>📋</span> Paste Raw Job Descriptions & Company URLs
+            </h3>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Paste one or more job postings, email inquiries, or direct website URLs (one URL per line):
+            </p>
+            <div style="margin-bottom: 1rem;">
+              <textarea id="import-raw-text" class="form-control" rows="8" placeholder="https://examplecompany.com
+https://anothervendor.in
+
+Or paste raw job text:
+We are looking for full-stack Node.js agency in Gujarat. Budget $5k. Email: info@techstart.io..."></textarea>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; cursor: pointer; color: #cbd5e1;">
+                <input type="checkbox" id="import-raw-crawl" checked style="accent-color: #3b82f6;">
+                🌐 Deep Crawl URLs to extract Contact Info & About page
+              </label>
+            </div>
+            <button class="btn btn-primary" id="btn-run-import-raw" onclick="executeImportRawText()" style="width: 100%; justify-content: center; padding: 0.75rem;">
+              🔍 Parse & Extract Leads
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Real-time Terminal Stream -->
+        <div class="table-card" style="padding: 1.5rem; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 0.45rem;">
+              <span>💻</span> Import Engine Terminal
+            </h3>
+            <span id="import-engine-badge" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(148, 163, 184, 0.2); color: #94a3b8; font-weight: 600;">
+              IDLE
+            </span>
+          </div>
+          <div id="import-terminal-console" class="console-box" style="height: 290px; font-size: 0.75rem; flex: 1;">[00:00:00] Engine Ready. Select a method on the left and click Extract/Search...</div>
+        </div>
+      </div>
+
+      <!-- Preview & Commit Card -->
+      <div id="import-preview-section" class="table-card" style="padding: 1.5rem; display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+              <span>✨</span> Extracted Leads Preview & Deduplication Check
+            </h3>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;">
+              Review extracted leads below. Inspect duplicate detection, edit any fields if needed, and commit to the database.
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <span id="import-stat-summary" style="font-size: 0.8rem; font-weight: 600; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.4rem 0.85rem; border-radius: 8px;">
+              Extracted: 0 | New: 0 | Duplicates: 0
+            </span>
+            <button class="btn btn-secondary" onclick="toggleSelectAllImportLeads()" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
+              Toggle All
+            </button>
+            <button class="btn btn-secondary" onclick="clearImportPreview()" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-responsive" style="max-height: 480px; overflow-y: auto; margin-bottom: 1.25rem; border: 1px solid var(--border-color); border-radius: 10px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+            <thead>
+              <tr style="background: rgba(30, 41, 59, 0.9); border-bottom: 1px solid var(--border-color); color: #cbd5e1; position: sticky; top: 0; z-index: 5;">
+                <th style="padding: 0.75rem; width: 40px; text-align: center;">
+                  <input type="checkbox" id="import-select-all" checked onchange="toggleSelectAllImportLeads(this.checked)" style="accent-color: #3b82f6;">
+                </th>
+                <th style="padding: 0.75rem;">Company / Client</th>
+                <th style="padding: 0.75rem;">Title / Requirement</th>
+                <th style="padding: 0.75rem;">Email Contact</th>
+                <th style="padding: 0.75rem;">Phone / WhatsApp</th>
+                <th style="padding: 0.75rem;">Location</th>
+                <th style="padding: 0.75rem; width: 140px;">Status / Match</th>
+              </tr>
+            </thead>
+            <tbody id="import-preview-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Bottom Commit Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">
+          <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; cursor: pointer; color: #f1f5f9;">
+            <input type="checkbox" id="import-auto-outreach" style="accent-color: #10b981; width: 16px; height: 16px;">
+            <span>📧 <strong>Auto-Outreach:</strong> Send cold proposal email immediately to selected new leads with email address</span>
+          </label>
+          <button class="btn btn-emerald" id="btn-commit-import" onclick="commitSelectedImportLeads()" style="font-weight: 700; padding: 0.7rem 1.5rem; font-size: 0.9rem;">
+            💾 Commit Selected Leads to Database (Sync Supabase)
+          </button>
         </div>
       </div>
     </div>
@@ -1507,7 +1702,8 @@
         const idMap = {
           'tab-leads': 'tab-btn-leads',
           'tab-scraper': 'tab-btn-scraper',
-          'tab-settings': 'tab-btn-settings'
+          'tab-settings': 'tab-btn-settings',
+          'tab-import': 'tab-btn-import'
         };
         const activeNav = document.getElementById(idMap[tabId]);
         if (activeNav) activeNav.classList.add('active');
@@ -2728,6 +2924,364 @@ ${sig}`;
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    // ==============================================================================
+    // IMPORT LEADS & AUTOMATION ENGINE CLIENT LOGIC
+    // ==============================================================================
+    let currentImportedLeads = [];
+
+    function switchImportSubTab(mode) {
+      const tabs = ['search', 'chat', 'raw'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`import-subtab-${t}`);
+        const panel = document.getElementById(`import-panel-${t}`);
+        if (btn) {
+          if (t === mode) btn.classList.add('active');
+          else btn.classList.remove('active');
+        }
+        if (panel) {
+          panel.style.display = (t === mode) ? 'block' : 'none';
+        }
+      });
+      logImportTerminal(`Switched input mode to: ${mode.toUpperCase()}`);
+    }
+
+    function logImportTerminal(text, type = 'info') {
+      const consoleBox = document.getElementById('import-terminal-console');
+      if (!consoleBox) return;
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      const line = document.createElement('div');
+      line.style.padding = '2px 0';
+      line.style.fontFamily = 'monospace';
+      
+      if (type === 'error') {
+        line.style.color = '#f87171';
+      } else if (type === 'success') {
+        line.style.color = '#34d399';
+      } else if (type === 'warn') {
+        line.style.color = '#fbbf24';
+      } else {
+        line.style.color = '#94a3b8';
+      }
+      
+      line.textContent = `[${timeStr}] ${text}`;
+      consoleBox.appendChild(line);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    function setImportEngineBadge(text, state = 'idle') {
+      const badge = document.getElementById('import-engine-badge');
+      if (!badge) return;
+      badge.textContent = text;
+      if (state === 'busy') {
+        badge.style.background = 'rgba(234, 179, 8, 0.2)';
+        badge.style.color = '#fbbf24';
+      } else if (state === 'success') {
+        badge.style.background = 'rgba(16, 185, 129, 0.2)';
+        badge.style.color = '#34d399';
+      } else if (state === 'error') {
+        badge.style.background = 'rgba(239, 68, 68, 0.2)';
+        badge.style.color = '#f87171';
+      } else {
+        badge.style.background = 'rgba(148, 163, 184, 0.2)';
+        badge.style.color = '#94a3b8';
+      }
+    }
+
+    function handleChatFileUpload(input) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+      logImportTerminal(`Reading file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target.result || '';
+        const textarea = document.getElementById('import-chat-text');
+        if (textarea) textarea.value = text;
+        logImportTerminal(`✅ File loaded successfully! (${text.split('\n').length} lines). Click 'Extract Client Leads' to process.`, 'success');
+      };
+      reader.onerror = (e) => {
+        logImportTerminal(`❌ Error reading file: ${e.message}`, 'error');
+        showToast('Failed to read file', 'error');
+      };
+      reader.readAsText(file);
+    }
+
+    async function executeImportSearch() {
+      const kw = (document.getElementById('import-search-kw').value || '').trim();
+      const loc = (document.getElementById('import-search-loc').value || '').trim();
+      const targetType = document.getElementById('import-search-type').value || 'all';
+      const maxResults = parseInt(document.getElementById('import-search-max').value || '10');
+      const btn = document.getElementById('btn-run-import-search');
+
+      if (!kw) {
+        showToast('Please enter a search keyword or role requirement.', 'error');
+        document.getElementById('import-search-kw').focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Scraping Live Leads...';
+      setImportEngineBadge('SEARCHING', 'busy');
+      logImportTerminal(`Starting Live Search: "${kw}" | Location: "${loc || 'Global'}" | Target: ${targetType} | Max: ${maxResults}`);
+
+      try {
+        const res = await fetch('/api/import/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword: kw, location: loc, target_type: targetType, max_results: maxResults })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Search failed');
+        }
+
+        logImportTerminal(`Discovered ${data.leads.length} leads. Deduplicating against master database...`, 'info');
+        renderImportPreview(data.leads);
+        setImportEngineBadge('DONE', 'success');
+        showToast(`Discovered ${data.leads.length} leads from live search!`, 'success');
+      } catch (err) {
+        logImportTerminal(`Search error: ${err.message}`, 'error');
+        setImportEngineBadge('ERROR', 'error');
+        showToast(`Scrape error: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Start Live Discovery Scraper';
+      }
+    }
+
+    async function executeImportChat() {
+      const text = (document.getElementById('import-chat-text').value || '').trim();
+      const btn = document.getElementById('btn-run-import-chat');
+
+      if (!text) {
+        showToast('Please paste chat messages or upload a .txt chat file.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Parsing Chat Messages...';
+      setImportEngineBadge('PARSING CHAT', 'busy');
+      logImportTerminal(`Parsing chat messages (${text.split('\n').length} lines) for client hiring intent & contacts...`);
+
+      try {
+        const res = await fetch('/api/import/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Chat extraction failed');
+        }
+
+        logImportTerminal(`Extracted ${data.leads.length} actionable client leads from chat!`, 'success');
+        renderImportPreview(data.leads);
+        setImportEngineBadge('DONE', 'success');
+        showToast(`Extracted ${data.leads.length} leads from WhatsApp chat!`, 'success');
+      } catch (err) {
+        logImportTerminal(`Chat extraction error: ${err.message}`, 'error');
+        setImportEngineBadge('ERROR', 'error');
+        showToast(`Error: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '⚡ Extract Client Leads from Chat';
+      }
+    }
+
+    async function executeImportRawText() {
+      const text = (document.getElementById('import-raw-text').value || '').trim();
+      const crawlUrls = document.getElementById('import-raw-crawl').checked;
+      const btn = document.getElementById('btn-run-import-raw');
+
+      if (!text) {
+        showToast('Please paste job descriptions, requirements or website URLs.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Extracting Leads & Contacts...';
+      setImportEngineBadge('EXTRACTING', 'busy');
+      logImportTerminal(`Parsing raw text & URLs (Deep crawl: ${crawlUrls ? 'ON' : 'OFF'})...`);
+
+      try {
+        const res = await fetch('/api/import/raw-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, crawl_urls: crawlUrls })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Extraction failed');
+        }
+
+        logImportTerminal(`Extracted ${data.leads.length} leads from raw content!`, 'success');
+        renderImportPreview(data.leads);
+        setImportEngineBadge('DONE', 'success');
+        showToast(`Extracted ${data.leads.length} leads!`, 'success');
+      } catch (err) {
+        logImportTerminal(`Raw text extraction error: ${err.message}`, 'error');
+        setImportEngineBadge('ERROR', 'error');
+        showToast(`Error: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🔍 Parse & Extract Leads';
+      }
+    }
+
+    function renderImportPreview(leads) {
+      currentImportedLeads = leads || [];
+      const previewSection = document.getElementById('import-preview-section');
+      const tbody = document.getElementById('import-preview-tbody');
+      const statSummary = document.getElementById('import-stat-summary');
+
+      if (!previewSection || !tbody) return;
+
+      if (currentImportedLeads.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--text-muted);">No leads detected or extracted from input. Try a different query or text.</td></tr>`;
+        previewSection.style.display = 'block';
+        statSummary.textContent = 'Extracted: 0 | New: 0 | Duplicates: 0';
+        return;
+      }
+
+      const newCount = currentImportedLeads.filter(l => !l.is_duplicate).length;
+      const dupCount = currentImportedLeads.filter(l => l.is_duplicate).length;
+
+      statSummary.innerHTML = `Extracted: <strong>${currentImportedLeads.length}</strong> | <span style="color: #34d399;">✨ New: ${newCount}</span> | <span style="color: #f87171;">⚠️ Duplicates: ${dupCount}</span>`;
+
+      let rowsHtml = '';
+      currentImportedLeads.forEach((lead, idx) => {
+        const isDup = Boolean(lead.is_duplicate);
+        const rowBg = isDup ? 'rgba(239, 68, 68, 0.04)' : 'rgba(16, 185, 129, 0.04)';
+        const badgeHtml = isDup 
+          ? `<span style="font-size: 0.72rem; padding: 2px 7px; border-radius: 6px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);" title="${escapeHtml(lead.match_reason)}">⚠️ Duplicate</span>`
+          : `<span style="font-size: 0.72rem; padding: 2px 7px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">✨ New Lead</span>`;
+
+        rowsHtml += `
+          <tr style="background: ${rowBg}; border-bottom: 1px solid var(--border-color);" id="import-row-${idx}">
+            <td style="padding: 0.65rem; text-align: center;">
+              <input type="checkbox" class="import-lead-chk" data-index="${idx}" ${!isDup ? 'checked' : ''} style="accent-color: #3b82f6;">
+            </td>
+            <td style="padding: 0.65rem;">
+              <input type="text" id="imp-comp-${idx}" class="form-control" value="${escapeHtml(lead.company_name || '')}" style="font-size: 0.8rem; padding: 0.25rem 0.45rem; background: rgba(0,0,0,0.25);">
+              ${lead.website ? `<a href="${escapeHtml(lead.website)}" target="_blank" style="font-size: 0.7rem; color: #38bdf8; text-decoration: none; display: block; margin-top: 2px;">🔗 ${escapeHtml(lead.website.substring(0, 30))}...</a>` : ''}
+            </td>
+            <td style="padding: 0.65rem;">
+              <input type="text" id="imp-title-${idx}" class="form-control" value="${escapeHtml(lead.title || '')}" style="font-size: 0.8rem; padding: 0.25rem 0.45rem; background: rgba(0,0,0,0.25);">
+              ${lead.description ? `<div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(lead.description)}">${escapeHtml(lead.description)}</div>` : ''}
+            </td>
+            <td style="padding: 0.65rem;">
+              <input type="email" id="imp-email-${idx}" class="form-control" value="${escapeHtml(lead.email || '')}" placeholder="hr@domain.com" style="font-size: 0.8rem; padding: 0.25rem 0.45rem; background: rgba(0,0,0,0.25); color: ${lead.email ? '#38bdf8' : '#94a3b8'};">
+            </td>
+            <td style="padding: 0.65rem;">
+              <input type="text" id="imp-phone-${idx}" class="form-control" value="${escapeHtml(lead.mobile_number || '')}" placeholder="+91..." style="font-size: 0.8rem; padding: 0.25rem 0.45rem; background: rgba(0,0,0,0.25);">
+            </td>
+            <td style="padding: 0.65rem;">
+              <input type="text" id="imp-loc-${idx}" class="form-control" value="${escapeHtml(lead.location || 'Remote')}" style="font-size: 0.8rem; padding: 0.25rem 0.45rem; background: rgba(0,0,0,0.25);">
+            </td>
+            <td style="padding: 0.65rem;">
+              ${badgeHtml}
+              <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;" title="${escapeHtml(lead.match_reason)}">
+                ${escapeHtml(lead.match_reason || '')}
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = rowsHtml;
+      previewSection.style.display = 'block';
+      previewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      logImportTerminal(`Rendered ${currentImportedLeads.length} leads in preview table (${newCount} new selected).`);
+    }
+
+    function toggleSelectAllImportLeads(forceChecked) {
+      const masterChk = document.getElementById('import-select-all');
+      const checkboxes = document.querySelectorAll('.import-lead-chk');
+      const targetState = (forceChecked !== undefined) ? forceChecked : (masterChk ? !masterChk.checked : true);
+      if (masterChk && forceChecked === undefined) {
+        masterChk.checked = targetState;
+      }
+      checkboxes.forEach(c => c.checked = targetState);
+      logImportTerminal(`Toggled selection: ${targetState ? 'All selected' : 'All unselected'}`);
+    }
+
+    function clearImportPreview() {
+      currentImportedLeads = [];
+      const tbody = document.getElementById('import-preview-tbody');
+      const previewSection = document.getElementById('import-preview-section');
+      if (tbody) tbody.innerHTML = '';
+      if (previewSection) previewSection.style.display = 'none';
+      logImportTerminal('Preview cleared.');
+    }
+
+    async function commitSelectedImportLeads() {
+      const checkboxes = document.querySelectorAll('.import-lead-chk:checked');
+      if (checkboxes.length === 0) {
+        showToast('⚠️ No leads selected to commit. Please check at least one lead.', 'error');
+        return;
+      }
+
+      const leadsToCommit = [];
+      checkboxes.forEach(chk => {
+        const idx = parseInt(chk.getAttribute('data-index'));
+        const orig = currentImportedLeads[idx] || {};
+        
+        const compInput = document.getElementById(`imp-comp-${idx}`);
+        const titleInput = document.getElementById(`imp-title-${idx}`);
+        const emailInput = document.getElementById(`imp-email-${idx}`);
+        const phoneInput = document.getElementById(`imp-phone-${idx}`);
+        const locInput = document.getElementById(`imp-loc-${idx}`);
+
+        leadsToCommit.push({
+          ...orig,
+          company_name: compInput ? compInput.value.trim() : (orig.company_name || ''),
+          title: titleInput ? titleInput.value.trim() : (orig.title || ''),
+          email: emailInput ? emailInput.value.trim() : (orig.email || ''),
+          mobile_number: phoneInput ? phoneInput.value.trim() : (orig.mobile_number || ''),
+          location: locInput ? locInput.value.trim() : (orig.location || '')
+        });
+      });
+
+      const autoOutreach = document.getElementById('import-auto-outreach').checked;
+      const commitBtn = document.getElementById('btn-commit-import');
+
+      commitBtn.disabled = true;
+      commitBtn.innerHTML = '⏳ Committing & Syncing Database...';
+      setImportEngineBadge('COMMITTING', 'busy');
+      logImportTerminal(`Committing ${leadsToCommit.length} selected leads to Master CSV & Supabase (Auto Outreach: ${autoOutreach ? 'YES' : 'NO'})...`);
+
+      try {
+        const res = await fetch('/api/import/commit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            leads: leadsToCommit,
+            send_outreach_email: autoOutreach
+          })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Commit failed');
+        }
+
+        const r = data.result || {};
+        logImportTerminal(`✅ Database Commit Complete! Added: ${r.added}, Updated: ${r.updated}, Duplicates: ${r.duplicates}, Emails Sent: ${r.emails_sent}, Supabase: ${r.supabase_synced ? 'Synced' : 'Local Only'}, Total Master Leads: ${r.total_leads}`, 'success');
+        showToast(`🎉 Successfully imported ${r.added} new leads! (Total: ${r.total_leads})`, 'success');
+        setImportEngineBadge('SYNCED', 'success');
+
+        await loadLeads();
+        clearImportPreview();
+
+      } catch (err) {
+        logImportTerminal(`Commit error: ${err.message}`, 'error');
+        setImportEngineBadge('ERROR', 'error');
+        showToast(`Commit error: ${err.message}`, 'error');
+      } finally {
+        commitBtn.disabled = false;
+        commitBtn.innerHTML = '💾 Commit Selected Leads to Database (Sync Supabase)';
+      }
     }
 
     // Startup

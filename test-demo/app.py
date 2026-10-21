@@ -20,7 +20,9 @@ def add_header(response):
     response.headers["Expires"] = "0"
     return response
 
-LEADS_CSV = "all_leads_master.csv" if os.path.exists("all_leads_master.csv") else "leads_new.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MASTER_PATH = os.path.join(BASE_DIR, "all_leads_master.csv")
+LEADS_CSV = MASTER_PATH if os.path.exists(MASTER_PATH) else os.path.join(BASE_DIR, "leads_new.csv")
 
 # Global state for background scraper process
 scraper_process = None
@@ -393,6 +395,93 @@ def export_csv():
     if os.path.exists(LEADS_CSV):
         return send_file(LEADS_CSV, as_attachment=True, download_name="sangeeta_infotech_leads.csv")
     return "No leads CSV found", 404
+
+# ==============================================================================
+# IMPORT LEADS & AUTOMATION ENGINE ROUTES
+# ==============================================================================
+import lead_importer
+
+@app.route("/api/import/search", methods=["POST"])
+def import_search():
+    try:
+        data = request.json or {}
+        keyword = data.get("keyword", "").strip()
+        location = data.get("location", "").strip()
+        target_type = data.get("target_type", "all")
+        max_results = int(data.get("max_results", 10))
+
+        if not keyword:
+            return jsonify({"success": False, "error": "Search keyword is required."}), 400
+
+        leads = lead_importer.search_leads_live(
+            keyword=keyword,
+            location=location,
+            target_type=target_type,
+            max_results=max_results
+        )
+        enriched = lead_importer.check_duplicates_against_master(leads, master_csv=LEADS_CSV)
+        return jsonify({"success": True, "leads": enriched, "count": len(enriched)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/import/chat", methods=["POST"])
+def import_chat():
+    try:
+        chat_text = ""
+        if "file" in request.files:
+            file = request.files["file"]
+            chat_text = file.read().decode("utf-8", errors="ignore")
+        elif request.json and "text" in request.json:
+            chat_text = request.json.get("text", "")
+
+        if not chat_text.strip():
+            return jsonify({"success": False, "error": "No chat content or file uploaded."}), 400
+
+        leads = lead_importer.parse_whatsapp_chat(chat_text)
+        enriched = lead_importer.check_duplicates_against_master(leads, master_csv=LEADS_CSV)
+        return jsonify({"success": True, "leads": enriched, "count": len(enriched)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/import/raw-text", methods=["POST"])
+def import_raw_text():
+    try:
+        data = request.json or {}
+        raw_text = data.get("text", "").strip()
+        crawl_urls = bool(data.get("crawl_urls", True))
+
+        if not raw_text:
+            return jsonify({"success": False, "error": "Text content or URLs required."}), 400
+
+        leads = lead_importer.parse_raw_text(raw_text, crawl_urls=crawl_urls)
+        enriched = lead_importer.check_duplicates_against_master(leads, master_csv=LEADS_CSV)
+        return jsonify({"success": True, "leads": enriched, "count": len(enriched)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/import/commit", methods=["POST"])
+def import_commit():
+    try:
+        global _cached_leads_data
+        data = request.json or {}
+        leads = data.get("leads", [])
+        send_outreach_email = bool(data.get("send_outreach_email", False))
+
+        if not leads:
+            return jsonify({"success": False, "error": "No leads selected to import."}), 400
+
+        result = lead_importer.commit_imported_leads(
+            leads_to_commit=leads,
+            send_outreach_email=send_outreach_email,
+            master_csv=LEADS_CSV
+        )
+        # Invalidate read_leads cache so UI immediately refreshes
+        _cached_leads_data.clear()
+
+        return jsonify({"success": True, "result": result})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 if __name__ == "__main__":
     port = 5000
