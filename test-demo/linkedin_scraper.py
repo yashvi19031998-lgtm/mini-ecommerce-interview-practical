@@ -5,7 +5,10 @@ import urllib.parse
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from duckduckgo_search import DDGS
+try:
+    from ddgs import DDGS
+except ImportError:
+    from duckduckgo_search import DDGS
 
 # 1. CONFIGURATION
 # ==============================================================================

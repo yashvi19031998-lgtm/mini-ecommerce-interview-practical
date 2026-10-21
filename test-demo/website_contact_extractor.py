@@ -16,6 +16,22 @@ EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
 PHONE_REGEX = r"(\+?\d[\d\s\-\(\)]{8,15}\d)"
 
 
+def is_likely_valid_phone(phone_str: str) -> bool:
+    """Verifies that the phone string has valid format and is not a timestamp or serial."""
+    digits = re.sub(r"\D", "", phone_str)
+    if len(digits) < 10 or len(digits) > 13:
+        return False
+    if len(set(digits)) <= 3:
+        return False
+    if phone_str.startswith("+91") or phone_str.startswith("079-"):
+        return True
+    if len(digits) == 10 and digits[0] in "6789":
+        return True
+    if phone_str.startswith("+"):
+        return True
+    return False
+
+
 def extract_contacts_from_url(url: str) -> Tuple[List[str], List[str]]:
     """Visits a website and its contact/about pages to scrape emails and phones."""
     found_emails = set()
@@ -25,7 +41,20 @@ def extract_contacts_from_url(url: str) -> Tuple[List[str], List[str]]:
         return [], []
 
     # Skip aggregator or blacklisted domains
-    if canonicalize_domain(url) in INVALID_DOMAINS:
+    parsed_netloc = urlparse(url if "://" in url else "https://" + url).netloc.lower()
+    if parsed_netloc.startswith("www."):
+        parsed_netloc = parsed_netloc[4:]
+    if ":" in parsed_netloc:
+        parsed_netloc = parsed_netloc.split(":")[0]
+
+    blocked_domains = INVALID_DOMAINS | {
+        "youtube.com", "imdb.com", "netflix.com", "wikipedia.org", "reddit.com",
+        "google.com", "linkedin.com", "twitter.com", "x.com", "facebook.com",
+        "instagram.com", "w3schools.com", "microsoft.com", "apple.com", "amazon.com",
+        "simplilearn.com", "computerhope.com", "techtarget.com", "britannica.com",
+        "forms.gle", "docs.google.com"
+    }
+    if not parsed_netloc or parsed_netloc in blocked_domains or any(b in parsed_netloc for b in blocked_domains):
         return [], []
 
     headers = {
@@ -54,7 +83,7 @@ def extract_contacts_from_url(url: str) -> Tuple[List[str], List[str]]:
         phones = re.findall(PHONE_REGEX, html_content)
         for p in phones:
             norm_p = normalize_phone(p)
-            if norm_p:
+            if norm_p and is_likely_valid_phone(norm_p):
                 found_phones.add(norm_p)
 
         # 2. Look for Contact Us / About Us subpages
@@ -86,7 +115,7 @@ def extract_contacts_from_url(url: str) -> Tuple[List[str], List[str]]:
                     sub_phones = re.findall(PHONE_REGEX, sub_html)
                     for p in sub_phones:
                         norm_p = normalize_phone(p)
-                        if norm_p:
+                        if norm_p and is_likely_valid_phone(norm_p):
                             found_phones.add(norm_p)
             except Exception:
                 continue

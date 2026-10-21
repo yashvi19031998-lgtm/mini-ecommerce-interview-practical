@@ -1,7 +1,10 @@
 import csv
 import re
 import time
-from duckduckgo_search import DDGS
+try:
+    from ddgs import DDGS
+except ImportError:
+    from duckduckgo_search import DDGS
 
 # Expanded queries for each platform
 PLATFORM_QUERIES = [
@@ -51,7 +54,7 @@ PLATFORM_QUERIES = [
 ]
 
 # Regex patterns for contact extraction
-EMAIL_REGEX = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+EMAIL_REGEX = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 DISCORD_REGEX = re.compile(r"discord[:#]?\s*[A-Za-z0-9_-]+", re.I)
 URL_REGEX = re.compile(r"https?://[^\s)]+")
 

@@ -1,65 +1,79 @@
 """
-Unified Scraper Adapters Module
-===============================
-Provides non-destructive execution adapters for each of the 10 existing
-lead generation scrapers, extracting structured records into memory.
+Unified Scraper Adapters Module (Supercharged High-Yield Edition)
+================================================================
+Provides non-destructive execution adapters for each of the 12 lead generation
+scrapers, using modern robust libraries (ddgs, REST APIs, live feeds, rotated search dorks),
+preventing artificial throttling, rotating queries across regions & niches, and
+extracting enriched structured records into memory.
 """
 
 import os
 import re
 import csv
 import time
+import random
 import datetime
 import urllib.request
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Tuple
 
+try:
+    from ddgs import DDGS
+except ImportError:
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        DDGS = None
+
 
 # ==============================================================================
-# 1. SCRAPER.PY ADAPTER (Search Discovery & Deep Website Crawler)
+# 1. SCRAPER.PY ADAPTER (Dynamic Search Discovery & Deep Website Crawler)
 # ==============================================================================
+DYNAMIC_SEARCH_QUERIES = [
+    'software development company Ahmedabad',
+    'web development agency Gujarat',
+    'IT consulting services Ahmedabad',
+    'hire dedicated software developers Ahmedabad',
+    'custom software solutions Surat',
+    'mobile app development company Pune',
+    'looking for software development company India',
+    'need full stack development agency remote',
+    'Python AI machine learning development company India',
+    'React Node.js development agency Ahmedabad',
+    'Shopify ecommerce web development agency Gujarat',
+    'Laravel PHP software development company India',
+    'MVP development agency for startups remote',
+    'IT services and software company Vadodara'
+]
+
 def run_scraper_adapter() -> List[Dict[str, Any]]:
-    """Invokes scraper.py functions or harvests high-quality leads."""
+    """Invokes scraper.py functions with dynamic multi-query rotation."""
     import scraper
 
     leads = []
-    # If leads.csv already exists with recent results, harvest them
-    if os.path.exists("leads.csv"):
-        with open("leads.csv", mode="r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                leads.append({
-                    "company_name": row.get("Company Name"),
-                    "website": row.get("Website URL"),
-                    "email": row.get("Email"),
-                    "mobile_number": row.get("Mobile Number"),
-                    "source": f"Search Engine ({row.get('Search Query', 'IT Hiring')})",
-                    "source_url": row.get("Website URL"),
-                    "lead_type": row.get("Lead Type", "Potential Buyer"),
-                    "intent_score": row.get("Lead Score", "5"),
-                    "location": scraper.SEARCH_LOCATION or "Ahmedabad"
-                })
+    # Pick 2-3 fresh rotating queries
+    chosen_queries = random.sample(DYNAMIC_SEARCH_QUERIES, min(3, len(DYNAMIC_SEARCH_QUERIES)))
 
-    # Also run 1 quick targeted search query for live discovery without overwhelming
-    try:
-        sample_query = f'"need software development company" {scraper.SEARCH_LOCATION}'.strip()
-        search_hits = scraper.search_web(sample_query, max_results=3)
-        for hit in search_hits:
-            lead_record, rej = scraper.crawl_and_evaluate(hit["url"], hit.get("title", ""), sample_query)
-            if lead_record:
-                leads.append({
-                    "company_name": lead_record.get("Company Name"),
-                    "website": lead_record.get("Website URL"),
-                    "email": lead_record.get("Email"),
-                    "mobile_number": lead_record.get("Mobile Number"),
-                    "source": f"Search Engine ({sample_query})",
-                    "source_url": lead_record.get("Website URL"),
-                    "lead_type": lead_record.get("Lead Type"),
-                    "intent_score": str(lead_record.get("Lead Score")),
-                    "location": scraper.SEARCH_LOCATION or "Ahmedabad"
-                })
-    except Exception as e:
-        print(f"  [scraper.py notice] Search fallback completed: {e}")
+    for q in chosen_queries:
+        try:
+            search_hits = scraper.search_web(q, max_results=5)
+            for hit in search_hits:
+                lead_record, rej = scraper.crawl_and_evaluate(hit["url"], hit.get("title", ""), q)
+                if lead_record:
+                    leads.append({
+                        "company_name": lead_record.get("Company Name"),
+                        "website": lead_record.get("Website URL"),
+                        "email": lead_record.get("Email"),
+                        "mobile_number": lead_record.get("Mobile Number"),
+                        "source": f"Search Engine ({q})",
+                        "source_url": lead_record.get("Website URL"),
+                        "lead_type": lead_record.get("Lead Type", "Software Company"),
+                        "intent_score": str(lead_record.get("Lead Score", 7)),
+                        "location": lead_record.get("Location") or "Ahmedabad"
+                    })
+            time.sleep(1.0)
+        except Exception as e:
+            print(f"  [scraper.py dynamic search notice on '{q}'] {e}")
 
     return leads
 
@@ -73,7 +87,6 @@ def run_lead_generation_master_adapter() -> List[Dict[str, Any]]:
 
     leads = []
 
-    # 1. RSS Harvester (Reddit & WeWorkRemotely)
     class TempStore:
         def __init__(self):
             self.collected = []
@@ -94,31 +107,35 @@ def run_lead_generation_master_adapter() -> List[Dict[str, Any]]:
     harvester = lgm.RssLeadHarvester(temp_store)
 
     try:
-        harvester.scrape_reddit_hiring(subreddit="forhire", limit=15)
+        harvester.scrape_reddit_hiring(subreddit="forhire", limit=20)
     except Exception as e:
         print(f"  [Reddit RSS error] {e}")
 
     try:
-        harvester.scrape_weworkremotely(limit=10)
+        harvester.scrape_reddit_hiring(subreddit="freelance_forhire", limit=15)
+    except Exception as e:
+        print(f"  [Reddit freelance RSS error] {e}")
+
+    try:
+        harvester.scrape_weworkremotely(limit=15)
     except Exception as e:
         print(f"  [WWR RSS error] {e}")
 
-    # Convert collected leads
     for item in temp_store.collected:
         leads.append({
             "company_name": item.get("Business Name/Title"),
             "source": item.get("Source"),
-            "lead_type": item.get("Category"),
-            "location": item.get("City"),
-            "mobile_number": item.get("Phone"),
-            "email": item.get("Email"),
-            "website": item.get("Website"),
-            "source_url": item.get("URL"),
-            "description": item.get("Snippet"),
+            "lead_type": item.get("Category", "Client Hiring"),
+            "location": item.get("City", "Remote"),
+            "mobile_number": item.get("Phone", ""),
+            "email": item.get("Email", ""),
+            "website": item.get("Website", ""),
+            "source_url": item.get("URL", ""),
+            "description": item.get("Snippet", ""),
             "first_seen_at": item.get("Scraped At")
         })
 
-    # 2. Playwright Justdial Harvester (if available)
+    # Playwright Justdial Harvester (if available)
     if getattr(lgm, "PLAYWRIGHT_AVAILABLE", False):
         try:
             jd_scraper = lgm.PlaywrightJustdialScraper(temp_store)
@@ -128,13 +145,12 @@ def run_lead_generation_master_adapter() -> List[Dict[str, Any]]:
                 max_results=8,
                 headless=True
             )
-            # Re-read new additions
-            for item in temp_store.collected:
+            for item in temp_store.collected[len(leads):]:
                 leads.append({
                     "company_name": item.get("Business Name/Title"),
                     "source": item.get("Source"),
                     "lead_type": item.get("Category"),
-                    "location": item.get("City"),
+                    "location": item.get("City", "Ahmedabad"),
                     "mobile_number": item.get("Phone"),
                     "email": item.get("Email"),
                     "website": item.get("Website"),
@@ -143,13 +159,13 @@ def run_lead_generation_master_adapter() -> List[Dict[str, Any]]:
                     "first_seen_at": item.get("Scraped At")
                 })
         except Exception as e:
-            print(f"  [Justdial error] {e}")
+            print(f"  [Justdial notice] {e}")
 
     return leads
 
 
 # ==============================================================================
-# 3. DIRECT_FEED_CSV.PY ADAPTER (Reddit r/forhire Pure Standard Lib)
+# 3. DIRECT_FEED_CSV.PY ADAPTER (Reddit r/forhire Live XML Feed)
 # ==============================================================================
 def run_direct_feed_csv_adapter() -> List[Dict[str, Any]]:
     """Polls Reddit r/forhire live XML feed using direct_feed_csv logic."""
@@ -159,7 +175,7 @@ def run_direct_feed_csv_adapter() -> List[Dict[str, Any]]:
     feed_url = dfc.FEED_URL
     req = urllib.request.Request(
         feed_url,
-        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        headers={"User-Agent": "LeadHarvesterBot/2.5 (Aggregator; contact: contact@domain.com)"}
     )
 
     try:
@@ -184,24 +200,29 @@ def run_direct_feed_csv_adapter() -> List[Dict[str, Any]]:
             snippet_clean = snippet.replace("<br>", " ").replace("<b>", "").replace("</b>", "").replace("&amp;", "&")
             full_text = f"{title} {snippet_clean}"
 
+            # Strict hiring check: must NOT be a job seeker
+            if "[for hire]" in title.lower() or "[for-hire]" in title.lower() or "for hire" in title.lower():
+                continue
+
+            is_hiring = "hiring" in title.lower() or "looking for" in title.lower() or "need" in title.lower()
             matched_kw = any(kw.lower() in full_text.lower() for kw in dfc.KEYWORDS)
-            is_hiring = "hiring" in title.lower() and "[for hire]" not in title.lower()
 
             if matched_kw and is_hiring:
                 contacts = dfc.extract_contacts(full_text)
+                clean_comp = re.sub(r"\[hiring\]", "", title, flags=re.I).strip()
                 leads.append({
-                    "company_name": title.replace("[Hiring]", "").replace("[HIRING]", "").strip(),
+                    "company_name": clean_comp[:80],
                     "source": "Reddit (r/forhire RSS)",
                     "source_url": url,
                     "first_seen_at": published,
-                    "email": contacts.get("Email", ""),
-                    "mobile_number": contacts.get("Mobile", ""),
+                    "email": contacts.get("Email", "") if contacts.get("Email") != "Not Found" else "",
+                    "mobile_number": contacts.get("Mobile", "") if contacts.get("Mobile") != "Not Found" else "",
                     "description": snippet_clean[:250],
                     "lead_type": "Client Hiring",
                     "location": "Remote"
                 })
     except Exception as e:
-        print(f"  [direct_feed_csv error] {e}")
+        print(f"  [direct_feed_csv notice] {e}")
 
     return leads
 
@@ -215,7 +236,7 @@ def run_direct_feed_testing_2_adapter() -> List[Dict[str, Any]]:
 
     leads = []
     for feed_url in dft.FEEDS:
-        user_agent = "PythonLeadScraper/2.0 (Contact: admin@example.com)" if "reddit.com" in feed_url else "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        user_agent = "PythonLeadBot/2.5 (contact: bot@leadgen.com)"
         req = urllib.request.Request(feed_url, headers={"User-Agent": user_agent})
 
         try:
@@ -237,180 +258,270 @@ def run_direct_feed_testing_2_adapter() -> List[Dict[str, Any]]:
                 url = link_elem.text if link_elem is not None and link_elem.text else link_elem.attrib.get('href', '') if link_elem is not None else ""
                 snippet = desc_elem.text if desc_elem is not None and desc_elem.text else ""
 
+                if "[for hire]" in title.lower() or "[for-hire]" in title.lower():
+                    continue
+
                 full_text = f"{title} {snippet}"
                 matched_kw = any(kw.lower() in full_text.lower() for kw in dft.KEYWORDS)
 
                 if "reddit.com" in feed_url:
-                    is_valid = "hiring" in title.lower() and "[for hire]" not in title.lower()
+                    is_valid = "hiring" in title.lower() or "looking for" in title.lower()
                 else:
                     is_valid = True
 
                 if matched_kw and is_valid:
                     contacts = dft.extract_contacts(full_text)
                     leads.append({
-                        "company_name": title.strip(),
+                        "company_name": title.strip()[:80],
                         "source": f"RSS Feed ({feed_url.split('/')[2]})",
                         "source_url": url,
-                        "email": contacts.get("Email", ""),
-                        "mobile_number": contacts.get("Mobile", ""),
+                        "email": contacts.get("Email", "") if contacts.get("Email") != "Not Found" else "",
+                        "mobile_number": contacts.get("Mobile", "") if contacts.get("Mobile") != "Not Found" else "",
                         "description": re.sub(r'<[^>]+>', '', snippet)[:250].strip(),
                         "lead_type": "Remote Tech Hiring",
                         "location": "Remote"
                     })
         except Exception as e:
-            print(f"  [direct_feed_testing_2 error on {feed_url}] {e}")
+            print(f"  [direct_feed_testing_2 notice on {feed_url}] {e}")
 
     return leads
 
 
 # ==============================================================================
-# 5. INSTANT_LEAD_GENERATOR.PY ADAPTER (Reddit JSON + HN Algolia REST APIs)
+# 5. INSTANT_LEAD_GENERATOR.PY ADAPTER (Reddit, HN, RemoteOK, Jobicy APIs)
 # ==============================================================================
 def run_instant_lead_generator_adapter() -> List[Dict[str, Any]]:
-    """Polls Reddit JSON API and Hacker News Algolia Search API."""
+    """Polls Reddit JSON API, Hacker News Algolia, RemoteOK API, and Jobicy API."""
     import instant_lead_generator as ilg
 
     leads = []
+    # 1. Reddit Client JSON API
     try:
         reddit_leads = ilg.fetch_reddit_leads()
         for r in reddit_leads:
             leads.append({
-                "company_name": r.get("Job Title / Requirement"),
-                "full_name": r.get("Client Name / Handle"),
-                "source": "Reddit JSON API",
-                "source_url": r.get("Direct URL"),
-                "description": r.get("Job Title / Requirement"),
+                "company_name": r.get("Job Title / Requirement", "")[:80],
+                "full_name": r.get("Client Name / Handle", ""),
+                "email": r.get("Email", ""),
+                "mobile_number": r.get("Mobile Number", ""),
+                "source": r.get("Platform", "Reddit JSON API"),
+                "source_url": r.get("Direct URL", ""),
+                "description": r.get("Snippet") or r.get("Job Title / Requirement", ""),
                 "lead_type": "Client Hiring",
-                "location": "Remote"
+                "location": "Remote",
+                "intent_score": "9"
             })
     except Exception as e:
-        print(f"  [instant_lead_generator Reddit error] {e}")
+        print(f"  [instant_lead_generator Reddit notice] {e}")
 
+    # 2. Hacker News Algolia API
     try:
         hn_leads = ilg.fetch_hackernews_leads()
         for h in hn_leads:
             leads.append({
-                "company_name": h.get("Job Title / Requirement"),
-                "full_name": h.get("Client Name / Handle"),
+                "company_name": h.get("Job Title / Requirement", "")[:80],
+                "full_name": h.get("Client Name / Handle", ""),
+                "email": h.get("Email", ""),
+                "mobile_number": h.get("Mobile Number", ""),
                 "source": "Hacker News Algolia API",
-                "source_url": h.get("Direct URL"),
-                "description": h.get("Job Title / Requirement"),
-                "lead_type": "HN Hiring Story",
-                "location": "Remote"
+                "source_url": h.get("Direct URL", ""),
+                "description": h.get("Snippet") or h.get("Job Title / Requirement", ""),
+                "lead_type": "HN Hiring Post",
+                "location": "Remote",
+                "intent_score": "8"
             })
     except Exception as e:
-        print(f"  [instant_lead_generator HN error] {e}")
+        print(f"  [instant_lead_generator HN notice] {e}")
+
+    # 3. RemoteOK API (High Yield Verified Tech Companies)
+    try:
+        rok_leads = ilg.fetch_remoteok_leads()
+        for r in rok_leads:
+            leads.append({
+                "company_name": r.get("Client Name / Handle", "Tech Company"),
+                "full_name": r.get("Client Name / Handle", ""),
+                "email": r.get("Email", ""),
+                "mobile_number": r.get("Mobile Number", ""),
+                "source": "RemoteOK API",
+                "source_url": r.get("Direct URL", ""),
+                "website": r.get("Direct URL", ""),
+                "description": r.get("Snippet", ""),
+                "lead_type": "Remote Tech Hiring",
+                "location": r.get("Location", "Remote"),
+                "intent_score": "9"
+            })
+    except Exception as e:
+        print(f"  [instant_lead_generator RemoteOK notice] {e}")
+
+    # 4. Jobicy Remote Jobs API (Verified Company Positions)
+    try:
+        jobicy_leads = ilg.fetch_jobicy_leads()
+        for j in jobicy_leads:
+            leads.append({
+                "company_name": j.get("Client Name / Handle", "Hiring Company"),
+                "full_name": j.get("Client Name / Handle", ""),
+                "email": j.get("Email", ""),
+                "mobile_number": j.get("Mobile Number", ""),
+                "source": "Jobicy Remote API",
+                "source_url": j.get("Direct URL", ""),
+                "website": j.get("Direct URL", ""),
+                "description": j.get("Snippet", ""),
+                "lead_type": "Remote Tech Hiring",
+                "location": j.get("Location", "Remote"),
+                "intent_score": "8"
+            })
+    except Exception as e:
+        print(f"  [instant_lead_generator Jobicy notice] {e}")
 
     return leads
 
 
 # ==============================================================================
-# 6. DDGS_BULK_SCRAPER.PY ADAPTER (DuckDuckGo Dorks Harvester)
+# 6. DDGS_BULK_SCRAPER.PY ADAPTER (DuckDuckGo Dorks Harvester with Rotation)
 # ==============================================================================
-def run_ddgs_bulk_scraper_adapter() -> List[Dict[str, Any]]:
-    """Runs a throttled subset of DuckDuckGo Dorks safely."""
-    leads = []
-    try:
-        from duckduckgo_search import DDGS
-        import ddgs_bulk_scraper as dbs
+DDGS_ROTATING_DORKS = [
+    'site:reddit.com/r/forhire "hiring" "developer"',
+    'site:reddit.com/r/forhire "hiring" "full stack"',
+    'site:reddit.com/r/forhire "hiring" "react"',
+    'site:reddit.com/r/forhire "hiring" "python"',
+    'site:reddit.com/r/freelance_forhire "looking for" "developer"',
+    'site:reddit.com/r/jobbit "hiring" remote',
+    'site:reddit.com/r/forhire "budget $" "developer"',
+    'site:upwork.com/jobs "full stack developer" remote',
+    'site:news.ycombinator.com "who is hiring" remote',
+    'site:dev.to "hiring" "software developer"',
+    'site:twitter.com "hiring" "developer" remote',
+    'site:freelancer.com/projects "software development"'
+]
 
+def run_ddgs_bulk_scraper_adapter() -> List[Dict[str, Any]]:
+    """Runs a dynamically sampled subset of DuckDuckGo Dorks safely."""
+    leads = []
+    if not DDGS:
+        return leads
+
+    try:
+        sampled_queries = random.sample(DDGS_ROTATING_DORKS, min(4, len(DDGS_ROTATING_DORKS)))
         with DDGS() as ddgs:
-            # Query the first 3 targeted queries to avoid aggressive IP throttling
-            for q in dbs.QUERIES[:3]:
+            for q in sampled_queries:
                 try:
-                    results = ddgs.text(q, max_results=3)
+                    results = list(ddgs.text(q, max_results=5))
                     if results:
                         for r in results:
                             url = r.get("href", "")
                             if url:
+                                snippet = r.get("body", "")
+                                emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}', snippet)
+                                phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', snippet)
                                 leads.append({
-                                    "company_name": r.get("title", ""),
+                                    "company_name": r.get("title", "")[:80],
                                     "source": "DuckDuckGo Dork",
                                     "source_url": url,
-                                    "description": r.get("body", ""),
-                                    "lead_type": "Developer Requirement"
+                                    "email": ", ".join(set(emails)) if emails else "",
+                                    "mobile_number": phones[0] if phones else "",
+                                    "description": snippet[:250],
+                                    "lead_type": "Developer Requirement",
+                                    "intent_score": "7"
                                 })
-                    time.sleep(2.0)
+                    time.sleep(1.5)
                 except Exception:
                     pass
     except Exception as e:
-        print(f"  [ddgs_bulk_scraper error] {e}")
+        print(f"  [ddgs_bulk_scraper notice] {e}")
 
     return leads
 
 
 # ==============================================================================
-# 7. B2B_PORTAL_SCRAPER.PY ADAPTER (IndiaMART / TradeIndia with Fixed Imports)
+# 7. B2B_PORTAL_SCRAPER.PY ADAPTER (IndiaMART / TradeIndia with Location Rotation)
 # ==============================================================================
+B2B_LOCATIONS = ["Ahmedabad", "Surat", "Pune", "Mumbai", "Bengaluru", "Vadodara", "Jaipur"]
+
 def run_b2b_portal_scraper_adapter() -> List[Dict[str, Any]]:
-    """Runs B2B portal search with corrected import and strict domain filtering."""
+    """Runs B2B portal search with rotated locations and robust extraction."""
     leads = []
+    if not DDGS:
+        return leads
+
+    loc = random.choice(B2B_LOCATIONS)
     try:
-        from duckduckgo_search import DDGS
-        import requests
         import b2b_portal_scraper as bps
 
         with DDGS() as ddgs:
             for portal in ["IndiaMART", "TradeIndia"]:
-                query = f'site:{portal.lower()}.com "software development company"'
+                query = f'site:{portal.lower()}.com "software development company" {loc}'
                 try:
-                    results = ddgs.text(query, max_results=3)
+                    results = list(ddgs.text(query, max_results=4))
                     if results:
                         for r in results:
                             url = r.get("href") or r.get("url")
                             if url and portal.lower() in url:
+                                snippet = r.get("body", "")
                                 emails, phones = bps.extract_contacts_from_url(url)
+                                # Fallback to snippet regex
+                                if not emails:
+                                    emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}', snippet)
+                                if not phones:
+                                    phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', snippet)
+
                                 leads.append({
-                                    "company_name": r.get("title", ""),
+                                    "company_name": r.get("title", "").replace(" - IndiaMART", "").replace(" - Tradeindia", "")[:80],
                                     "website": url,
                                     "source": f"B2B Portal ({portal})",
                                     "source_url": url,
                                     "email": ", ".join(emails) if emails else "",
-                                    "mobile_number": ", ".join(phones) if phones else "",
-                                    "description": r.get("body", ""),
-                                    "lead_type": "B2B IT Company"
+                                    "mobile_number": ", ".join(phones[:2]) if phones else "",
+                                    "description": snippet[:250],
+                                    "location": loc,
+                                    "lead_type": "B2B IT Company",
+                                    "intent_score": "7"
                                 })
-                    time.sleep(2.0)
+                    time.sleep(1.5)
                 except Exception:
                     pass
     except Exception as e:
-        print(f"  [b2b_portal_scraper error] {e}")
+        print(f"  [b2b_portal_scraper notice] {e}")
 
     return leads
 
 
 # ==============================================================================
-# 8. FREELANCE_REDDIT_SCRAPER.PY ADAPTER (Multi-Platform Dorks with Fixed Imports)
+# 8. FREELANCE_REDDIT_SCRAPER.PY ADAPTER (Multi-Platform Dorks)
 # ==============================================================================
 def run_freelance_reddit_scraper_adapter() -> List[Dict[str, Any]]:
-    """Queries freelance platform search dorks using corrected duckduckgo_search."""
+    """Queries freelance platform search dorks using modern ddgs."""
     leads = []
+    if not DDGS:
+        return leads
+
     try:
-        from duckduckgo_search import DDGS
         import freelance_reddit_scraper as frs
 
+        sampled_platforms = random.sample(frs.PLATFORM_QUERIES, min(3, len(frs.PLATFORM_QUERIES)))
         with DDGS() as ddgs:
-            for platform in frs.PLATFORM_QUERIES[:2]:
+            for platform in sampled_platforms:
                 q = platform["queries"][0]
                 try:
-                    results = ddgs.text(q, max_results=3)
+                    results = list(ddgs.text(q, max_results=4))
                     if results:
                         for r in results:
                             snippet = r.get("body", "")
                             contacts = frs.extract_contacts(snippet)
+                            url = r.get("href") or r.get("url")
                             leads.append({
-                                "company_name": r.get("title", ""),
+                                "company_name": r.get("title", "")[:80],
                                 "source": f"Platform ({platform['name']})",
-                                "source_url": r.get("href") or r.get("url"),
+                                "source_url": url,
                                 "email": contacts.get("email", ""),
-                                "description": snippet,
-                                "lead_type": "Freelance Requirement"
+                                "description": snippet[:250],
+                                "lead_type": "Freelance Client Requirement",
+                                "intent_score": "7"
                             })
-                    time.sleep(2.0)
+                    time.sleep(1.5)
                 except Exception:
                     pass
     except Exception as e:
-        print(f"  [freelance_reddit_scraper error] {e}")
+        print(f"  [freelance_reddit_scraper notice] {e}")
 
     return leads
 
@@ -419,19 +530,22 @@ def run_freelance_reddit_scraper_adapter() -> List[Dict[str, Any]]:
 # 9. LINKEDIN_SCRAPER.PY ADAPTER (Public Search Snippet Contact Discovery)
 # ==============================================================================
 def run_linkedin_scraper_adapter() -> List[Dict[str, Any]]:
-    """Extracts LinkedIn company mentions from public search snippets safely."""
+    """Extracts LinkedIn company mentions from public search snippets with location rotation."""
     leads = []
+    if not DDGS:
+        return leads
+
+    loc = random.choice(B2B_LOCATIONS)
     try:
-        from duckduckgo_search import DDGS
         import linkedin_scraper as ls
 
         with DDGS() as ddgs:
-            query = 'site:linkedin.com/company "software company" Ahmedabad'
+            query = f'site:linkedin.com/company "software company" {loc}'
             try:
-                results = ddgs.text(query, max_results=3)
+                results = list(ddgs.text(query, max_results=5))
                 if results:
                     for r in results:
-                        title = r.get("title", "").replace(" - LinkedIn", "").replace(" | LinkedIn", "")
+                        title = r.get("title", "").replace(" - LinkedIn", "").replace(" | LinkedIn", "")[:80]
                         snippet = r.get("body", "")
                         emails = ls.extract_emails(snippet)
                         phones = ls.extract_phones(snippet)
@@ -441,21 +555,22 @@ def run_linkedin_scraper_adapter() -> List[Dict[str, Any]]:
                             "source_url": r.get("href", ""),
                             "email": ", ".join(emails) if emails else "",
                             "mobile_number": ", ".join(phones) if phones else "",
-                            "description": snippet,
-                            "location": "Ahmedabad",
-                            "lead_type": "LinkedIn Company"
+                            "description": snippet[:250],
+                            "location": loc,
+                            "lead_type": "LinkedIn Company",
+                            "intent_score": "7"
                         })
-                time.sleep(2.0)
+                time.sleep(1.5)
             except Exception:
                 pass
     except Exception as e:
-        print(f"  [linkedin_scraper error] {e}")
+        print(f"  [linkedin_scraper notice] {e}")
 
     return leads
 
 
 # ==============================================================================
-# 10. REDDIT_RSS_SCRAPER.PY ADAPTER (Multi-Subreddit RSS with Filter & stdlib)
+# 10. REDDIT_RSS_SCRAPER.PY ADAPTER (Multi-Subreddit RSS with Strict Filter)
 # ==============================================================================
 def run_reddit_rss_scraper_adapter() -> List[Dict[str, Any]]:
     """Polls subreddits with strict exclusion of [FOR HIRE] posts."""
@@ -466,7 +581,7 @@ def run_reddit_rss_scraper_adapter() -> List[Dict[str, Any]]:
         rss_url = f"https://www.reddit.com/r/{sub}/new/.rss"
         req = urllib.request.Request(
             rss_url,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+            headers={"User-Agent": "LeadBotMulti/2.5 (contact: info@domain.com)"}
         )
 
         try:
@@ -490,23 +605,27 @@ def run_reddit_rss_scraper_adapter() -> List[Dict[str, Any]]:
                 text_to_check = f"{title} {clean_summary}".lower()
 
                 # STRICT HIRING REQUIREMENT: Must NOT be [for hire]
-                if "[for hire]" in text_to_check or "[for-hire]" in text_to_check:
+                if "[for hire]" in text_to_check or "[for-hire]" in text_to_check or "for hire" in text_to_check:
                     continue
 
-                if "hiring" in title.lower() or "looking for" in title.lower():
-                    # Extract email regex
-                    emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', clean_summary)
+                if "hiring" in title.lower() or "looking for" in title.lower() or "need" in title.lower():
+                    emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}', clean_summary)
+                    clean_emails = [e for e in emails if not e.endswith(('.png', '.jpg', '.jpeg'))]
+                    phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', clean_summary)
+                    clean_comp = re.sub(r"\[hiring\]", "", title, flags=re.I).strip()
                     leads.append({
-                        "company_name": title.strip(),
+                        "company_name": clean_comp[:80],
                         "source": f"Reddit (r/{sub})",
                         "source_url": url,
-                        "email": ", ".join(set(emails)) if emails else "",
+                        "email": ", ".join(set(clean_emails)) if clean_emails else "",
+                        "mobile_number": phones[0] if phones else "",
                         "description": clean_summary[:250].strip(),
                         "lead_type": "Client Hiring",
-                        "location": "Remote"
+                        "location": "Remote",
+                        "intent_score": "8"
                     })
         except Exception as e:
-            print(f"  [reddit_rss_scraper on r/{sub} error] {e}")
+            print(f"  [reddit_rss_scraper on r/{sub} notice] {e}")
 
     return leads
 
@@ -515,38 +634,17 @@ def run_reddit_rss_scraper_adapter() -> List[Dict[str, Any]]:
 # 11. GOOGLE_MAPS_SCRAPER.PY ADAPTER (Playwright Google Maps Local Business Scraper)
 # ==============================================================================
 def run_google_maps_scraper_adapter() -> List[Dict[str, Any]]:
-    """Runs Playwright Google Maps scraper and loads historical Google Maps CSV leads."""
+    """Runs Playwright Google Maps scraper safely without re-dumping entire historical cache."""
     leads = []
 
-    # 1. Harvest existing leads from google_maps_leads.csv if present
-    if os.path.exists("google_maps_leads.csv"):
-        try:
-            with open("google_maps_leads.csv", mode="r", encoding="utf-8-sig") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    b_name = row.get("Business Name")
-                    if b_name:
-                        leads.append({
-                            "company_name": b_name,
-                            "mobile_number": row.get("Phone", ""),
-                            "website": row.get("Website", ""),
-                            "location": row.get("Address") or row.get("City", "Ahmedabad"),
-                            "source": f"Google Maps ({row.get('Category', 'Business')} in {row.get('City', 'Ahmedabad')})",
-                            "source_url": row.get("Google Maps URL", ""),
-                            "lead_type": row.get("Category", "Local Business"),
-                            "intent_score": "7" if row.get("Rating") and row.get("Rating") != "N/A" else "5",
-                            "description": f"Rating: {row.get('Rating', 'N/A')} ({row.get('Reviews Count', '0')} reviews) | {row.get('Address', '')}"
-                        })
-        except Exception as e:
-            print(f"  [google_maps_scraper CSV read notice] {e}")
-
-    # 2. Live Playwright Google Maps Scraping
+    # Live Playwright Google Maps Scraping
     try:
         import google_maps_scraper
+        loc = random.choice(B2B_LOCATIONS)
         live_results = google_maps_scraper.scrape_google_maps(
             search_query="Software Development Company",
-            location="Ahmedabad",
-            max_results=15,
+            location=loc,
+            max_results=8,
             headless=True
         )
         for r in live_results:
@@ -556,8 +654,8 @@ def run_google_maps_scraper_adapter() -> List[Dict[str, Any]]:
                     "company_name": b_name,
                     "mobile_number": r.get("Phone", ""),
                     "website": r.get("Website", ""),
-                    "location": r.get("Address") or r.get("City", "Ahmedabad"),
-                    "source": f"Google Maps ({r.get('Category', 'Business')} in {r.get('City', 'Ahmedabad')})",
+                    "location": r.get("Address") or r.get("City", loc),
+                    "source": f"Google Maps ({r.get('Category', 'Business')} in {loc})",
                     "source_url": r.get("Google Maps URL", ""),
                     "lead_type": r.get("Category", "Local Business"),
                     "intent_score": "7" if r.get("Rating") and r.get("Rating") != "N/A" else "5",
@@ -573,48 +671,10 @@ def run_google_maps_scraper_adapter() -> List[Dict[str, Any]]:
 # 12. TELEGRAM_SCRAPER.PY ADAPTER (Telegram Client Job / Freelance Channels)
 # ==============================================================================
 def run_telegram_scraper_adapter() -> List[Dict[str, Any]]:
-    """Runs Telegram channel scraper and loads historical telegram_leads.csv leads."""
+    """Runs live Telegram channel scraper without dumping stale historical cache."""
     leads = []
 
-    # 1. Harvest existing leads from telegram_leads.csv if present
-    if os.path.exists("telegram_leads.csv"):
-        try:
-            with open("telegram_leads.csv", mode="r", encoding="utf-8-sig") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    msg = row.get("Message", "")
-                    sender = row.get("Sender Username", "")
-                    channel = row.get("Channel/Group", "")
-                    c_email = row.get("Contact Email", "")
-                    c_phone = row.get("Contact Phone", "")
-                    c_handle = row.get("Contact Handle", "")
-                    c_url = row.get("Project URL", "")
-                    
-                    if not c_email and msg:
-                        emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', msg)
-                        c_email = ", ".join(set(emails)) if emails else ""
-                    if not c_phone and msg:
-                        phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', msg)
-                        c_phone = phones[0].strip() if phones else ""
-
-                    if msg:
-                        leads.append({
-                            "company_name": f"{c_handle or sender} ({channel})",
-                            "full_name": c_handle or sender,
-                            "email": c_email,
-                            "mobile_number": c_phone,
-                            "website": c_url,
-                            "description": msg[:300].strip(),
-                            "source": f"Telegram ({channel})",
-                            "source_url": c_url or (f"https://t.me/{channel.replace('@', '')}" if channel else ""),
-                            "lead_type": "Telegram Client Hiring",
-                            "intent_score": "8",
-                            "location": "Remote"
-                        })
-        except Exception as e:
-            print(f"  [telegram_scraper CSV read notice] {e}")
-
-    # 2. Live Telegram Client Scan
+    # Live Telegram Client Scan
     try:
         import telegram_scraper
         live_results = telegram_scraper.run_telegram_scraper_sync()
@@ -623,7 +683,7 @@ def run_telegram_scraper_adapter() -> List[Dict[str, Any]]:
             sender = r.get("Sender Username", "")
             channel = r.get("Channel/Group", "")
             if msg:
-                emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', msg)
+                emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}', msg)
                 phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', msg)
                 leads.append({
                     "company_name": f"{sender} ({channel})",
@@ -641,5 +701,3 @@ def run_telegram_scraper_adapter() -> List[Dict[str, Any]]:
         print(f"  [telegram_scraper execution notice] {e}")
 
     return leads
-
-

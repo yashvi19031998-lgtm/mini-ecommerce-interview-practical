@@ -20,7 +20,7 @@ def add_header(response):
     response.headers["Expires"] = "0"
     return response
 
-LEADS_CSV = "leads_new.csv"
+LEADS_CSV = "all_leads_master.csv" if os.path.exists("all_leads_master.csv") else "leads_new.csv"
 
 # Global state for background scraper process
 scraper_process = None

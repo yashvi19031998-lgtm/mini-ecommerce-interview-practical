@@ -39,13 +39,16 @@ INVALID_DOMAINS = {
     "google.com", "yahoo.com", "bing.com", "duckduckgo.com",
     "reddit.com", "twitter.com", "x.com", "facebook.com",
     "instagram.com", "youtube.com", "wikipedia.org", "w3schools.com",
-    "geeksforgeeks.org", "softonic.com", "microsoft.com", "apple.com"
+    "geeksforgeeks.org", "softonic.com", "microsoft.com", "apple.com",
+    "imdb.com", "netflix.com", "simplilearn.com", "computerhope.com",
+    "techtarget.com", "britannica.com", "forms.gle", "docs.google.com"
 }
 
 EMAIL_BLACKLIST_DOMAINS = {
     "example.com", "domain.com", "test.com", "sentry.io",
     "wixpress.com", "wix.com", "googleapis.com", "schema.org",
-    "cloudflare.com", "noreply.com"
+    "cloudflare.com", "noreply.com", "google.com", "youtube.com",
+    "reddit.com", "github.com", "netflix.com", "imdb.com"
 }
 
 
@@ -114,9 +117,7 @@ def normalize_phone(phone_str: Optional[str]) -> str:
             valid_phones.append(f"+91 {digits[:5]} {digits[5:]}")
         elif len(digits) == 12 and digits.startswith("91") and digits[2] in "6789":
             valid_phones.append(f"+91 {digits[2:7]} {digits[7:]}")
-        elif len(digits) == 11 and digits.startswith("0") and digits[1] in "6789":
-            valid_phones.append(f"+91 {digits[1:6]} {digits[6:]}")
-        elif 10 <= len(digits) <= 13:
+        elif 10 <= len(digits) <= 13 and (cand.startswith("+") or cand.startswith("00") or "-" in cand or "(" in cand):
             valid_phones.append(cand)
 
     # Deduplicate while preserving order
