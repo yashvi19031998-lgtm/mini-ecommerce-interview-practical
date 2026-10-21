@@ -430,9 +430,38 @@ def import_chat():
         chat_text = ""
         if "file" in request.files:
             file = request.files["file"]
-            chat_text = file.read().decode("utf-8", errors="ignore")
-        elif request.json and "text" in request.json:
+            raw_bytes = file.read()
+            filename = (file.filename or "").lower()
+            if filename.endswith(".zip") or raw_bytes.startswith(b"PK\x03\x04"):
+                import zipfile, io
+                try:
+                    with zipfile.ZipFile(io.BytesIO(raw_bytes)) as z:
+                        txt_files = [n for n in z.namelist() if n.lower().endswith(".txt")]
+                        if not txt_files:
+                            return jsonify({"success": False, "error": "No .txt chat file found inside the uploaded ZIP archive."}), 400
+                        # Prefer _chat.txt or the largest .txt file in the archive
+                        target_name = "_chat.txt" if "_chat.txt" in txt_files else max(txt_files, key=lambda n: z.getinfo(n).file_size)
+                        chat_text = z.read(target_name).decode("utf-8", errors="ignore")
+                except Exception as ze:
+                    return jsonify({"success": False, "error": f"Failed to unzip chat archive: {ze}"}), 400
+            else:
+                chat_text = raw_bytes.decode("utf-8", errors="ignore")
+        elif request.is_json:
             chat_text = request.json.get("text", "")
+        elif request.form and "text" in request.form:
+            chat_text = request.form.get("text", "")
+
+        # Also support if text was read as latin-1/binary zip string
+        if isinstance(chat_text, str) and chat_text.startswith("PK\x03\x04"):
+            import zipfile, io
+            try:
+                with zipfile.ZipFile(io.BytesIO(chat_text.encode("latin-1"))) as z:
+                    txt_files = [n for n in z.namelist() if n.lower().endswith(".txt")]
+                    if txt_files:
+                        target_name = "_chat.txt" if "_chat.txt" in txt_files else max(txt_files, key=lambda n: z.getinfo(n).file_size)
+                        chat_text = z.read(target_name).decode("utf-8", errors="ignore")
+            except Exception:
+                pass
 
         if not chat_text.strip():
             return jsonify({"success": False, "error": "No chat content or file uploaded."}), 400

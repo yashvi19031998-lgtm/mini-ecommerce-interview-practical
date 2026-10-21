@@ -135,9 +135,20 @@ def extract_contacts_from_text(text: str) -> Dict[str, str]:
 
 def parse_whatsapp_chat(chat_text: str) -> List[Dict[str, Any]]:
     """
-    Parses exported WhatsApp chat text (.txt) into candidate lead records.
+    Parses exported WhatsApp chat text (.txt or .zip string) into candidate lead records.
     Splits multi-line messages accurately and detects client requirements.
     """
+    if isinstance(chat_text, str) and chat_text.startswith("PK\x03\x04"):
+        import zipfile, io
+        try:
+            with zipfile.ZipFile(io.BytesIO(chat_text.encode("latin-1"))) as z:
+                txt_files = [n for n in z.namelist() if n.lower().endswith(".txt")]
+                if txt_files:
+                    target = "_chat.txt" if "_chat.txt" in txt_files else max(txt_files, key=lambda n: z.getinfo(n).file_size)
+                    chat_text = z.read(target).decode("utf-8", errors="ignore")
+        except Exception:
+            pass
+
     lines = chat_text.splitlines()
     messages = []
     current_msg = None
@@ -160,15 +171,17 @@ def parse_whatsapp_chat(chat_text: str) -> List[Dict[str, Any]]:
                 "text": text.strip()
             }
         else:
-            # Continuation of previous message
+            # Continuation of previous message (capped at 5,000 chars to prevent regex stalling)
             if current_msg:
-                current_msg["text"] += "\n" + line_clean
+                if len(current_msg["text"]) < 5000:
+                    current_msg["text"] += "\n" + line_clean
             else:
-                current_msg = {
-                    "timestamp": "",
-                    "sender": "Unknown Sender",
-                    "text": line_clean
-                }
+                if len(line_clean) < 5000:
+                    current_msg = {
+                        "timestamp": "",
+                        "sender": "Unknown Sender",
+                        "text": line_clean
+                    }
 
     # Don't forget last message
     if current_msg and is_hiring_or_lead_message(current_msg["text"]):
