@@ -165,3 +165,27 @@ Stores discarded entries with their `Rejection Reason` for debugging and transpa
 2. **No Anti-Bot Bypass**: Complies with anti-bot policies. If search engines throttle or present verification challenges, the script logs an informative message and falls back to standard public search endpoints.
 3. **No Buying Guarantees**: A `Potential Buyer` classification indicates automated textual evidence of need or hiring intent; it is **not a guarantee of a confirmed transaction**.
 4. **Courteous Scraping**: Enforces `REQUEST_DELAY` between visits to minimize server load.
+
+---
+
+## ⚡ Modern Next.js UI Hub (`frontend/`)
+
+A state-of-the-art Next.js web application UI for managing leads, triggering multi-channel scrapers, and conducting cold outreach campaigns.
+
+### Features
+- **Leads CRM & Table**: Instant debounced search, filtering by intent/outreach/status, pagination, and bulk actions.
+- **Cold Email Outreach**: Personalized email composer modal with chips (`{company}`, `{name}`, `{location}`), batch sender with delay throttling, and live signature preview.
+- **WhatsApp Integration**: Direct click-to-chat deep links with prefilled templates.
+- **Live Scraper Console**: 12-channel harvester control room with real-time streaming terminal logs.
+- **Lead Importer**: Extract leads from live search queries, exported WhatsApp chats (`.txt`/`.zip`), or raw notes.
+- **Company & SMTP Settings**: Configure Gmail SMTP credentials, company profile, and verify delivery via test emails.
+
+### Quick Start
+1. Launch via double-clicking [`run_nextjs_ui.bat`](file:///e:/MyWork/mini-ecommerce-interview-practical/test-demo/run_nextjs_ui.bat)
+2. Or run via PowerShell:
+   ```powershell
+   cd frontend
+   npm.cmd run dev -- -p 3001
+   ```
+3. Open in browser: **http://localhost:3001**
+
