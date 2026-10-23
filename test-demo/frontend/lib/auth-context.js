@@ -11,7 +11,24 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Check existing session
+    // 1. Check existing local demo session first
+    if (typeof window !== 'undefined') {
+      const savedLocalUser = localStorage.getItem('lead_hub_demo_user');
+      if (savedLocalUser) {
+        try {
+          const parsed = JSON.parse(savedLocalUser);
+          if (parsed && parsed.email) {
+            setUser(parsed);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          localStorage.removeItem('lead_hub_demo_user');
+        }
+      }
+    }
+
+    // 2. Check Supabase session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -20,10 +37,12 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
 
-    // 2. Listen for auth state changes
+    // 3. Listen for Supabase auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+      }
       setLoading(false);
     });
 
@@ -34,18 +53,23 @@ export function AuthProvider({ children }) {
 
   // Sign In
   const signIn = async (email, password) => {
+    const cleanEmail = email.trim();
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: cleanEmail,
       password,
     });
     if (error) throw error;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('lead_hub_demo_user');
+    }
     return data;
   };
 
   // Sign Up (Register)
   const signUp = async (email, password, fullName = '') => {
+    const cleanEmail = email.trim();
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
       options: {
         data: {
@@ -59,20 +83,29 @@ export function AuthProvider({ children }) {
 
   // Sign Out
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('lead_hub_demo_user');
+    }
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // Ignore if offline
+    }
     setUser(null);
     setSession(null);
   };
 
-  // Quick Demo Login (for offline or local developer convenience)
-  const bypassDemoLogin = () => {
-    const demoUser = {
+  // Quick Demo / Local Login (persists in localStorage)
+  const bypassDemoLogin = (customUser = null) => {
+    const userToSet = customUser || {
       id: 'demo-admin-id',
       email: 'admin@sangeetainfotech.com',
       user_metadata: { full_name: 'Lead Admin' }
     };
-    setUser(demoUser);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lead_hub_demo_user', JSON.stringify(userToSet));
+    }
+    setUser(userToSet);
   };
 
   return (
