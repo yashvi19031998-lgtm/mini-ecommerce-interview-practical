@@ -174,7 +174,7 @@ export default function LeadImporter({ onImportSuccess, showToast, onNavigateToL
                   type="text"
                   className="form-input"
                   placeholder="e.g. Node.js backend developer, Next.js agency"
-                  value={keyword}
+                  value={keyword || ''}
                   onChange={(e) => setKeyword(e.target.value)}
                 />
               </div>
@@ -185,7 +185,7 @@ export default function LeadImporter({ onImportSuccess, showToast, onNavigateToL
                   type="text"
                   className="form-input"
                   placeholder="e.g. Pune, Bengaluru, Remote"
-                  value={location}
+                  value={location || ''}
                   onChange={(e) => setLocation(e.target.value)}
                 />
               </div>

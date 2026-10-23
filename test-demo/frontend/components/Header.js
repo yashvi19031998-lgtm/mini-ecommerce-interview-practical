@@ -67,7 +67,7 @@ export default function Header({
           <input 
             type="text" 
             placeholder="Search leads, companies, emails..." 
-            value={searchQuery}
+            value={searchQuery || ''}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
           />
         </div>

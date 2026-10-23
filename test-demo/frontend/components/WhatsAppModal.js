@@ -86,7 +86,7 @@ export default function WhatsAppModal({
             <input
               type="text"
               className="form-input"
-              value={phone}
+              value={phone || ''}
               readOnly
               style={{ background: 'var(--bg-lavender-subtle)', color: 'var(--text-primary)' }}
             />
@@ -97,7 +97,7 @@ export default function WhatsAppModal({
             <textarea
               className="form-input"
               rows={5}
-              value={template}
+              value={template || ''}
               onChange={(e) => setTemplate(e.target.value)}
             />
           </div>
