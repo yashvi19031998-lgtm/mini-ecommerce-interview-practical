@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { 
-  Database, Terminal, DownloadCloud, Settings, RefreshCw, 
-  Send, Play, Download, Sparkles, LogOut, User, Menu, ChevronRight 
+  Search, RefreshCw, Play, Send, Moon, Sun, Bell, 
+  Menu, LogOut, ChevronRight, CheckCircle2, AlertCircle
 } from 'lucide-react';
 
 export default function Header({
@@ -17,129 +17,97 @@ export default function Header({
   onSyncSupabase,
   user = null,
   onSignOut = null,
-  onToggleMobileMenu = null
+  onToggleCollapse = null,
+  searchQuery = '',
+  onSearchChange = null
 }) {
-  const tabsMeta = {
-    leads: {
-      category: 'Pipeline',
-      title: 'Leads Database & Outreach CRM',
-      subtitle: 'Authoritative multi-channel leads database with atomic deduplication & cold outreach',
-      icon: Database,
-      iconColor: 'var(--primary-lavender)'
-    },
-    scraper: {
-      category: 'Harvester',
-      title: 'Live Scraper Console & Multi-Harvester',
-      subtitle: 'Coordinate parallel background scrapers across 12 public tech hiring sources',
-      icon: Terminal,
-      iconColor: 'var(--success)'
-    },
-    import: {
-      category: 'Growth',
-      title: 'Lead Importer & Extraction Engine',
-      subtitle: 'Keyword discovery scans, exported WhatsApp group chat parser, and raw text crawler',
-      icon: DownloadCloud,
-      iconColor: 'var(--primary-lavender)'
-    },
-    settings: {
-      category: 'Preferences',
-      title: 'Company Profile & Gmail SMTP Configuration',
-      subtitle: 'Manage company branding, Gmail SMTP credentials, and outgoing signatures',
-      icon: Settings,
-      iconColor: 'var(--pink-accent)'
-    }
+  const tabTitles = {
+    leads: { root: 'Workspace', leaf: 'Leads Database' },
+    scraper: { root: 'Workspace', leaf: 'Live Scrapers' },
+    import: { root: 'Growth', leaf: 'Import & Parse' },
+    settings: { root: 'Configuration', leaf: 'Settings & SMTP' }
   };
 
-  const meta = tabsMeta[activeTab] || tabsMeta.leads;
-  const TabIcon = meta.icon;
+  const crumb = tabTitles[activeTab] || tabTitles.leads;
 
   return (
-    <header className="main-header-bar">
-      <div className="header-left-col">
-        {/* Mobile Menu Hamburger Toggle */}
-        {onToggleMobileMenu && (
-          <button
-            onClick={onToggleMobileMenu}
-            className="mobile-menu-btn"
-            title="Open navigation menu"
-            aria-label="Toggle navigation drawer"
-          >
-            <Menu size={18} />
-          </button>
-        )}
+    <header className="theme-header">
+      {/* Left section: Collapse Toggle & Breadcrumbs */}
+      <div className="theme-header-left">
+        <button 
+          onClick={onToggleCollapse} 
+          className="theme-collapse-toggle" 
+          title="Toggle Sidebar"
+          aria-label="Toggle Sidebar"
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h9" />
+          </svg>
+        </button>
 
-        <div className="header-icon-badge" style={{ color: meta.iconColor }}>
-          <TabIcon size={20} />
+        <div className="theme-header-star" title="Workspace Bookmarks">
+          <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#8a8f98" strokeWidth="1.5">
+            <path d="M10 3.5l2.1 4.3 4.7.6-3.4 3.3.8 4.7L10 14.2l-4.2 2.2.8-4.7L3.2 8.4l4.7-.6z" />
+          </svg>
         </div>
-        <div>
-          {/* Breadcrumbs Navigation */}
-          <div className="header-breadcrumbs">
-            <span
-              className="header-breadcrumb-root"
-              onClick={() => setActiveTab && setActiveTab('leads')}
-            >
-              Workspace
-            </span>
-            <ChevronRight size={11} className="header-breadcrumb-sep" />
-            <span>{meta.category}</span>
-            <ChevronRight size={11} className="header-breadcrumb-sep" />
-            <span className="header-breadcrumb-current">{meta.title.split('&')[0].trim()}</span>
-          </div>
 
-          <h1 className="header-title">{meta.title}</h1>
-          <p className="header-subtitle">{meta.subtitle}</p>
+        <span className="theme-crumb-sep">/</span>
+        <span className="theme-crumb-root">{crumb.root}</span>
+        <span className="theme-crumb-sep">/</span>
+        <span className="theme-crumb-leaf">{crumb.leaf}</span>
+      </div>
+
+      {/* Center Search Pill matching Theme (max-width 340px, rounded-full) */}
+      <div className="theme-header-center">
+        <div className="theme-search-pill">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#a3a7ae" strokeWidth="1.7">
+            <circle cx="9" cy="9" r="5.2" />
+            <path d="M13 13l3.2 3.2" />
+          </svg>
+          <input 
+            type="text" 
+            placeholder="Search leads, companies, emails..." 
+            value={searchQuery}
+            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+          />
         </div>
       </div>
 
-      <div className="header-right-actions">
-        {/* Backend Connectivity Status Pill */}
-        <div className={`status-pill ${backendOnline ? 'status-pill-online' : 'status-pill-standby'}`}>
-          <span className={`pulse-dot ${backendOnline ? 'pulse-emerald' : 'pulse-amber'}`}></span>
-          <span>{backendOnline ? 'Python DB Live (5000)' : 'Python Standby'}</span>
+      {/* Right Action Icons & Status */}
+      <div className="theme-header-right">
+        {/* Backend Online status pill */}
+        <div className={`theme-header-pill ${backendOnline ? 'online' : 'standby'}`}>
+          <span className={`theme-header-dot ${backendOnline ? 'green' : 'amber'}`}></span>
+          <span>{backendOnline ? 'DB Connected' : 'DB Standby'}</span>
         </div>
 
-        {/* Global Refresh Button */}
-        <button
-          onClick={onRefreshLeads}
+        <button 
+          onClick={onRefreshLeads} 
           disabled={isRefreshing}
-          className="btn-header btn-header-secondary"
-          title="Reload leads from database"
+          className="theme-header-icon-btn" 
+          title="Refresh Leads Database"
+          aria-label="Refresh Database"
         >
-          <RefreshCw size={13} className={isRefreshing ? 'animate-spin' : ''} />
-          Reload
+          <RefreshCw size={17} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
 
-        {/* Quick Launch Scraper */}
-        <button
-          onClick={onTriggerQuickScraper}
+        <button 
+          onClick={onTriggerQuickScraper} 
           disabled={isScraperRunning}
-          className="btn-header btn-header-primary"
+          className={`theme-header-icon-btn ${isScraperRunning ? 'running' : ''}`}
+          title={isScraperRunning ? 'Scraper is running' : 'Start Quick Scraper'}
+          aria-label="Quick Scraper"
         >
-          <Play size={13} />
-          {isScraperRunning ? 'Scraper Busy...' : 'Run Scraper'}
+          <Play size={17} fill={isScraperRunning ? '#1f9254' : 'none'} color={isScraperRunning ? '#1f9254' : 'currentColor'} />
         </button>
 
-        {/* Sync Supabase */}
-        <button
-          onClick={onSyncSupabase}
-          className="btn-header btn-header-secondary"
-          title="Sync with Supabase Cloud Database"
-        >
-          <Send size={13} />
-          Supabase
-        </button>
-
-        {/* User Sign Out */}
-        {user && onSignOut && (
-          <button
-            onClick={onSignOut}
-            className="btn-header btn-header-danger"
-            title="Sign out of account"
-          >
-            <LogOut size={13} />
-            Sign Out
-          </button>
-        )}
+        <div className="theme-header-notification-wrap" title="System alerts">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="3" y="4" width="14" height="12" rx="2.4" />
+            <path d="M12.6 4v12" />
+          </svg>
+          {isScraperRunning && <span className="theme-notif-badge"></span>}
+        </div>
       </div>
     </header>
   );

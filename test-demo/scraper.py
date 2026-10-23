@@ -253,8 +253,22 @@ def filter_search_result(url: str, title: str) -> Tuple[bool, str]:
         return False, f"Validation error: {e}"
 
 
+try:
+    from html_cache_manager import fetch_or_get_cached_html
+except ImportError:
+    fetch_or_get_cached_html = None
+
+
 def fetch_page(url: str) -> Optional[str]:
-    """Fetches HTML with timeout and error handling."""
+    """Fetches HTML with cache check, timeout and error handling."""
+    if fetch_or_get_cached_html:
+        try:
+            cached_text, status = fetch_or_get_cached_html(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+            if status == 1 and cached_text:
+                return cached_text
+        except Exception:
+            pass
+
     try:
         response = requests.get(
             url,

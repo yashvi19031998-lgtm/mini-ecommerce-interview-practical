@@ -48,13 +48,22 @@ def search_ddg(query, max_results=20):
         print(f"[ERROR] Search failed for '{query}': {e}")
     return results
 
+try:
+    from html_cache_manager import fetch_or_get_cached_html
+except ImportError:
+    fetch_or_get_cached_html = None
+
 def extract_contacts_from_url(url):
     emails, phones = set(), set()
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=8)
-        text = resp.text
-        emails.update(re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text))
-        phones.update(re.findall(r'\+?\d{1,3}[-.\s]?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}', text))
+        if fetch_or_get_cached_html:
+            text, status = fetch_or_get_cached_html(url, headers=HEADERS, timeout=8)
+        else:
+            resp = requests.get(url, headers=HEADERS, timeout=8)
+            text = resp.text
+        if text:
+            emails.update(re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text))
+            phones.update(re.findall(r'\+?\d{1,3}[-.\s]?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}', text))
     except Exception:
         pass
     return list(emails), list(phones)

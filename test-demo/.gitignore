@@ -7,3 +7,4 @@ __pycache__/
 scraper_log.txt
 *.bak
 *.tmp
+html_cache/

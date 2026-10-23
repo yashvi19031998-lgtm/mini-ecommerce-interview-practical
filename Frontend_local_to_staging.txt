@@ -24,6 +24,8 @@ then
 
 rsync -rt --delete /var/www/html/rms/customer-panel/ root@10.0.1.201:/var/www/rms/customer-panel
 
+rsync -rt --delete /var/www/html/rms/new-customer-panel/ root@10.0.1.201:/var/www/rms/new-customer-panel
+
 this command need to add
 
 then it's frontend add into live

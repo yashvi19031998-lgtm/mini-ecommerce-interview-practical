@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Database, Terminal, DownloadCloud, Settings, 
-  Send, RefreshCw, Play, ShieldCheck, Activity,
-  ChevronLeft, ChevronRight, Sparkles, Layers, Download, CheckCircle2, LogOut
+  Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -20,51 +19,31 @@ export default function Sidebar({
   user = null,
   onSignOut = null,
   isMobileOpen = false,
-  onCloseMobile = null
+  onCloseMobile = null,
+  isCollapsed = false
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  const menuSections = [
+  const navItems = [
     {
-      title: 'CORE PLATFORM',
-      items: [
-        {
-          id: 'leads',
-          label: 'Leads Database',
-          icon: Database,
-          count: totalLeads > 0 ? totalLeads.toLocaleString() : '157',
-          badgeType: 'lavender'
-        },
-        {
-          id: 'scraper',
-          label: 'Live Scraper Console',
-          icon: Terminal,
-          statusBadge: isScraperRunning ? 'RUNNING' : 'READY',
-          badgeType: isScraperRunning ? 'green' : 'slate'
-        }
-      ]
+      id: 'leads',
+      label: 'Leads Database',
+      icon: Database,
+      badge: totalLeads > 0 ? totalLeads.toLocaleString() : '0'
     },
     {
-      title: 'GROWTH ENGINES',
-      items: [
-        {
-          id: 'import',
-          label: 'Import & Harvester',
-          icon: DownloadCloud,
-          tag: 'Multi-Source',
-          badgeType: 'pink'
-        }
-      ]
+      id: 'scraper',
+      label: 'Live Scrapers',
+      icon: Terminal,
+      badge: isScraperRunning ? 'RUNNING' : '12 READY'
     },
     {
-      title: 'PREFERENCES',
-      items: [
-        {
-          id: 'settings',
-          label: 'Company & SMTP',
-          icon: Settings
-        }
-      ]
+      id: 'import',
+      label: 'Import & Parse',
+      icon: DownloadCloud
+    },
+    {
+      id: 'settings',
+      label: 'Settings & SMTP',
+      icon: Settings
     }
   ];
 
@@ -73,9 +52,10 @@ export default function Sidebar({
     if (onCloseMobile) onCloseMobile();
   };
 
+  const ownerName = user?.user_metadata?.full_name || (user?.email ? user.email.split('@')[0] : 'Admin');
+
   return (
     <>
-      {/* Mobile Drawer Overlay Backdrop */}
       {isMobileOpen && (
         <div
           className="sidebar-mobile-backdrop"
@@ -84,173 +64,138 @@ export default function Sidebar({
         />
       )}
 
-      <aside className={`saas-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
-        {/* Brand Header */}
-        <div className="sidebar-header">
-          <div className="sidebar-brand-wrapper">
-            <div className="brand-logo-glow">S</div>
-            {!isCollapsed && (
-              <div className="brand-text">
-                <div className="brand-title-row">
-                  <span className="brand-name">Sangeeta Infotech</span>
-                  <span className="brand-pro-tag">PRO</span>
-                </div>
-                <div className="brand-sub">Lead & Outreach Engine</div>
-              </div>
-            )}
+      <aside className={`theme-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
+        {/* User Account Row */}
+        <div className="theme-user-row">
+          <div className="theme-user-avatar">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <circle cx="10" cy="7" r="3.2" />
+              <path d="M4 17c0-3.2 2.7-5 6-5s6 1.8 6 5" />
+            </svg>
           </div>
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="collapse-toggle"
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label="Toggle sidebar collapse"
-          >
-            {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-          </button>
+          {!isCollapsed && <span className="theme-user-name">{ownerName}</span>}
         </div>
 
-        {/* Navigation Sections */}
-        <div className="sidebar-body">
-          {menuSections.map((sec, sIdx) => (
-            <div key={sIdx} className="nav-section">
-              {!isCollapsed && <div className="nav-section-title">{sec.title}</div>}
-              <nav className="nav-items-list" role="navigation">
-                {sec.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-
-                  return (
-                    <button
-                      key={item.id}
-                      id={`nav-item-${item.id}`}
-                      onClick={() => handleNavClick(item.id)}
-                      className={`nav-item-btn ${isActive ? 'active' : ''}`}
-                      title={isCollapsed ? item.label : undefined}
-                      data-tooltip={item.label}
-                    >
-                      <div className="nav-item-left">
-                        <div className={`nav-icon-container ${isActive ? 'icon-active' : ''}`}>
-                          <Icon size={18} />
-                        </div>
-                        {!isCollapsed && <span className="nav-label">{item.label}</span>}
-                      </div>
-
-                      {!isCollapsed && (
-                        <div className="nav-item-right">
-                          {item.count && (
-                            <span className={`pill-counter pill-${item.badgeType}`}>
-                              {item.count}
-                            </span>
-                          )}
-                          {item.statusBadge && (
-                            <span className={`pill-status pill-${item.badgeType}`}>
-                              {item.id === 'scraper' && isScraperRunning && (
-                                <span className="live-dot-pulse"></span>
-                              )}
-                              {item.statusBadge}
-                            </span>
-                          )}
-                          {item.tag && (
-                            <span className="pill-tag">{item.tag}</span>
-                          )}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-          ))}
-
-        {/* Quick Actions Shortcuts Panel */}
-        {!isCollapsed && (
-          <div className="sidebar-actions-card">
-            <div className="actions-card-title">
-              <Sparkles size={13} style={{ color: 'var(--primary-lavender)' }} />
-              Quick Automations
-            </div>
-            <div className="actions-button-stack">
-              <button
-                onClick={onTriggerQuickScraper}
-                disabled={isScraperRunning}
-                className="btn-quick btn-quick-primary"
-              >
-                <Play size={13} />
-                {isScraperRunning ? 'Scraper Busy...' : 'Run Quick Scraper'}
-              </button>
-
-              <button
-                onClick={onSyncSupabase}
-                className="btn-quick btn-quick-secondary"
-              >
-                <Send size={13} />
-                Sync to Supabase
-              </button>
-
-              <a
-                href="/api/export-csv"
-                download
-                className="btn-quick btn-quick-secondary"
-              >
-                <Download size={13} />
-                Export Leads CSV
-              </a>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer System Connectivity & User Profile */}
-      <div className="sidebar-bottom">
-        <div className={`system-health-pill ${backendOnline ? 'online' : 'standby'}`}>
-          <div className="health-left">
-            <span className={`pulse-dot ${backendOnline ? 'pulse-emerald' : 'pulse-amber'}`}></span>
+        {/* Workspace Brand / Business Row */}
+        <div className="theme-business-stack">
+          <div className="theme-business-active">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0 }}>
+              <path d="M3 7.5 4.5 4h11L17 7.5M3.5 7.5h13V16h-13z" />
+              <path d="M3.5 7.5h13" />
+            </svg>
             {!isCollapsed && (
-              <div className="health-info">
-                <span className="health-title">
-                  {backendOnline ? 'Python DB Connected' : 'Python Standby'}
-                </span>
-                <span className="health-desc">
-                  {backendOnline ? 'Port 5000 Active' : 'Run python app.py'}
-                </span>
-              </div>
+              <>
+                <span className="theme-business-name">Sangeeta Infotech</span>
+                <ChevronDown size={14} color="#8a8f98" style={{ marginLeft: 'auto', flexShrink: 0 }} />
+              </>
             )}
           </div>
           {!isCollapsed && (
-            <button
-              onClick={onRefreshLeads}
-              disabled={isRefreshing}
-              className="refresh-btn"
-              title="Refresh leads database"
-            >
-              <RefreshCw size={13} className={isRefreshing ? 'animate-spin' : ''} />
-            </button>
+            <div className="theme-business-alt" title="Lead Generation Pipeline">
+              <span className={`theme-status-dot ${backendOnline ? 'online' : 'standby'}`}></span>
+              <span className="theme-business-sub">{backendOnline ? 'Python DB Online' : 'Python Standby'}</span>
+            </div>
           )}
         </div>
 
-        {/* User Account & Logout */}
-        {user && !isCollapsed && (
-          <div className="sidebar-user-strip">
-            <div className="user-avatar-circle">
-              {(user.email || 'A')[0].toUpperCase()}
+        {/* Favorites & Quick Navigation (when expanded) */}
+        {!isCollapsed && (
+          <div className="theme-favorites-section">
+            <div className="theme-favorites-header">
+              <span className="theme-fav-title">Favorites</span>
+              <span className="theme-fav-tab" onClick={onRefreshLeads}>
+                {isRefreshing ? 'Refreshing...' : 'Refresh DB'}
+              </span>
             </div>
-            <div className="user-details">
-              <span className="user-name">{user.user_metadata?.full_name || 'Admin'}</span>
-              <span className="user-email" title={user.email}>{user.email}</span>
-            </div>
-            {onSignOut && (
-              <button
-                onClick={onSignOut}
-                className="user-logout-btn"
-                title="Sign out of workspace"
+            <div className="theme-favorites-list">
+              <div 
+                className={`theme-fav-item ${activeTab === 'leads' ? 'active' : ''}`}
+                onClick={() => handleNavClick('leads')}
               >
-                <LogOut size={14} />
-              </button>
-            )}
+                <span className="theme-fav-dot"></span>
+                <span>Active Leads Queue</span>
+              </div>
+              <div 
+                className={`theme-fav-item ${activeTab === 'scraper' ? 'active' : ''}`}
+                onClick={() => handleNavClick('scraper')}
+              >
+                <span className="theme-fav-dot"></span>
+                <span>Scraper Console</span>
+              </div>
+            </div>
           </div>
         )}
-      </div>
-    </aside>
-  </>
+
+        {/* Main Navigation Menu */}
+        <nav className="theme-nav-list" role="navigation">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+
+            return (
+              <div
+                key={item.id}
+                id={`nav-item-${item.id}`}
+                onClick={() => handleNavClick(item.id)}
+                className={`theme-nav-item ${isActive ? 'active' : ''}`}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <Icon size={17} strokeWidth={1.6} style={{ flexShrink: 0 }} />
+                {!isCollapsed && (
+                  <>
+                    <span className="theme-nav-label">{item.label}</span>
+                    {item.badge && (
+                      <span className={`theme-nav-badge ${item.badge === 'RUNNING' ? 'running' : ''}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Quick Actions Shortcuts (when expanded) */}
+        {!isCollapsed && (
+          <div className="theme-sidebar-quick-actions">
+            <div className="theme-quick-label">QUICK ACTIONS</div>
+            <button
+              onClick={onTriggerQuickScraper}
+              disabled={isScraperRunning}
+              className="theme-quick-btn primary"
+            >
+              <Play size={12} fill="currentColor" />
+              <span>{isScraperRunning ? 'Scraper Active...' : 'Run Quick Scraper'}</span>
+            </button>
+            <button
+              onClick={onSyncSupabase}
+              className="theme-quick-btn"
+            >
+              <Send size={12} />
+              <span>Sync with Supabase</span>
+            </button>
+          </div>
+        )}
+
+        {/* Sidebar Brand Footer */}
+        <div className="theme-sidebar-footer">
+          <div className="theme-footer-brand">
+            <Zap size={14} fill="currentColor" color="#1a6dff" style={{ flexShrink: 0 }} />
+            {!isCollapsed && <span className="theme-footer-brand-name">LeadPro</span>}
+          </div>
+          {user && !isCollapsed && onSignOut && (
+            <button 
+              onClick={onSignOut} 
+              className="theme-logout-btn" 
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut size={14} />
+            </button>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }

@@ -14,7 +14,7 @@ import ScraperConsole from '../components/ScraperConsole';
 import LeadImporter from '../components/LeadImporter';
 import SettingsView from '../components/SettingsView';
 import Toast from '../components/Toast';
-import { Loader2, ChevronRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 import {
   fetchLeads,
@@ -32,10 +32,12 @@ function DashboardContent() {
   const { user, signOut, loading: authLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState('leads'); // 'leads' | 'scraper' | 'import' | 'settings'
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [leads, setLeads] = useState([]);
   const [backendOnline, setBackendOnline] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
 
   // Scraper State
   const [isScraperRunning, setIsScraperRunning] = useState(false);
@@ -128,10 +130,10 @@ function DashboardContent() {
   // If Auth is loading
   if (authLoading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-main)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: 'var(--primary-lavender)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: '#1a6dff' }}>
           <Loader2 size={32} className="animate-spin" />
-          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Connecting to Supabase Auth...</span>
+          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5b5f67' }}>Connecting to Workspace...</span>
         </div>
       </div>
     );
@@ -217,8 +219,8 @@ function DashboardContent() {
   };
 
   return (
-    <div className="app-layout">
-      {/* Enterprise Left-Side Navigation Sidebar */}
+    <div className="theme-app-wrapper">
+      {/* Sidebar with Theme Layout */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -233,11 +235,12 @@ function DashboardContent() {
         onSignOut={signOut}
         isMobileOpen={isMobileOpen}
         onCloseMobile={() => setIsMobileOpen(false)}
+        isCollapsed={isSidebarCollapsed}
       />
 
-      {/* Main Content Area */}
-      <div className="main-content-area">
-        {/* Dynamic Top Bar Header */}
+      {/* Main Content Pane */}
+      <main className="theme-main-pane">
+        {/* Header with Search and Breadcrumb */}
         <Header
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -249,164 +252,130 @@ function DashboardContent() {
           onSyncSupabase={handleSyncSupabase}
           user={user}
           onSignOut={signOut}
-          onToggleMobileMenu={() => setIsMobileOpen(prev => !prev)}
+          onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
+          searchQuery={globalSearch}
+          onSearchChange={setGlobalSearch}
         />
 
-        <div className="content-body-wrap">
-          {/* Interactive Pipeline Journey Bar */}
-          <div className="workflow-pipeline-banner" role="navigation" aria-label="Lead Growth Lifecycle">
-            <button
-              onClick={() => setActiveTab('scraper')}
-              className={`pipeline-step-item ${activeTab === 'scraper' ? 'active' : ''}`}
-              title="Step 1: Automated deep web search & social harvesters"
-            >
-              <div className="pipeline-step-num">1</div>
-              <div className="pipeline-step-meta">
-                <span className="pipeline-step-title">Discover & Scrape</span>
-                <span className="pipeline-step-sub">12 Public Harvesters</span>
-              </div>
-            </button>
+        <div className="theme-scrollable-content">
+          <div className="theme-content-padding">
+            {/* Real-time KPI Metric Summary */}
+            <StatsCards leads={leads} />
 
-            <div className="pipeline-divider">
-              <ChevronRight size={14} />
-            </div>
+            {/* TAB 1: Leads CRM & Database */}
+            {activeTab === 'leads' && (
+              <LeadsTable
+                leads={leads}
+                onSelectLeadForEmail={(lead) => setSelectedLeadForEmail(lead)}
+                onSelectLeadForWhatsApp={(lead) => setSelectedLeadForWhatsApp(lead)}
+                onBulkEmailOpen={(ids) => {
+                  setBulkEmailLeadIds(ids);
+                  setBulkEmailOpen(true);
+                }}
+                onBulkWhatsAppOpen={(ids) => {
+                  if (ids.length) {
+                    const first = leads.find(l => l.id === ids[0]);
+                    if (first) setSelectedLeadForWhatsApp(first);
+                  }
+                }}
+                onStatusChange={handleLeadStatusChange}
+                onTriggerQuickScraper={() => handleStartScraperMode('quick')}
+                onNavigateToScraper={() => setActiveTab('scraper')}
+                onNavigateToImport={() => setActiveTab('import')}
+                globalSearch={globalSearch}
+              />
+            )}
 
-            <button
-              onClick={() => setActiveTab('import')}
-              className={`pipeline-step-item ${activeTab === 'import' ? 'active' : ''}`}
-              title="Step 2: Parse raw job posts & WhatsApp client groups"
-            >
-              <div className="pipeline-step-num">2</div>
-              <div className="pipeline-step-meta">
-                <span className="pipeline-step-title">Import & Parse</span>
-                <span className="pipeline-step-sub">WhatsApp & Raw Text</span>
-              </div>
-            </button>
+            {/* TAB 2: Scraper Console */}
+            {activeTab === 'scraper' && (
+              <ScraperConsole
+                isScraperRunning={isScraperRunning}
+                scraperLogs={scraperLogs}
+                autoScrollLogs={autoScrollLogs}
+                setAutoScrollLogs={setAutoScrollLogs}
+                onStartScraper={handleStartScraperMode}
+                onStopScraper={handleStopScraper}
+                onClearLogs={() => setScraperLogs([])}
+                backendOnline={backendOnline}
+              />
+            )}
 
-            <div className="pipeline-divider">
-              <ChevronRight size={14} />
-            </div>
+            {/* TAB 3: Importer & Raw Extraction */}
+            {activeTab === 'import' && (
+              <LeadImporter
+                onLeadsImported={() => loadLeads(true)}
+                showToast={showToast}
+              />
+            )}
 
-            <button
-              onClick={() => setActiveTab('leads')}
-              className={`pipeline-step-item ${activeTab === 'leads' ? 'active' : ''}`}
-              title="Step 3: Review qualified leads and trigger outreach"
-            >
-              <div className="pipeline-step-num">3</div>
-              <div className="pipeline-step-meta">
-                <span className="pipeline-step-title">Qualify & Outreach</span>
-                <span className="pipeline-step-sub">{leads.length} Leads Active</span>
-              </div>
-            </button>
-
-            <div className="pipeline-divider">
-              <ChevronRight size={14} />
-            </div>
-
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`pipeline-step-item ${activeTab === 'settings' ? 'active' : ''}`}
-              title="Step 4: Configure company branding and Gmail SMTP"
-            >
-              <div className="pipeline-step-num">4</div>
-              <div className="pipeline-step-meta">
-                <span className="pipeline-step-title">Scale & SMTP</span>
-                <span className="pipeline-step-sub">Company Signature</span>
-              </div>
-            </button>
+            {/* TAB 4: Settings & SMTP */}
+            {activeTab === 'settings' && (
+              <SettingsView
+                onSettingsSaved={() => {
+                  showToast('Company profile & SMTP configuration saved!', 'success');
+                  fetchSettings().then(res => {
+                    if (res && res.formattedSignature) {
+                      setSignature(res.formattedSignature);
+                    }
+                  });
+                }}
+                showToast={showToast}
+              />
+            )}
           </div>
-
-          {/* Real-time KPI Metric Summary */}
-          <StatsCards leads={leads} />
-
-          {/* TAB 1: Leads CRM & Database */}
-          {activeTab === 'leads' && (
-            <LeadsTable
-              leads={leads}
-              onSelectLeadForEmail={(lead) => setSelectedLeadForEmail(lead)}
-              onSelectLeadForWhatsApp={(lead) => setSelectedLeadForWhatsApp(lead)}
-              onBulkEmailOpen={(ids) => {
-                setBulkEmailLeadIds(ids);
-                setBulkEmailOpen(true);
-              }}
-              onBulkWhatsAppOpen={(ids) => {
-                if (ids.length) {
-                  const first = leads.find(l => l.id === ids[0]);
-                  if (first) setSelectedLeadForWhatsApp(first);
-                }
-              }}
-              onStatusChange={handleLeadStatusChange}
-              onTriggerQuickScraper={() => handleStartScraperMode('quick')}
-              onNavigateToScraper={() => setActiveTab('scraper')}
-              onNavigateToImport={() => setActiveTab('import')}
-            />
-          )}
-
-          {/* TAB 2: Live Scraper Console */}
-          {activeTab === 'scraper' && (
-            <ScraperConsole
-              isRunning={isScraperRunning}
-              logs={scraperLogs}
-              onStartScraper={handleStartScraperMode}
-              onStopScraper={handleStopScraper}
-              onClearLogs={() => setScraperLogs([])}
-              autoScroll={autoScrollLogs}
-              setAutoScroll={setAutoScrollLogs}
-              onNavigateToLeads={() => setActiveTab('leads')}
-            />
-          )}
-
-          {/* TAB 3: Lead Importer & Extraction Engine */}
-          {activeTab === 'import' && (
-            <LeadImporter
-              onImportSuccess={() => loadLeads(true)}
-              showToast={showToast}
-              onNavigateToLeads={() => setActiveTab('leads')}
-            />
-          )}
-
-          {/* TAB 4: Company & SMTP Settings */}
-          {activeTab === 'settings' && (
-            <SettingsView
-              showToast={showToast}
-              onNavigateToLeads={() => setActiveTab('leads')}
-            />
-          )}
         </div>
+      </main>
+
+      {/* Outreach Modals */}
+      {selectedLeadForEmail && (
+        <SingleEmailModal
+          isOpen={true}
+          lead={selectedLeadForEmail}
+          signature={signature}
+          onClose={() => setSelectedLeadForEmail(null)}
+          onSend={handleSendSingleEmail}
+        />
+      )}
+
+      {bulkEmailOpen && (
+        <BulkEmailModal
+          isOpen={true}
+          selectedLeadIds={bulkEmailLeadIds}
+          leads={leads}
+          onClose={() => {
+            setBulkEmailOpen(false);
+            setBulkEmailLeadIds([]);
+          }}
+          onBulkSend={handleSendBulkEmail}
+        />
+      )}
+
+      {selectedLeadForWhatsApp && (
+        <WhatsAppModal
+          isOpen={true}
+          lead={selectedLeadForWhatsApp}
+          onClose={() => setSelectedLeadForWhatsApp(null)}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Global Toast Container */}
+      <div className="toast-container">
+        {toasts.map(t => (
+          <Toast
+            key={t.id}
+            id={t.id}
+            message={t.message}
+            type={t.type}
+            onClose={() => dismissToast(t.id)}
+          />
+        ))}
       </div>
-
-      {/* Single Email Composer Modal */}
-      <SingleEmailModal
-        lead={selectedLeadForEmail}
-        isOpen={!!selectedLeadForEmail}
-        onClose={() => setSelectedLeadForEmail(null)}
-        onSend={handleSendSingleEmail}
-        signature={signature}
-      />
-
-      {/* Bulk Email Outreach Modal */}
-      <BulkEmailModal
-        selectedLeadIds={bulkEmailLeadIds}
-        leads={leads}
-        isOpen={bulkEmailOpen}
-        onClose={() => setBulkEmailOpen(false)}
-        onBulkSend={handleSendBulkEmail}
-      />
-
-      {/* WhatsApp Outreach Modal */}
-      <WhatsAppModal
-        lead={selectedLeadForWhatsApp}
-        isOpen={!!selectedLeadForWhatsApp}
-        onClose={() => setSelectedLeadForWhatsApp(null)}
-      />
-
-      {/* Global Toast Notification Shelf */}
-      <Toast toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
 
-export default function LeadHubPage() {
+export default function Home() {
   return (
     <AuthProvider>
       <DashboardContent />

@@ -76,6 +76,16 @@ def sync(csv_filepath=None):
         email = row.get("email") or row.get("Email") or ""
         full_name = row.get("full_name") or ""
 
+        curr_status = str(row.get("lead_status") or row.get("Status") or row.get("email_status") or row.get("Email Status") or "NEW").strip().upper()
+        if curr_status in ["SENT", "EMAIL_SENT"]:
+            lead_status_val = "CONTACTED"
+        elif curr_status in ["DISQUALIFIED", "REJECTED"]:
+            lead_status_val = "DISQUALIFIED"
+        elif curr_status in ["QUALIFIED", "INTERESTED"]:
+            lead_status_val = "QUALIFIED"
+        else:
+            lead_status_val = "NEW"
+
         lead_data = {
             "company_name": str(company).strip() if pd.notna(company) and str(company).strip() else None,
             "website": str(website).strip() if pd.notna(website) and str(website).strip() and str(website) != "N/A" else None,
@@ -83,7 +93,7 @@ def sync(csv_filepath=None):
             "location": str(location).strip() if pd.notna(location) and str(location).strip() and str(location) != "N/A" else None,
             "lead_type": str(lead_type).strip() if pd.notna(lead_type) and str(lead_type).strip() else "Potential Buyer",
             "lead_quality": "High",
-            "lead_status": "NEW",
+            "lead_status": lead_status_val,
             "source_platform": str(source)[:50] if pd.notna(source) and str(source).strip() else "Multi-Source Harvester",
             "source_url": str(source_url).strip() if pd.notna(source_url) and str(source_url).strip() else None,
             "project_description": str(description)[:400] if pd.notna(description) and str(description).strip() else None,

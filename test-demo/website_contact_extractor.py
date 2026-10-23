@@ -67,11 +67,20 @@ def extract_contacts_from_url(url: str) -> Tuple[List[str], List[str]]:
         if not url.startswith("http://") and not url.startswith("https://"):
             url = "https://" + url
 
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code != 200:
-            return list(found_emails), list(found_phones)
+        try:
+            from html_cache_manager import fetch_or_get_cached_html
+        except ImportError:
+            fetch_or_get_cached_html = None
 
-        html_content = response.text
+        if fetch_or_get_cached_html:
+            html_content, status = fetch_or_get_cached_html(url, headers=headers, timeout=10)
+            if status != 1 or not html_content:
+                return list(found_emails), list(found_phones)
+        else:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code != 200:
+                return list(found_emails), list(found_phones)
+            html_content = response.text
 
         # 1. Scan Homepage content
         emails = re.findall(EMAIL_REGEX, html_content)
@@ -102,10 +111,13 @@ def extract_contacts_from_url(url: str) -> Tuple[List[str], List[str]]:
         # 3. Visit discovered subpages (limit to top 3 to keep it fast)
         for sub_url in list(contact_links)[:3]:
             try:
-                sub_res = requests.get(sub_url, headers=headers, timeout=6)
-                if sub_res.status_code == 200:
-                    sub_html = sub_res.text
-
+                if fetch_or_get_cached_html:
+                    sub_html, sub_status = fetch_or_get_cached_html(sub_url, headers=headers, timeout=6)
+                else:
+                    sub_res = requests.get(sub_url, headers=headers, timeout=6)
+                    sub_html = sub_res.text if sub_res.status_code == 200 else ""
+                
+                if sub_html:
                     sub_emails = re.findall(EMAIL_REGEX, sub_html)
                     for e in sub_emails:
                         norm_e = normalize_email(e)

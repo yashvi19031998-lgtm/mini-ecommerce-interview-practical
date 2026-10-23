@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Database, Mail, CheckCircle2, Clock, TrendingUp, Sparkles } from 'lucide-react';
+import { Database, Mail, CheckCircle2, Clock } from 'lucide-react';
 
 export default function StatsCards({ leads = [] }) {
   const total = leads.length;
@@ -12,64 +12,57 @@ export default function StatsCards({ leads = [] }) {
   }).length;
   const pending = total - emailSent;
   const emailPct = total > 0 ? Math.round((withEmail / total) * 100) : 0;
+  const sentPct = total > 0 ? Math.round((emailSent / total) * 100) : 0;
 
   return (
-    <div className="stats-row-container">
-      {/* 1. Total Leads */}
-      <div className="stat-box stat-box-lavender">
-        <div className="stat-icon-wrapper stat-icon-lavender">
-          <Database size={22} />
-        </div>
-        <div className="stat-content">
-          <div className="stat-number">{total.toLocaleString()}</div>
-          <div className="stat-label-text">Total Scraped Leads</div>
-          <div className="stat-sub-badge badge-lavender">
-            <TrendingUp size={11} /> 100% Real Database
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Leads with Verified Email */}
-      <div className="stat-box stat-box-emerald">
-        <div className="stat-icon-wrapper stat-icon-emerald">
-          <Mail size={22} />
-        </div>
-        <div className="stat-content">
-          <div className="stat-number">{withEmail.toLocaleString()}</div>
-          <div className="stat-label-text">
-            With Email ({emailPct}%)
-          </div>
-          <div className="stat-sub-badge badge-emerald">
-            <Sparkles size={11} /> Verified Contact Rate
-          </div>
+    <div className="theme-overview-grid">
+      {/* 1. Total Scraped Leads - Lavender #ecedfb */}
+      <div className="theme-kpi-card card-lavender">
+        <div className="theme-kpi-label">Total Leads</div>
+        <div className="theme-kpi-val-row">
+          <span className="theme-kpi-value">{total.toLocaleString()}</span>
+          <span className="theme-kpi-badge badge-pos">
+            +100%
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 14L16 6M16 6h-6M16 6v6" />
+            </svg>
+          </span>
         </div>
       </div>
 
-      {/* 3. Outreach Completed */}
-      <div className="stat-box stat-box-pink">
-        <div className="stat-icon-wrapper stat-icon-pink">
-          <CheckCircle2 size={22} />
-        </div>
-        <div className="stat-content">
-          <div className="stat-number">{emailSent.toLocaleString()}</div>
-          <div className="stat-label-text">Outreach Completed</div>
-          <div className="stat-sub-badge badge-pink">
-            Delivered Sequences
-          </div>
+      {/* 2. Leads with Verified Email - Soft Blue #e7f0fd */}
+      <div className="theme-kpi-card card-blue">
+        <div className="theme-kpi-label">Verified Emails</div>
+        <div className="theme-kpi-val-row">
+          <span className="theme-kpi-value">{withEmail.toLocaleString()}</span>
+          <span className="theme-kpi-badge badge-neutral">
+            {emailPct}% rate
+          </span>
         </div>
       </div>
 
-      {/* 4. Pending Emails */}
-      <div className="stat-box stat-box-amber">
-        <div className="stat-icon-wrapper stat-icon-amber">
-          <Clock size={22} />
+      {/* 3. Outreach Completed - Mint Green #e8f6ee */}
+      <div className="theme-kpi-card card-green">
+        <div className="theme-kpi-label">Outreach Sent</div>
+        <div className="theme-kpi-val-row">
+          <span className="theme-kpi-value">{emailSent.toLocaleString()}</span>
+          <span className="theme-kpi-badge badge-pos">
+            {sentPct}% sent
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 14L16 6M16 6h-6M16 6v6" />
+            </svg>
+          </span>
         </div>
-        <div className="stat-content">
-          <div className="stat-number">{pending.toLocaleString()}</div>
-          <div className="stat-label-text">Pending Emails</div>
-          <div className="stat-sub-badge badge-amber">
-            In Master Queue
-          </div>
+      </div>
+
+      {/* 4. Pending Master Queue - Peach/Warm Amber #fdf1e3 */}
+      <div className="theme-kpi-card card-peach">
+        <div className="theme-kpi-label">Pending Queue</div>
+        <div className="theme-kpi-val-row">
+          <span className="theme-kpi-value">{pending.toLocaleString()}</span>
+          <span className="theme-kpi-badge badge-neutral">
+            Ready
+          </span>
         </div>
       </div>
     </div>
