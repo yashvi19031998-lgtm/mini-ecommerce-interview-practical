@@ -32,7 +32,41 @@ MASTER_FIELDNAMES = [
     "last_updated_at",
     "email_status",
     "email_sent_at",
+    # CRM pipeline status (NEW, CONTACTED, REPLIED, MEETING, WON, LOST, ...) - set from the UI
+    "status",
+    # How to reach this lead: email / phone / reddit / telegram / website / none
+    "contact_channel",
+    # AI qualification (filled by lead_quality.py)
+    "ai_category",
+    "ai_score",
+    "ai_summary",
+    "ai_requirement",
+    "ai_tech_stack",
+    "ai_budget",
+    "ai_reason",
+    "ai_qualified_at",
+    # When this lead was posted to Slack (empty = not yet)
+    "slack_notified_at",
 ]
+
+# Fields that are not derived from scraper output and must survive every re-save untouched
+PASSTHROUGH_FIELDS = [
+    "contact_channel", "ai_category", "ai_score", "ai_summary", "ai_requirement",
+    "ai_tech_stack", "ai_budget", "ai_reason", "ai_qualified_at", "slack_notified_at",
+]
+
+# Template / placeholder emails copied from website themes ("you@company.com")
+PLACEHOLDER_EMAIL_LOCALS = {
+    "you", "your", "yourname", "youremail", "your.name", "name", "email", "user",
+    "username", "someone", "example", "test", "john.doe", "johndoe", "firstname.lastname",
+}
+PLACEHOLDER_EMAIL_DOMAINS = {
+    "company.com", "yourcompany.com", "yourdomain.com", "mydomain.com", "example.org",
+    "example.net", "email.com", "website.com", "yoursite.com", "mysite.com",
+}
+
+# Paid-ad click-trackers are never leads
+AD_URL_MARKERS = ("bing.com/aclick", "googleadservices.com", "doubleclick.net", "/aclk?")
 
 # Blacklisted domain names (social media, search, aggregators, system)
 INVALID_DOMAINS = {
@@ -84,6 +118,8 @@ def normalize_email(email_str: Optional[str]) -> str:
         parts = cand.split("@")
         if len(parts) == 2 and parts[1] in EMAIL_BLACKLIST_DOMAINS:
             continue
+        if len(parts) == 2 and (parts[0] in PLACEHOLDER_EMAIL_LOCALS or parts[1] in PLACEHOLDER_EMAIL_DOMAINS):
+            continue
         if email_regex.match(cand):
             valid_emails.add(cand)
 
@@ -129,6 +165,31 @@ def normalize_phone(phone_str: Optional[str]) -> str:
             result.append(p)
 
     return ", ".join(result)
+
+
+def url_host(url: Optional[str]) -> str:
+    """Returns the bare host (no www / port) of a URL, or "" if unparsable."""
+    if not url or url in ("None", "N/A", "Not Found"):
+        return ""
+    try:
+        u = url.strip()
+        if not u.startswith(("http://", "https://")):
+            u = "http://" + u
+        host = urlparse(u).netloc.lower().split(":")[0]
+        return host[4:] if host.startswith("www.") else host
+    except Exception:
+        return ""
+
+
+def is_invalid_domain(url: Optional[str]) -> bool:
+    """True if the URL belongs to a platform/aggregator (or any subdomain of one)."""
+    host = url_host(url)
+    return any(host == d or host.endswith("." + d) for d in INVALID_DOMAINS)
+
+
+def is_ad_url(url: Optional[str]) -> bool:
+    u = (url or "").lower()
+    return any(marker in u for marker in AD_URL_MARKERS)
 
 
 def canonicalize_domain(url: Optional[str]) -> str:
@@ -223,8 +284,10 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
         raw.get("External_Website") or
         raw.get("Extracted_External_URL") or ""
     )
-    # If website is an aggregator, move to source_url
-    if canonicalize_domain(website) in INVALID_DOMAINS:
+    # If website is a platform/aggregator (reddit, bing, ...), it is not the company's site.
+    # (Previously compared canonicalize_domain() - which returns "" for these - so it never matched.)
+    platform_url = website if is_invalid_domain(website) else ""
+    if platform_url:
         website = ""
 
     # 6. Source URL
@@ -237,8 +300,8 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
         raw.get("Portal_URL") or
         raw.get("LinkedIn_URL") or
         raw.get("Direct URL") or ""
-    )
-    if not website and source_url and canonicalize_domain(source_url) not in INVALID_DOMAINS:
+    ) or platform_url
+    if not website and source_url and not is_invalid_domain(source_url):
         # Source itself is a company website
         website = source_url
 
@@ -292,6 +355,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     lead_id = clean_text(raw.get("lead_id") or raw.get("Lead ID") or "")
     email_status = clean_text(raw.get("email_status") or raw.get("Email Status") or "NOT_SENT")
     email_sent_at = clean_text(raw.get("email_sent_at") or raw.get("Email Sent At") or "")
+    status = clean_text(raw.get("status") or raw.get("Status") or "NEW").upper()
 
     return {
         "lead_id": lead_id,
@@ -311,6 +375,8 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
         "last_updated_at": last_updated,
         "email_status": email_status,
         "email_sent_at": email_sent_at,
+        "status": status,
+        **{k: str(raw.get(k) or "").strip() for k in PASSTHROUGH_FIELDS},
     }
 
 
@@ -506,6 +572,10 @@ class MasterLeadRegistry:
         - If new, appends and returns ('added', new_lead).
         """
         lead = normalize_lead_record(raw_lead, default_source)
+
+        # Paid ads (e.g. Bing "Post a Job - Indeed") are never leads
+        if is_ad_url(lead.get("source_url")) or is_ad_url(lead.get("website")):
+            return "skipped_invalid", False
 
         # Basic validity: Must have at least a company name, website, source URL, or contact
         if not (lead.get("company_name") or lead.get("website") or lead.get("source_url") or lead.get("email") or lead.get("mobile_number")):

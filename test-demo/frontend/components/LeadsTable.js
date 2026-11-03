@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { downloadLeadsCsv } from '../lib/api';
 import { 
   Search, ExternalLink, Mail, MessageSquare, 
   ChevronLeft, ChevronRight, Download, Globe, MapPin, Phone, Copy, Check
@@ -199,14 +200,15 @@ export default function LeadsTable({
               >
                 Import Leads
               </div>
-              <a
-                href="/api/export-csv"
-                download
+              <div
                 className="theme-dropdown-item"
-                onClick={() => setActionsMenuOpen(false)}
+                onClick={() => {
+                  setActionsMenuOpen(false);
+                  downloadLeadsCsv().catch(err => alert(err.message));
+                }}
               >
                 Export Master CSV
-              </a>
+              </div>
               <div 
                 className="theme-dropdown-item" 
                 onClick={() => {

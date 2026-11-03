@@ -1,7 +1,16 @@
 // Direct API client connecting Next.js to Python Backend Database (/api/...)
 // 100% Dynamic - All leads, statuses, scrapers, and emails are processed directly by Python
 
+import { supabase } from './supabase';
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+// Attach the signed-in user's Supabase access token so the Python API can verify it.
+async function authHeaders() {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function apiFetch(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;
@@ -9,6 +18,7 @@ async function apiFetch(endpoint, options = {}) {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(await authHeaders()),
       ...(options.headers || {})
     }
   });
@@ -149,6 +159,21 @@ export async function importRawTextData(text, crawl_urls = true) {
     method: 'POST',
     body: JSON.stringify({ text, crawl_urls })
   });
+}
+
+// 15. Download master CSV (authenticated fetch, then save as a file)
+export async function downloadLeadsCsv() {
+  const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });
+  if (!res.ok) throw new Error(`Export failed: HTTP ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sangeeta_infotech_leads.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // Helper: Build WhatsApp click-to-chat URL

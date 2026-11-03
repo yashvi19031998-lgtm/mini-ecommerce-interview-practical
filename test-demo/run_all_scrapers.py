@@ -31,6 +31,13 @@ try:
 except ImportError:
     sync_to_supabase = None
 
+try:
+    import lead_quality
+    from lead_quality import is_outreach_ready
+except ImportError:
+    lead_quality = None
+    is_outreach_ready = lambda lead: False  # without the quality module, never auto-email
+
 AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "true").lower() in ("true", "1", "yes")
 AUTO_SYNC_SUPABASE = os.getenv("AUTO_SYNC_SUPABASE", "true").lower() in ("true", "1", "yes")
 MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "5"))  # Safe batch of 5 new leads per run
@@ -40,6 +47,8 @@ RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")
 LOCK_FILE = ".scraper_runner.lock"
 
 # List of all 12 scrapers to coordinate
+import feedly_scraper
+
 SCRAPERS_CONFIG = [
     {
         "name": "scraper.py (Search Engine IT Hiring Scraper)",
@@ -112,6 +121,12 @@ SCRAPERS_CONFIG = [
         "func": scraper_adapters.run_telegram_scraper_adapter,
         "enabled": True,
         "category": "Telegram Channels"
+    },
+    {
+        "name": "feedly_scraper.py (Feedly API / RSS feeds from Feedly OPML)",
+        "func": feedly_scraper.run_feedly_adapter,
+        "enabled": True,
+        "category": "Feeds"
     },
 ]
 
@@ -246,6 +261,10 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
         if status == "SENT":
             continue
 
+        # Only contact leads the AI qualified as real buyers with a high score
+        if not is_outreach_ready(lead_obj):
+            continue
+
         raw_emails = str(lead_obj.get("email", "")).split(",")
         raw_email = raw_emails[0].strip() if raw_emails else ""
 
@@ -376,28 +395,7 @@ def run_all_scrapers():
                 s_added += 1
                 total_new_leads_added += 1
 
-                # Direct Auto Outreach Email Dispatch
-                if AUTO_SEND_EMAIL and send_smtp_email and isinstance(lead_obj, dict):
-                    raw_email = str(lead_obj.get("email", "")).split(",")[0].strip()
-                    if raw_email and raw_email != "N/A" and "@" in raw_email:
-                        comp_name = lead_obj.get("company_name") or lead_obj.get("full_name") or "your company"
-                        loc_name = lead_obj.get("location") or "your region"
-
-                        custom_sub = sub_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
-                        custom_msg = msg_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
-
-                        if sig and sig.strip()[:20] not in custom_msg:
-                            custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
-
-                        print(f"       -> [AUTO-MAIL] Dispatching outreach to {raw_email} ({comp_name})...")
-                        mail_res = send_smtp_email(raw_email, custom_sub, custom_msg)
-                        if mail_res.get("success"):
-                            lead_obj["email_status"] = "SENT"
-                            lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            print(f"       -> [AUTO-MAIL] [SUCCESS] Delivered via Gmail SMTP.")
-                        else:
-                            lead_obj["email_status"] = "FAILED"
-                            print(f"       -> [AUTO-MAIL] [FAILED] {mail_res.get('error')}")
+                # Outreach happens later (Step 5), only after enrichment + AI qualification.
 
             elif outcome == "updated":
                 s_updated += 1
@@ -425,16 +423,7 @@ def run_all_scrapers():
             error_summary=error_msg
         )
 
-    # Step 2b: Dispatch Outreach to Backlog of Pending Leads (NOT_SENT / FAILED)
-    if AUTO_SEND_EMAIL and send_smtp_email and MAX_PENDING_EMAILS_PER_RUN > 0:
-        print(f"\n[*] Step 2b: Checking backlog for pending outreach emails (Batch limit: {MAX_PENDING_EMAILS_PER_RUN})...")
-        pending_sent = dispatch_pending_outreach_emails(registry, max_batch=MAX_PENDING_EMAILS_PER_RUN)
-        if pending_sent > 0:
-            print(f"[*] [OK] Successfully dispatched {pending_sent} pending outreach emails!")
-        else:
-            print("[*] No pending uncontacted leads required outreach at this time.")
-
-    # Step 5: Save Master Database Safely
+    # Step 3: Save Master Database Safely
     print("\n[*] Step 3: Performing safe atomic commit to master database...")
     save_ok = registry.save_master_safely()
     if save_ok:
@@ -442,14 +431,31 @@ def run_all_scrapers():
     else:
         print(f"[FATAL] Failed to write to '{MASTER_CSV}'!")
 
-    # Step 5a: Deep Website Contact Enrichment
+    # Step 4a: Deep Website Contact Enrichment
     try:
         import website_contact_extractor
-        print("\n[*] Step 4: Running Deep Website Contact Extractor on leads with missing email/phone...")
+        print("\n[*] Step 4a: Running Deep Website Contact Extractor on leads with missing email/phone...")
         enriched_leads_count = website_contact_extractor.run_website_enrichment(master_csv_path=MASTER_CSV)
         total_leads_updated += enriched_leads_count
     except Exception as e:
         print(f"[WARN] Website Contact Extractor notice: {e}")
+
+    # Step 4b: Cleanup + AI qualification
+    if lead_quality:
+        print("\n[*] Step 4b: Cleaning leads and running AI qualification...")
+        try:
+            lead_quality.run(MASTER_CSV)
+        except Exception as e:
+            print(f"[WARN] Lead quality step notice: {e}")
+
+    # Step 5: Outreach to qualified leads only (reload: steps 4a/4b rewrote the CSV)
+    if AUTO_SEND_EMAIL and send_smtp_email and MAX_PENDING_EMAILS_PER_RUN > 0:
+        registry.load_master()
+        print(f"\n[*] Step 5: Emailing AI-qualified leads (batch limit: {MAX_PENDING_EMAILS_PER_RUN})...")
+        pending_sent = dispatch_pending_outreach_emails(registry, max_batch=MAX_PENDING_EMAILS_PER_RUN)
+        print(f"[*] Outreach emails sent this run: {pending_sent}")
+        if not registry.save_master_safely():
+            print(f"[FATAL] Failed to save email statuses to '{MASTER_CSV}'!")
 
     # Step 5b: Direct Sync to Supabase Database
     if AUTO_SYNC_SUPABASE and sync_to_supabase:

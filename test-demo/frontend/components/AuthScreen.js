@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../lib/auth-context';
 import { 
   Lock, Mail, User, Eye, EyeOff, ArrowRight, 
-  Sparkles, ShieldCheck, AlertCircle, CheckCircle2, Loader2
+  ShieldCheck, AlertCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 
 export default function AuthScreen() {
-  const { signIn, signUp, bypassDemoLogin } = useAuth();
+  const { signIn, signUp } = useAuth();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   
   const [fullName, setFullName] = useState('');
@@ -49,25 +49,17 @@ export default function AuthScreen() {
       console.error('[AUTH ERROR]', err);
       const msg = err.message || '';
       if (msg.toLowerCase().includes('is invalid')) {
-        setErrorMsg('Email address was rejected by Gmail/Supabase deliverability check (mailbox does not exist). You can use your real email, or click below to enter directly.');
+        setErrorMsg('This email address was rejected (mailbox does not exist). Please use your real email address.');
       } else if (msg.toLowerCase().includes('not confirmed')) {
-        setErrorMsg('Account exists but email is not confirmed in your inbox yet. Click below to enter the workspace directly.');
+        setErrorMsg('Your email is not confirmed yet. Open the confirmation link in your inbox, or ask the admin to confirm your account in the Supabase dashboard.');
       } else if (msg.toLowerCase().includes('rate limit')) {
-        setErrorMsg('Supabase free tier hourly email rate limit reached. Click below to enter the workspace directly.');
+        setErrorMsg('Too many sign-up emails were sent this hour. Please try again later, or ask the admin to create your account in the Supabase dashboard.');
       } else {
         setErrorMsg(err.message || 'Authentication failed. Please verify credentials.');
       }
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleInstantBypass = () => {
-    bypassDemoLogin({
-      id: 'user-' + Date.now(),
-      email: email.trim() || 'demo@sangeetainfotech.com',
-      user_metadata: { full_name: fullName.trim() || 'Lead Admin' }
-    });
   };
 
   return (
@@ -100,37 +92,9 @@ export default function AuthScreen() {
 
         {/* Alerts */}
         {errorMsg && (
-          <div className="auth-alert alert-error" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
-              <AlertCircle size={15} style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: '0.82rem' }}>{errorMsg}</span>
-            </div>
-            {(errorMsg.includes('click below') || errorMsg.includes('rejected') || errorMsg.includes('confirmed') || errorMsg.includes('rate limit')) && (
-              <button
-                type="button"
-                onClick={handleInstantBypass}
-                style={{
-                  alignSelf: 'stretch',
-                  marginTop: '0.25rem',
-                  padding: '0.45rem 0.75rem',
-                  background: 'var(--primary-lavender)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  transition: 'opacity 0.2s ease'
-                }}
-              >
-                <Sparkles size={13} />
-                Enter Workspace as {email.trim() || 'Admin'}
-              </button>
-            )}
+          <div className="auth-alert alert-error">
+            <AlertCircle size={15} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: '0.82rem' }}>{errorMsg}</span>
           </div>
         )}
 
@@ -215,20 +179,6 @@ export default function AuthScreen() {
             )}
           </button>
         </form>
-
-        {/* Quick Demo Access Divider */}
-        <div className="auth-divider">
-          <span>OR QUICK ACCESS</span>
-        </div>
-
-        <button
-          type="button"
-          onClick={bypassDemoLogin}
-          className="auth-quick-btn"
-        >
-          <Sparkles size={14} style={{ color: 'var(--primary-lavender)' }} />
-          One-Click Admin Demo Login
-        </button>
 
         {/* Security Footer */}
         <div className="auth-footer-note">

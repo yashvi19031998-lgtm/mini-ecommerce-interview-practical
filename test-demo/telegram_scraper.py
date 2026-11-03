@@ -11,12 +11,35 @@ except ImportError:
     TelegramClient = None
     TELETHON_AVAILABLE = False
 
-# Telegram API Credentials
-# Replace with your API ID and HASH from https://my.telegram.org, or set TELEGRAM_API_ID & TELEGRAM_API_HASH environment variables
-API_ID = int(os.environ.get("TELEGRAM_API_ID", "30353212"))
-API_HASH = os.environ.get("TELEGRAM_API_HASH", "f8c329a35f17c590f3873a47ade224e0")
-# Paste your Bot Token here from @BotFather (keep exact case)
+try:
+    from telethon.sessions import StringSession
+except ImportError:
+    StringSession = None
+
+
+def _load_dotenv(path=".env"):
+    """Minimal .env loader (does not override variables already set)."""
+    if not os.path.exists(path):
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip("'\""))
+
+
+_load_dotenv()
+
+# Telegram API credentials - NEVER hardcode these. Get them from https://my.telegram.org
+# and put them in .env (local) or GitHub Actions secrets (CI).
+API_ID = int(os.environ.get("TELEGRAM_API_ID", "0") or 0)
+API_HASH = os.environ.get("TELEGRAM_API_HASH", "")
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+# Preferred: a StringSession (generate once with: python telegram_login.py) stored as a secret.
+SESSION_STRING = os.environ.get("TELEGRAM_SESSION_STRING", "")
+# Fallback: local .session file (kept out of git via .gitignore).
 SESSION_NAME = os.environ.get("TELEGRAM_SESSION_NAME", "lead_scraper_session")
 CSV_FILE = "telegram_leads.csv"
 
@@ -87,15 +110,15 @@ async def scrape_telegram_leads() -> List[Dict[str, Any]]:
         return collected_leads
 
     # Check if placeholder credentials are still present
-    if API_ID == 12345678 or API_HASH == 'your_api_hash_here':
-        print("[INFO] Telegram scraper requires valid API_ID and API_HASH from https://my.telegram.org")
-        print("       Set them via TELEGRAM_API_ID and TELEGRAM_API_HASH environment variables or inside telegram_scraper.py.")
+    if not API_ID or not API_HASH:
+        print("[INFO] Telegram scraper skipped: set TELEGRAM_API_ID and TELEGRAM_API_HASH (in .env or environment).")
         return collected_leads
 
     init_csv()
     print("[INFO] Initializing Telegram Client...")
 
-    client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+    session = StringSession(SESSION_STRING) if (SESSION_STRING and StringSession) else SESSION_NAME
+    client = TelegramClient(session, API_ID, API_HASH)
     try:
         await client.connect()
         is_auth = await client.is_user_authorized()

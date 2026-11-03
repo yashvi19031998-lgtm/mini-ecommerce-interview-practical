@@ -76,7 +76,10 @@ def sync(csv_filepath=None):
         email = row.get("email") or row.get("Email") or ""
         full_name = row.get("full_name") or ""
 
-        curr_status = str(row.get("lead_status") or row.get("Status") or row.get("email_status") or row.get("Email Status") or "NEW").strip().upper()
+        status_col = row.get("status")
+        if pd.isna(status_col) or str(status_col).strip().upper() in ("", "NEW"):
+            status_col = None
+        curr_status = str(status_col or row.get("lead_status") or row.get("Status") or row.get("email_status") or row.get("Email Status") or "NEW").strip().upper()
         if curr_status in ["SENT", "EMAIL_SENT"]:
             lead_status_val = "CONTACTED"
         elif curr_status in ["DISQUALIFIED", "REJECTED"]:

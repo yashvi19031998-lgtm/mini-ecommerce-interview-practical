@@ -10,8 +10,15 @@ from settings_manager import load_settings, save_settings, format_signature
 from email_service import send_smtp_email
 import sync_to_supabase
 
+from api_auth import init_auth
+
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+# Bind to localhost by default so the API isn't reachable from the LAN.
+# Set FLASK_HOST=0.0.0.0 only when deploying behind auth + HTTPS.
+BIND_HOST = os.getenv("FLASK_HOST", "127.0.0.1")
+init_auth(app, BIND_HOST)
 
 @app.after_request
 def add_header(response):
@@ -30,22 +37,21 @@ scraper_logs = []
 scraper_lock = threading.Lock()
 
 def ensure_csv_status_column():
-    """Ensure Status and Email Sent columns exist in CSV."""
+    """Ensure workflow columns exist (canonical snake_case names for the master CSV)."""
     if os.path.exists(LEADS_CSV):
         try:
             df = pd.read_csv(LEADS_CSV)
-            modified = False
-            if "Status" not in df.columns:
-                df["Status"] = "NEW"
-                modified = True
-            if "Email Status" not in df.columns:
-                df["Email Status"] = "NOT_SENT"
-                modified = True
-            if "Email Sent At" not in df.columns:
-                df["Email Sent At"] = ""
-                modified = True
-            if modified:
-                df.to_csv(LEADS_CSV, index=False, encoding="utf-8")
+            is_master = "lead_id" in df.columns
+            defaults = (
+                {"status": "NEW", "email_status": "NOT_SENT", "email_sent_at": ""}
+                if is_master else
+                {"Status": "NEW", "Email Status": "NOT_SENT", "Email Sent At": ""}
+            )
+            missing = {k: v for k, v in defaults.items() if k not in df.columns}
+            if missing:
+                for k, v in missing.items():
+                    df[k] = v
+                df.to_csv(LEADS_CSV, index=False, encoding="utf-8-sig")
         except Exception:
             pass
 
@@ -88,8 +94,7 @@ def read_leads(source_file=None):
                 item["Intent"] = "High" if str(item.get("intent_score")) in ("10", "High") else "Medium"
             if "Lead Type" not in item and "lead_type" in item:
                 item["Lead Type"] = item["lead_type"]
-            if not item.get("Status"):
-                item["Status"] = "NEW"
+            item["Status"] = str(item.get("status") or item.get("Status") or "NEW").upper()
 
             # Standardize Lead Source
             raw_src = item.get("Source") or item.get("source") or item.get("Search Query") or "Google Search"
@@ -113,51 +118,38 @@ def read_leads(source_file=None):
         print(f"Error reading leads: {e}")
         return []
 
+# UI field names -> canonical master CSV column names
+MASTER_COLUMN_MAP = {"Status": "status", "Email Status": "email_status", "Email Sent At": "email_sent_at"}
+
+
 def update_lead_record(lead_id, updates):
+    """Update one lead (matched by lead_id, legacy 'No', or row number) in the leads CSV."""
     global _cached_leads_data
-    updated = False
-    if os.path.exists(LEADS_CSV):
-        try:
-            df = pd.read_csv(LEADS_CSV)
-            matched = False
-            for idx, row in df.iterrows():
-                curr_id = str(row.get("No") or (idx + 1))
-                if curr_id == str(lead_id):
-                    for k, v in updates.items():
-                        if k not in df.columns:
-                            df[k] = ""
-                        df.at[idx, k] = v
-                    matched = True
-                    break
-            if matched:
-                df.to_csv(LEADS_CSV, index=False, encoding="utf-8")
-                updated = True
-        except Exception as e:
-            print(f"Error updating {LEADS_CSV}: {e}")
-
-    if os.path.exists("all_leads_master.csv"):
-        try:
-            mdf = pd.read_csv("all_leads_master.csv")
-            m_matched = False
-            for idx, row in mdf.iterrows():
-                curr_id = str(row.get("lead_id") or row.get("No") or (idx + 1))
-                if curr_id == str(lead_id):
-                    if "Email Status" in updates and "email_status" in mdf.columns:
-                        mdf.at[idx, "email_status"] = updates["Email Status"]
-                    if "Email Sent At" in updates and "email_sent_at" in mdf.columns:
-                        mdf.at[idx, "email_sent_at"] = updates["Email Sent At"]
-                    m_matched = True
-                    break
-            if m_matched:
-                mdf.to_csv("all_leads_master.csv", index=False, encoding="utf-8")
-                updated = True
-        except Exception as e:
-            print(f"Error updating all_leads_master.csv: {e}")
-
-    if updated:
-        _cached_leads_data.clear()
-
-    return updated
+    if not os.path.exists(LEADS_CSV):
+        return False
+    try:
+        df = pd.read_csv(LEADS_CSV, dtype=str, keep_default_na=False)
+        is_master = "lead_id" in df.columns
+        for idx in range(len(df)):
+            row = df.iloc[idx]
+            curr_id = str(row.get("lead_id") or row.get("No") or (idx + 1))
+            if curr_id != str(lead_id):
+                continue
+            for k, v in updates.items():
+                col = MASTER_COLUMN_MAP.get(k, k) if is_master else k
+                if col not in df.columns:
+                    df[col] = ""
+                df.at[df.index[idx], col] = v
+            if is_master and "last_updated_at" in df.columns:
+                df.at[df.index[idx], "last_updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            tmp = LEADS_CSV + ".tmp"
+            df.to_csv(tmp, index=False, encoding="utf-8-sig")
+            os.replace(tmp, LEADS_CSV)
+            _cached_leads_data.clear()
+            return True
+    except Exception as e:
+        print(f"Error updating {LEADS_CSV}: {e}")
+    return False
 
 @app.route("/")
 def index():
@@ -513,10 +505,9 @@ def import_commit():
 
 
 if __name__ == "__main__":
-    port = 5000
+    port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)
     print("SANGEETA INFOTECH - ALL-IN-ONE LEAD & OUTREACH HUB")
-    print(f">> ULTRA-FAST LOCAL URL: http://127.0.0.1:{port}")
-    print(f">> Network / Hostname:   http://localhost:{port}")
+    print(f">> URL: http://127.0.0.1:{port}  (bound to {BIND_HOST})")
     print("=" * 60 + "\n")
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    app.run(host=BIND_HOST, port=port, debug=False, threaded=True)
