@@ -129,7 +129,7 @@ export default function BulkEmailModal({
             <input
               type="text"
               className="form-input"
-              value={subject}
+              value={subject || ''}
               onChange={(e) => setSubject(e.target.value)}
               disabled={isSending}
             />
@@ -138,14 +138,14 @@ export default function BulkEmailModal({
           {/* Delay Throttle */}
           <div className="form-group">
             <label className="form-label">
-              SMTP Throttle Delay: <strong>{delayMs} ms</strong> between emails (Recommended: 1500ms to safeguard sender reputation)
+              SMTP Throttle Delay: <strong>{delayMs ?? 1500} ms</strong> between emails (Recommended: 1500ms to safeguard sender reputation)
             </label>
             <input
               type="range"
               min={500}
               max={5000}
               step={250}
-              value={delayMs}
+              value={delayMs ?? 1500}
               onChange={(e) => setDelayMs(Number(e.target.value))}
               disabled={isSending}
               style={{ accentColor: 'var(--primary-lavender)' }}
@@ -158,7 +158,7 @@ export default function BulkEmailModal({
             <textarea
               className="form-input"
               rows={7}
-              value={message}
+              value={message || ''}
               onChange={(e) => setMessage(e.target.value)}
               disabled={isSending}
             />

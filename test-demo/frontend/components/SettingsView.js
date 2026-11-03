@@ -31,8 +31,23 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
 
   useEffect(() => {
     fetchSettings().then(res => {
-      if (res.settings) {
-        setSettings(res.settings);
+      if (res && res.settings) {
+        const s = res.settings;
+        setSettings(prev => ({
+          company_name: s.company_name || s.companyName || prev.company_name || '',
+          tagline: s.tagline || prev.tagline || '',
+          website: s.website || prev.website || '',
+          phone: s.phone || prev.phone || '',
+          address: s.address || prev.address || '',
+          email: s.email || prev.email || '',
+          smtp_host: s.smtp_host || s.smtpHost || prev.smtp_host || 'smtp.gmail.com',
+          smtp_port: s.smtp_port || s.smtpPort || prev.smtp_port || 587,
+          smtp_user: s.smtp_user || s.smtpUser || s.email || prev.smtp_user || '',
+          smtp_pass: s.smtp_pass || s.smtpPass || prev.smtp_pass || '',
+          sender_name: s.sender_name || s.senderName || prev.sender_name || '',
+          default_subject: s.default_subject || s.defaultSubject || prev.default_subject || '',
+          default_template: s.default_template || s.defaultMessage || prev.default_template || ''
+        }));
         setFormattedSignature(res.formattedSignature || '');
       }
     });
@@ -46,7 +61,14 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await saveSettings(settings);
+      const payload = {
+        ...settings,
+        companyName: settings.company_name,
+        senderName: settings.sender_name,
+        defaultSubject: settings.default_subject,
+        defaultMessage: settings.default_template
+      };
+      await saveSettings(payload);
       showToast('Settings & signature saved successfully!', 'success');
     } catch (err) {
       showToast(err.message || 'Failed saving configuration', 'error');
@@ -97,7 +119,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <input
                   type="text"
                   className="form-input"
-                  value={settings.company_name}
+                  value={settings.company_name || ''}
                   onChange={(e) => handleChange('company_name', e.target.value)}
                 />
               </div>
@@ -107,7 +129,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <input
                   type="text"
                   className="form-input"
-                  value={settings.tagline}
+                  value={settings.tagline || ''}
                   onChange={(e) => handleChange('tagline', e.target.value)}
                 />
               </div>
@@ -117,7 +139,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <input
                   type="text"
                   className="form-input"
-                  value={settings.website}
+                  value={settings.website || ''}
                   onChange={(e) => handleChange('website', e.target.value)}
                 />
               </div>
@@ -127,7 +149,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <input
                   type="text"
                   className="form-input"
-                  value={settings.phone}
+                  value={settings.phone || ''}
                   onChange={(e) => handleChange('phone', e.target.value)}
                 />
               </div>
@@ -137,7 +159,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <input
                   type="text"
                   className="form-input"
-                  value={settings.address}
+                  value={settings.address || ''}
                   onChange={(e) => handleChange('address', e.target.value)}
                 />
               </div>
@@ -167,7 +189,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                   <input
                     type="text"
                     className="form-input"
-                    value={settings.smtp_host}
+                    value={settings.smtp_host || ''}
                     onChange={(e) => handleChange('smtp_host', e.target.value)}
                   />
                 </div>
@@ -176,7 +198,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                   <input
                     type="number"
                     className="form-input"
-                    value={settings.smtp_port}
+                    value={settings.smtp_port ?? 587}
                     onChange={(e) => handleChange('smtp_port', Number(e.target.value))}
                   />
                 </div>
@@ -187,7 +209,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <input
                   type="text"
                   className="form-input"
-                  value={settings.sender_name}
+                  value={settings.sender_name || ''}
                   onChange={(e) => handleChange('sender_name', e.target.value)}
                 />
               </div>
@@ -197,7 +219,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <input
                   type="email"
                   className="form-input"
-                  value={settings.email || settings.smtp_user}
+                  value={settings.email || settings.smtp_user || ''}
                   onChange={(e) => {
                     handleChange('email', e.target.value);
                     handleChange('smtp_user', e.target.value);
@@ -212,7 +234,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                     type={showPassword ? 'text' : 'password'}
                     className="form-input"
                     style={{ paddingRight: '2.5rem' }}
-                    value={settings.smtp_pass}
+                    value={settings.smtp_pass || ''}
                     onChange={(e) => handleChange('smtp_pass', e.target.value)}
                   />
                   <button

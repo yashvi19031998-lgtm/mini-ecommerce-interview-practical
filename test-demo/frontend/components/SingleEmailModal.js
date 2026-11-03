@@ -126,7 +126,7 @@ export default function SingleEmailModal({
             <input
               type="text"
               className="form-input"
-              value={subject}
+              value={subject || ''}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Enter compelling subject line..."
             />
@@ -164,7 +164,7 @@ export default function SingleEmailModal({
             <textarea
               className="form-input"
               rows={8}
-              value={message}
+              value={message || ''}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Write personalized outreach message..."
             />

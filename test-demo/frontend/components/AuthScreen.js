@@ -35,21 +35,39 @@ export default function AuthScreen() {
       return;
     }
 
+    const cleanEmail = email.trim();
     setIsLoading(true);
     try {
       if (isRegisterMode) {
-        await signUp(email, password, fullName);
-        setSuccessMsg('Account registered successfully! You can now sign in or check your email for confirmation.');
+        await signUp(cleanEmail, password, fullName);
+        setSuccessMsg('Account registered successfully! If Supabase email confirmation is enabled, check your inbox or sign in.');
         setIsRegisterMode(false);
       } else {
-        await signIn(email, password);
+        await signIn(cleanEmail, password);
       }
     } catch (err) {
       console.error('[AUTH ERROR]', err);
-      setErrorMsg(err.message || 'Authentication failed. Please verify credentials.');
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('is invalid')) {
+        setErrorMsg('Email address was rejected by Gmail/Supabase deliverability check (mailbox does not exist). You can use your real email, or click below to enter directly.');
+      } else if (msg.toLowerCase().includes('not confirmed')) {
+        setErrorMsg('Account exists but email is not confirmed in your inbox yet. Click below to enter the workspace directly.');
+      } else if (msg.toLowerCase().includes('rate limit')) {
+        setErrorMsg('Supabase free tier hourly email rate limit reached. Click below to enter the workspace directly.');
+      } else {
+        setErrorMsg(err.message || 'Authentication failed. Please verify credentials.');
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleInstantBypass = () => {
+    bypassDemoLogin({
+      id: 'user-' + Date.now(),
+      email: email.trim() || 'demo@sangeetainfotech.com',
+      user_metadata: { full_name: fullName.trim() || 'Lead Admin' }
+    });
   };
 
   return (
@@ -82,9 +100,37 @@ export default function AuthScreen() {
 
         {/* Alerts */}
         {errorMsg && (
-          <div className="auth-alert alert-error">
-            <AlertCircle size={15} style={{ flexShrink: 0 }} />
-            <span>{errorMsg}</span>
+          <div className="auth-alert alert-error" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+              <AlertCircle size={15} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '0.82rem' }}>{errorMsg}</span>
+            </div>
+            {(errorMsg.includes('click below') || errorMsg.includes('rejected') || errorMsg.includes('confirmed') || errorMsg.includes('rate limit')) && (
+              <button
+                type="button"
+                onClick={handleInstantBypass}
+                style={{
+                  alignSelf: 'stretch',
+                  marginTop: '0.25rem',
+                  padding: '0.45rem 0.75rem',
+                  background: 'var(--primary-lavender)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  transition: 'opacity 0.2s ease'
+                }}
+              >
+                <Sparkles size={13} />
+                Enter Workspace as {email.trim() || 'Admin'}
+              </button>
+            )}
           </div>
         )}
 

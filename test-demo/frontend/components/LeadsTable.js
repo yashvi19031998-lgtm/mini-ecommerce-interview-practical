@@ -120,7 +120,7 @@ export default function LeadsTable({
           <input
             type="text"
             placeholder="Search leads..."
-            value={searchQuery}
+            value={searchQuery || ''}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
