@@ -38,7 +38,7 @@ except ImportError:
     lead_quality = None
     is_outreach_ready = lambda lead: False  # without the quality module, never auto-email
 
-AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "true").lower() in ("true", "1", "yes")
+AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "false").lower() in ("true", "1", "yes")
 AUTO_SYNC_SUPABASE = os.getenv("AUTO_SYNC_SUPABASE", "true").lower() in ("true", "1", "yes")
 MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "5"))  # Safe batch of 5 new leads per run
 
@@ -48,6 +48,10 @@ LOCK_FILE = ".scraper_runner.lock"
 
 # List of all 12 scrapers to coordinate
 import feedly_scraper
+import intent_feeds
+import hn_hiring_scraper
+import freelancer_api_scraper
+from email_checks import can_receive_mail
 
 SCRAPERS_CONFIG = [
     {
@@ -127,6 +131,24 @@ SCRAPERS_CONFIG = [
         "func": feedly_scraper.run_feedly_adapter,
         "enabled": True,
         "category": "Feeds"
+    },
+    {
+        "name": "intent_feeds.py (Reddit buyer search, founder subreddits, funding news)",
+        "func": intent_feeds.run_intent_feeds_adapter,
+        "enabled": True,
+        "category": "Feeds"
+    },
+    {
+        "name": "hn_hiring_scraper.py (HN 'Who is hiring?' contract/freelance posts)",
+        "func": hn_hiring_scraper.run_hn_hiring_adapter,
+        "enabled": True,
+        "category": "Hiring Threads"
+    },
+    {
+        "name": "freelancer_api_scraper.py (Freelancer.com live projects, official API)",
+        "func": freelancer_api_scraper.run_freelancer_adapter,
+        "enabled": True,
+        "category": "Freelance Marketplaces"
     },
 ]
 
@@ -258,7 +280,7 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
             break
 
         status = str(lead_obj.get("email_status", "")).strip().upper()
-        if status == "SENT":
+        if status in ("SENT", "INVALID", "INVALID_DOMAIN"):
             continue
 
         # Only contact leads the AI qualified as real buyers with a high score
@@ -280,6 +302,12 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
         domain_part = email_lower.split("@")[-1]
         if domain_part in EMAIL_BLACKLIST_DOMAINS or "ingest" in domain_part or "sentry" in domain_part:
             lead_obj["email_status"] = "INVALID"
+            continue
+
+        # Domain must have a mail server, otherwise the email bounces and hurts our Gmail reputation
+        if not can_receive_mail(raw_email):
+            print(f"       -> [AUTO-MAIL-PENDING] Skipping {raw_email}: domain has no mail server")
+            lead_obj["email_status"] = "INVALID_DOMAIN"
             continue
 
         comp_name = lead_obj.get("company_name") or lead_obj.get("full_name") or "your company"

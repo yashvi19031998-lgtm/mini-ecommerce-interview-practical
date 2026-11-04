@@ -22,12 +22,28 @@ import os
 
 import env_loader  # noqa: F401  (loads .env before reading settings below)
 import slack_notifier
-from lead_normalizer import MasterLeadRegistry, is_ad_url
+import website_signals
+from lead_normalizer import MasterLeadRegistry, is_ad_url, lead_age_days
 
 MASTER_CSV = "all_leads_master.csv"
 AI_MODEL = os.getenv("AI_QUALIFY_MODEL", "claude-opus-5-5")
 AI_QUALIFY_LIMIT = int(os.getenv("AI_QUALIFY_LIMIT", "40"))  # max new leads qualified per run
 MIN_AI_SCORE_FOR_AUTO_EMAIL = int(os.getenv("MIN_AI_SCORE_FOR_AUTO_EMAIL", "7"))
+
+# Posts older than this are usually already filled: their score is capped so they never
+# reach Slack or auto-email. Age = post date if known, else when we first saw the lead.
+STALE_AFTER_DAYS = int(os.getenv("STALE_AFTER_DAYS", "14"))
+STALE_SCORE_CAP = 4
+
+# Who you actually want as a client. Edit in .env to match your business.
+IDEAL_CLIENT_PROFILE = os.getenv("IDEAL_CLIENT_PROFILE", "").strip() or (
+    "Businesses, startups or individuals in India, USA, UK, Canada, Australia, UAE or Europe who need "
+    "a web app, website, mobile app (Flutter / React Native), custom software, SaaS/MVP, or AI automation, "
+    "or who want to hire dedicated developers (React, Node.js, Python, PHP/Laravel, Flutter). "
+    "Best fit: a stated budget of roughly USD 500 or more (or INR 40,000+), or an ongoing/long-term engagement. "
+    "Poor fit: tiny one-off fixes under USD 100, unpaid or equity-only work, academic assignments, "
+    "and roles that require being on-site outside India."
+)
 
 # Categories that represent someone who may BUY software/dev services from us
 BUYER_CATEGORIES = {"client_project", "hiring_developer"}
@@ -38,6 +54,7 @@ AI_CATEGORIES = [
     "service_provider",   # agency/freelancer SELLING dev services (competitor, not a buyer)
     "job_seeker",         # person looking for work ("[FOR HIRE]")
     "job_board_or_directory",  # Indeed, Upwork listing pages, directories, aggregators
+    "prospect_signal",    # no request yet, but a strong trigger (e.g. just raised funding) - Slack only, never auto-emailed
     "irrelevant",         # non-IT work, articles, dictionaries, spam, ads
 ]
 
@@ -54,6 +71,9 @@ Classify the lead into exactly one category:
 - service_provider: an agency or freelancer selling development services
 - job_seeker: someone looking for work
 - job_board_or_directory: a job board, listing page, marketplace or directory page rather than one buyer
+- prospect_signal: no explicit request, but a specific company with a strong reason to need software \
+work soon - e.g. a startup that just raised funding, launched, or is expanding. Score by how likely they \
+are to buy development work (tech/product startups high; non-tech or very large companies low).
 - irrelevant: anything else (non-IT work, articles, ads, spam)
 
 score (0-10) = how worthwhile this lead is for the agency to contact now: \
@@ -61,6 +81,21 @@ score (0-10) = how worthwhile this lead is for the agency to contact now: \
 Score service_provider, job_seeker, job_board_or_directory and irrelevant at 2 or below.
 
 Base everything only on the text given. Use an empty string when a field is unknown; never invent budgets or tech."""
+
+SYSTEM_PROMPT += f"""
+
+Our ideal client:
+{IDEAL_CLIENT_PROFILE}
+
+Within the buyer categories, score higher the better the lead matches the ideal client \
+(fit of work type, budget, location, and how specific the need is) and lower when it is a poor fit. \
+Each lead shows when it was posted and today's date: a request posted more than about two weeks ago \
+is probably already filled, so score it lower. \
+"Seen in" lists every source where this same lead was found; several independent sources are a stronger signal. \
+"Website check" lists problems found on the company's own website (not mobile-friendly, no HTTPS, old \
+WordPress/jQuery, not updated in years, site builder), and "Website: none found" means a listed local business \
+has no website. These are reasons a business may need web work: without an explicit request, classify such a \
+real business as prospect_signal (stronger the more serious the problems); never treat them as a request."""
 
 QUALIFY_SCHEMA = {
     "type": "object",
@@ -89,6 +124,10 @@ def derive_contact_channel(lead: dict) -> str:
     if lead.get("mobile_number"):
         return "phone"
     src = f"{lead.get('source_url', '')} {lead.get('source', '')}".lower()
+    if "freelancer.com" in src:
+        return "freelancer_bid"  # must be contacted through the platform
+    if "ycombinator.com" in src or "hacker news" in src:
+        return "hackernews"
     if "reddit.com" in src or "reddit" in src:
         return "reddit"
     if "t.me/" in src or "telegram" in src:
@@ -108,15 +147,49 @@ def is_outreach_ready(lead: dict) -> bool:
         lead.get("ai_category") in BUYER_CATEGORIES
         and score >= MIN_AI_SCORE_FOR_AUTO_EMAIL
         and bool(lead.get("email"))
+        and not is_stale(lead)
     )
 
 
+def _age_label(lead: dict) -> str:
+    age = lead_age_days(lead)
+    if age is None:
+        return "unknown"
+    stamp = lead.get("posted_at") or lead.get("first_seen_at")
+    kind = "" if lead.get("posted_at") else " (first seen by us; real post date unknown)"
+    return f"{stamp[:10]}, {int(age)} days ago{kind}"
+
+
+def is_stale(lead: dict) -> bool:
+    age = lead_age_days(lead)
+    return age is not None and age > STALE_AFTER_DAYS
+
+
+def _sources(lead: dict) -> list:
+    """Distinct sources this lead was merged from (the normalizer joins them with ' | ')."""
+    parts = [p.strip() for p in str(lead.get("source") or "").split("|") if p.strip()]
+    return list(dict.fromkeys(parts))
+
+
+LOCAL_BUSINESS_SOURCES = ("google maps", "justdial", "indiamart", "tradeindia", "exportersindia")
+
+
+def _is_local_business(lead: dict) -> bool:
+    """Listing-directory businesses: for these, having no website is itself a sales signal."""
+    src = str(lead.get("source") or "").lower()
+    return any(s in src for s in LOCAL_BUSINESS_SOURCES)
+
+
 def _lead_text(lead: dict) -> str:
+    sources = _sources(lead)
     fields = [
+        ("Posted", _age_label(lead)),
+        ("Seen in", f"{len(sources)} sources: {'; '.join(sources)}" if len(sources) > 1 else ""),
         ("Title / company", lead.get("company_name")),
         ("Contact name", lead.get("full_name")),
         ("Description", lead.get("description")),
-        ("Website", lead.get("website")),
+        ("Website", lead.get("website") or ("none found" if _is_local_business(lead) else "")),
+        ("Website check", lead.get("website_signals")),
         ("Source", lead.get("source")),
         ("Source URL", lead.get("source_url")),
         ("Location", lead.get("location")),
@@ -170,7 +243,8 @@ def qualify_one(client, lead: dict) -> dict:
             "format": {"type": "json_schema", "schema": QUALIFY_SCHEMA},
         },
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": f"Qualify this lead:\n\n{_lead_text(lead)}"}],
+        messages=[{"role": "user", "content":
+                   f"Today's date: {datetime.date.today().isoformat()}\n\nQualify this lead:\n\n{_lead_text(lead)}"}],
     )
     if response.stop_reason == "refusal":
         raise RuntimeError("model declined to classify this lead")
@@ -197,6 +271,12 @@ def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -
     # Newest leads first: they are the most likely to still be open
     pending.sort(key=lambda l: l.get("first_seen_at", ""), reverse=True)
     for lead in pending[:limit]:
+        # Look at the company's own website first, so the AI can see "needs work" signals
+        if lead.get("website") and not lead.get("website_signals"):
+            try:
+                lead["website_signals"] = website_signals.check_website(lead["website"])
+            except Exception as e:  # never let a website problem stop qualification
+                print(f"[AI] website check failed for {lead.get('website')}: {e}")
         try:
             result = qualify_one(client, lead)
         except anthropic.RateLimitError:
@@ -211,6 +291,10 @@ def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -
             continue
 
         score = max(0, min(10, int(result.get("score", 0))))
+        reason = result.get("reason", "")
+        if is_stale(lead) and score > STALE_SCORE_CAP:
+            score = STALE_SCORE_CAP
+            reason = f"[Stale: older than {STALE_AFTER_DAYS} days, score capped] {reason}"
         lead.update({
             "ai_category": result.get("category", ""),
             "ai_score": str(score),
@@ -218,7 +302,7 @@ def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -
             "ai_requirement": result.get("requirement", "")[:300],
             "ai_tech_stack": result.get("tech_stack", "")[:150],
             "ai_budget": result.get("budget", "")[:100],
-            "ai_reason": result.get("reason", "")[:300],
+            "ai_reason": reason[:300],
             "ai_qualified_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         })
         stats["qualified"] += 1
@@ -237,6 +321,12 @@ def run(master_csv: str = MASTER_CSV, limit: int = AI_QUALIFY_LIMIT, use_ai: boo
         raise RuntimeError(f"Failed to save {master_csv}")
     ready = sum(1 for l in registry.leads if is_outreach_ready(l))
     stats["outreach_ready"] = ready
+    try:
+        import source_report
+        source_report.print_report(source_report.write_report(
+            registry.leads, os.path.join(os.path.dirname(os.path.abspath(master_csv)), source_report.REPORT_PATH)))
+    except OSError as e:
+        print(f"[QUALITY] source report not written: {e}")
     print(f"[QUALITY] {stats}")
     return stats
 

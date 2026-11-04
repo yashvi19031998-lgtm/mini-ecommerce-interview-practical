@@ -17,6 +17,8 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Tuple
 
+from lead_normalizer import MAX_DESCRIPTION_CHARS
+
 try:
     from ddgs import DDGS
 except ImportError:
@@ -214,10 +216,10 @@ def run_direct_feed_csv_adapter() -> List[Dict[str, Any]]:
                     "company_name": clean_comp[:80],
                     "source": "Reddit (r/forhire RSS)",
                     "source_url": url,
-                    "first_seen_at": published,
+                    "posted_at": published,
                     "email": contacts.get("Email", "") if contacts.get("Email") != "Not Found" else "",
                     "mobile_number": contacts.get("Mobile", "") if contacts.get("Mobile") != "Not Found" else "",
-                    "description": snippet_clean[:250],
+                    "description": snippet_clean[:MAX_DESCRIPTION_CHARS],
                     "lead_type": "Client Hiring",
                     "location": "Remote"
                 })
@@ -257,6 +259,8 @@ def run_direct_feed_testing_2_adapter() -> List[Dict[str, Any]]:
                 title = title_elem.text if title_elem is not None and title_elem.text else ""
                 url = link_elem.text if link_elem is not None and link_elem.text else link_elem.attrib.get('href', '') if link_elem is not None else ""
                 snippet = desc_elem.text if desc_elem is not None and desc_elem.text else ""
+                pub_date = (item.findtext('pubDate') or item.findtext('{http://www.w3.org/2005/Atom}published')
+                            or item.findtext('{http://www.w3.org/2005/Atom}updated') or "")
 
                 if "[for hire]" in title.lower() or "[for-hire]" in title.lower():
                     continue
@@ -277,7 +281,8 @@ def run_direct_feed_testing_2_adapter() -> List[Dict[str, Any]]:
                         "source_url": url,
                         "email": contacts.get("Email", "") if contacts.get("Email") != "Not Found" else "",
                         "mobile_number": contacts.get("Mobile", "") if contacts.get("Mobile") != "Not Found" else "",
-                        "description": re.sub(r'<[^>]+>', '', snippet)[:250].strip(),
+                        "description": re.sub(r'<[^>]+>', '', snippet)[:MAX_DESCRIPTION_CHARS].strip(),
+                        "posted_at": pub_date,
                         "lead_type": "Remote Tech Hiring",
                         "location": "Remote"
                     })
@@ -596,6 +601,8 @@ def run_reddit_rss_scraper_adapter() -> List[Dict[str, Any]]:
                 title_el = entry.find('atom:title', namespace)
                 link_el = entry.find('atom:link', namespace)
                 content_el = entry.find('atom:content', namespace)
+                pub_date = (entry.findtext('atom:published', default="", namespaces=namespace)
+                            or entry.findtext('atom:updated', default="", namespaces=namespace))
 
                 title = title_el.text if title_el is not None else ""
                 url = link_el.attrib.get('href', '') if link_el is not None else ""
@@ -619,7 +626,8 @@ def run_reddit_rss_scraper_adapter() -> List[Dict[str, Any]]:
                         "source_url": url,
                         "email": ", ".join(set(clean_emails)) if clean_emails else "",
                         "mobile_number": phones[0] if phones else "",
-                        "description": clean_summary[:250].strip(),
+                        "description": clean_summary[:MAX_DESCRIPTION_CHARS].strip(),
+                        "posted_at": pub_date,
                         "lead_type": "Client Hiring",
                         "location": "Remote",
                         "intent_score": "8"
@@ -690,7 +698,8 @@ def run_telegram_scraper_adapter() -> List[Dict[str, Any]]:
                     "full_name": sender,
                     "email": ", ".join(set(emails)) if emails else "",
                     "mobile_number": phones[0].strip() if phones else "",
-                    "description": msg[:300].strip(),
+                    "description": msg[:MAX_DESCRIPTION_CHARS].strip(),
+                    "posted_at": r.get("Date", ""),
                     "source": f"Telegram ({channel})",
                     "source_url": f"https://t.me/{channel.replace('@', '')}" if channel else "",
                     "lead_type": "Telegram Client Hiring",

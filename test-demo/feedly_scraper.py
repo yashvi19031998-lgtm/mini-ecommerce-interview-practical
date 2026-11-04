@@ -32,6 +32,7 @@ from typing import Any, Dict, List, Optional
 import requests
 
 import env_loader  # noqa: F401  (loads .env before reading settings below)
+from lead_normalizer import MAX_DESCRIPTION_CHARS
 
 FEEDLY_API_BASE = os.getenv("FEEDLY_API_BASE", "https://api.feedly.com/v3").rstrip("/")
 FEEDLY_ACCESS_TOKEN = os.getenv("FEEDLY_ACCESS_TOKEN", "").strip()
@@ -68,30 +69,33 @@ def _strip_html(html: str) -> str:
     return re.sub(r"\s+", " ", TAG_RE.sub(" ", html or "")).strip()
 
 
-def is_lead_like(title: str, text: str) -> bool:
+def is_lead_like(title: str, text: str, include=None, exclude=None) -> bool:
+    """Keyword pre-filter. include/exclude default to the buyer-intent lists above."""
     blob = f"{title} {text}".lower()
-    if any(x in blob for x in EXCLUDE_KEYWORDS):
+    if any(x in blob for x in (EXCLUDE_KEYWORDS if exclude is None else exclude)):
         return False
-    return any(k in blob for k in INTENT_KEYWORDS)
+    return any(k in blob for k in (INTENT_KEYWORDS if include is None else include))
 
 
-def to_raw_lead(title: str, text: str, link: str, source_name: str, published: Optional[datetime.datetime]) -> Dict[str, Any]:
+def to_raw_lead(title: str, text: str, link: str, source_name: str, published: Optional[datetime.datetime],
+                source_prefix: str = "Feedly", lead_type: str = "Feed Post") -> Dict[str, Any]:
     """Shape an article into the raw-record format lead_normalizer understands."""
     plain = _strip_html(text)
     return {
         "company_name": _strip_html(title)[:200],
-        "description": plain[:400],
-        "source": f"Feedly ({source_name})" if source_name else "Feedly",
+        "description": plain[:MAX_DESCRIPTION_CHARS],
+        "source": f"{source_prefix} ({source_name})" if source_name else source_prefix,
         "source_url": link,
         "email": ", ".join(sorted(set(EMAIL_RE.findall(plain)))),
         "Phone": ", ".join(PHONE_RE.findall(plain)[:2]),
-        "lead_type": "Feed Post",
-        "first_seen_at": (published or datetime.datetime.now()).strftime("%Y-%m-%d %H:%M:%S"),
+        "lead_type": lead_type,
+        "posted_at": published.strftime("%Y-%m-%d %H:%M:%S") if published else "",
     }
 
 
-def _cutoff() -> datetime.datetime:
-    return datetime.datetime.now() - datetime.timedelta(days=FEEDLY_MAX_AGE_DAYS)
+def _cutoff(max_age_days: float = None) -> datetime.datetime:
+    days = FEEDLY_MAX_AGE_DAYS if max_age_days is None else max_age_days
+    return datetime.datetime.now() - datetime.timedelta(days=days)
 
 
 # ---------------------------------------------------------------------------
@@ -161,38 +165,54 @@ def _parse_date(value: str) -> Optional[datetime.datetime]:
         return None
 
 
-def parse_feed_xml(xml_text: str, feed_url: str = "") -> List[Dict[str, Any]]:
+def parse_feed_xml(xml_text: str, feed_url: str = "", include=None, exclude=None, max_age_days: float = None,
+                   source_prefix: str = "Feedly", lead_type: str = "Feed Post") -> List[Dict[str, Any]]:
     """Parses RSS 2.0 or Atom XML into raw leads (after keyword + age filtering)."""
     root = ET.fromstring(xml_text)
     atom = "{http://www.w3.org/2005/Atom}"
     feed_title = (root.findtext("channel/title") or root.findtext(f"{atom}title") or feed_url).strip()
-    cutoff = _cutoff()
+    cutoff = _cutoff(max_age_days)
     leads = []
+    shape = dict(source_prefix=source_prefix, lead_type=lead_type)
 
     for item in root.iter("item"):  # RSS 2.0
         title = item.findtext("title") or ""
         text = item.findtext("description") or item.findtext("{http://purl.org/rss/1.0/modules/content/}encoded") or ""
         pub = _parse_date(item.findtext("pubDate") or "")
-        if (pub and pub < cutoff) or not is_lead_like(title, text):
+        if (pub and pub < cutoff) or not is_lead_like(title, text, include, exclude):
             continue
-        leads.append(to_raw_lead(title, text, item.findtext("link") or "", feed_title, pub))
+        leads.append(to_raw_lead(title, text, item.findtext("link") or "", feed_title, pub, **shape))
 
     for entry in root.iter(f"{atom}entry"):  # Atom (Reddit uses this)
         title = entry.findtext(f"{atom}title") or ""
         text = entry.findtext(f"{atom}content") or entry.findtext(f"{atom}summary") or ""
         pub = _parse_date(entry.findtext(f"{atom}published") or entry.findtext(f"{atom}updated") or "")
-        if (pub and pub < cutoff) or not is_lead_like(title, text):
+        if (pub and pub < cutoff) or not is_lead_like(title, text, include, exclude):
             continue
         link_el = entry.find(f"{atom}link")
         link = link_el.get("href", "") if link_el is not None else ""
-        leads.append(to_raw_lead(title, text, link, feed_title, pub))
+        leads.append(to_raw_lead(title, text, link, feed_title, pub, **shape))
     return leads
 
 
-def fetch_rss(feed_url: str) -> List[Dict[str, Any]]:
-    r = requests.get(feed_url, headers={"User-Agent": USER_AGENT}, timeout=15)
+def fetch_feed_text(feed_url: str, retries: int = 2) -> str:
+    """GET a feed. On HTTP 429 (rate limited) waits as the server asks (max 60s) and retries."""
+    for attempt in range(retries + 1):
+        r = requests.get(feed_url, headers={"User-Agent": USER_AGENT}, timeout=15)
+        if r.status_code == 429 and attempt < retries:
+            retry_after = r.headers.get("Retry-After", "")
+            wait = min(int(retry_after), 60) if retry_after.isdigit() else 15 * (attempt + 1)
+            print(f"       [feeds] rate limited by {feed_url.split('/')[2]}, waiting {wait}s...")
+            time.sleep(wait)
+            continue
+        r.raise_for_status()
+        return r.text
     r.raise_for_status()
-    return parse_feed_xml(r.text, feed_url)
+    return r.text
+
+
+def fetch_rss(feed_url: str, **parse_options) -> List[Dict[str, Any]]:
+    return parse_feed_xml(fetch_feed_text(feed_url), feed_url, **parse_options)
 
 
 # ---------------------------------------------------------------------------

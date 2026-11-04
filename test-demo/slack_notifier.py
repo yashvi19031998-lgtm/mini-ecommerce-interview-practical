@@ -22,13 +22,17 @@ import time
 import requests
 
 import env_loader  # noqa: F401  (loads .env before reading settings below)
+from lead_normalizer import lead_age_days
 
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL", "").strip()
 MIN_AI_SCORE_FOR_SLACK = int(os.getenv("MIN_AI_SCORE_FOR_SLACK", "7"))
 SLACK_MAX_PER_RUN = int(os.getenv("SLACK_MAX_PER_RUN", "20"))  # avoid flooding the channel on backfills
+STALE_AFTER_DAYS = int(os.getenv("STALE_AFTER_DAYS", "14"))  # same setting as lead_quality.py
 
-BUYER_CATEGORIES = {"client_project", "hiring_developer"}
-CATEGORY_LABELS = {"client_project": "Client project", "hiring_developer": "Hiring developers"}
+# prospect_signal (e.g. a startup that just raised funding) is alerted but never auto-emailed
+BUYER_CATEGORIES = {"client_project", "hiring_developer", "prospect_signal"}
+CATEGORY_LABELS = {"client_project": "Client project", "hiring_developer": "Hiring developers",
+                   "prospect_signal": "Prospect (trigger event)"}
 
 
 def _esc(text) -> str:
@@ -44,7 +48,10 @@ def _score(lead: dict) -> int:
 
 
 def is_hot_lead(lead: dict) -> bool:
-    """AI-qualified buyer with a high score. Email not required - Reddit/phone leads count too."""
+    """AI-qualified, still-fresh buyer with a high score. Email not required - Reddit/phone leads count too."""
+    age = lead_age_days(lead)
+    if age is not None and age > STALE_AFTER_DAYS:
+        return False
     return lead.get("ai_category") in BUYER_CATEGORIES and _score(lead) >= MIN_AI_SCORE_FOR_SLACK
 
 
@@ -56,7 +63,14 @@ def _contact_line(lead: dict) -> str:
         parts.append(f"📞 {_esc(lead['mobile_number'].split(',')[0].strip())}")
     link = lead.get("source_url") or lead.get("website")
     if link:
-        label = "Reddit post" if "reddit.com" in link else "Open source"
+        if "reddit.com" in link:
+            label = "Reddit post"
+        elif "freelancer.com" in link:
+            label = "Bid on Freelancer.com"
+        elif "ycombinator.com" in link:
+            label = "HN post"
+        else:
+            label = "Open source"
         parts.append(f"<{link}|{label}>")
     return "  •  ".join(parts) or "_No direct contact found_"
 

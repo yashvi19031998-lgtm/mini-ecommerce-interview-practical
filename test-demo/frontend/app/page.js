@@ -150,8 +150,8 @@ function DashboardContent() {
     try {
       await patchLeadStatus(leadId, newStatus);
       showToast(`Lead #${leadId} status set to ${newStatus}`, 'success');
-    } catch {
-      showToast('Status update saved locally', 'info');
+    } catch (err) {
+      showToast(`Could not save status: ${err.message}`, 'error');
     }
   };
 

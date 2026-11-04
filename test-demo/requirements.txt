@@ -9,3 +9,4 @@ ddgs>=9.0.0
 lxml>=4.9.0
 python-dateutil>=2.8.0
 anthropic>=2.4.0
+dnspython>=2.6.0

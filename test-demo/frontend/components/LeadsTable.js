@@ -7,6 +7,59 @@ import {
   ChevronLeft, ChevronRight, Download, Globe, MapPin, Phone, Copy, Check
 } from 'lucide-react';
 
+// AI qualification fields come from lead_quality.py (columns ai_* in all_leads_master.csv)
+const HOT_CATEGORIES = ['client_project', 'hiring_developer', 'prospect_signal'];
+const HOT_SCORE = 7;
+const CATEGORY_LABELS = {
+  client_project: 'Client project',
+  hiring_developer: 'Hiring developers',
+  prospect_signal: 'Prospect signal',
+  service_provider: 'Service provider',
+  job_seeker: 'Job seeker',
+  job_board_or_directory: 'Job board / directory',
+  irrelevant: 'Not relevant'
+};
+// CRM pipeline stages (saved to the `status` column; WON feeds logs/source_quality.csv)
+const PIPELINE_STAGES = ['NEW', 'CONTACTED', 'REPLIED', 'MEETING', 'WON', 'LOST', 'DISQUALIFIED'];
+
+const aiScoreOf = (item) => {
+  const n = parseFloat(item.ai_score);
+  return Number.isFinite(n) ? n : null;
+};
+
+const isHotLead = (item) => {
+  const score = aiScoreOf(item);
+  return score !== null && score >= HOT_SCORE && HOT_CATEGORIES.includes(item.ai_category);
+};
+
+const postedAgo = (item) => {
+  const stamp = item.posted_at || item.first_seen_at;
+  if (!stamp) return '';
+  const then = new Date(String(stamp).replace(' ', 'T'));
+  if (Number.isNaN(then.getTime())) return '';
+  const days = Math.floor((Date.now() - then.getTime()) / 86400000);
+  if (days <= 0) return 'today';
+  return days === 1 ? '1 day ago' : `${days} days ago`;
+};
+
+const scoreBadgeStyle = (score) => {
+  const palette = score >= HOT_SCORE
+    ? { background: 'var(--success-bg)', color: 'var(--success-green)' }
+    : score >= 4
+      ? { background: 'var(--warning-bg)', color: 'var(--warning-amber)' }
+      : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' };
+  return {
+    ...palette,
+    display: 'inline-block',
+    minWidth: '42px',
+    textAlign: 'center',
+    padding: '2px 8px',
+    borderRadius: 'var(--radius-pill)',
+    fontSize: '12px',
+    fontWeight: 600
+  };
+};
+
 export default function LeadsTable({
   leads = [],
   onSelectLeadForEmail,
@@ -32,12 +85,15 @@ export default function LeadsTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
+  // Sort by AI score (highest first) when toggled from the column header
+  const [sortByScore, setSortByScore] = useState(false);
+
   // Search effective
   const effectiveSearch = searchQuery || globalSearch;
 
   // Filtered Leads
   const filteredLeads = useMemo(() => {
-    return leads.filter(item => {
+    const result = leads.filter(item => {
       // Search text
       if (effectiveSearch.trim()) {
         const q = effectiveSearch.toLowerCase();
@@ -46,7 +102,8 @@ export default function LeadsTable({
         const loc = String(item.Address || '').toLowerCase();
         const src = String(item.Source || '').toLowerCase();
         const phone = String(item['Mobile Number'] || '').toLowerCase();
-        if (!comp.includes(q) && !em.includes(q) && !loc.includes(q) && !src.includes(q) && !phone.includes(q)) {
+        const ai = `${item.ai_summary || ''} ${item.ai_requirement || ''} ${item.ai_tech_stack || ''}`.toLowerCase();
+        if (!comp.includes(q) && !em.includes(q) && !loc.includes(q) && !src.includes(q) && !phone.includes(q) && !ai.includes(q)) {
           return false;
         }
       }
@@ -61,11 +118,19 @@ export default function LeadsTable({
       } else if (filterStatus === 'with_email') {
         const em = item.Email;
         if (!em || !em.includes('@') || em === 'N/A') return false;
+      } else if (filterStatus === 'hot') {
+        if (!isHotLead(item)) return false;
+      } else if (filterStatus === 'unscored') {
+        if (aiScoreOf(item) !== null) return false;
       }
 
       return true;
     });
-  }, [leads, effectiveSearch, filterStatus]);
+    if (sortByScore || filterStatus === 'hot') {
+      return [...result].sort((a, b) => (aiScoreOf(b) ?? -1) - (aiScoreOf(a) ?? -1));
+    }
+    return result;
+  }, [leads, effectiveSearch, filterStatus, sortByScore]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredLeads.length / pageSize) || 1;
@@ -105,7 +170,9 @@ export default function LeadsTable({
     all: 'All Leads',
     sent: 'Sent Outreach',
     pending: 'Pending Outreach',
-    with_email: 'Has Email'
+    with_email: 'Has Email',
+    hot: '🔥 Hot (AI 7+)',
+    unscored: 'Not scored yet'
   };
 
   return (
@@ -144,7 +211,7 @@ export default function LeadsTable({
 
           {statusMenuOpen && (
             <div className="theme-dropdown-pop">
-              {['all', 'sent', 'pending', 'with_email'].map((key) => (
+              {['all', 'hot', 'sent', 'pending', 'with_email', 'unscored'].map((key) => (
                 <div
                   key={key}
                   className="theme-dropdown-item"
@@ -267,6 +334,13 @@ export default function LeadsTable({
           </div>
           <span style={{ width: '32px', flexShrink: 0 }}></span>
           <span style={{ flex: '1 1 200px', minWidth: '180px' }}>Company & Website</span>
+          <span
+            onClick={() => { setSortByScore(!sortByScore); setCurrentPage(1); }}
+            style={{ width: '80px', flexShrink: 0, cursor: 'pointer', userSelect: 'none' }}
+            title="Click to sort by AI score"
+          >
+            AI Score {sortByScore ? '↓' : ''}
+          </span>
           <span style={{ width: '220px', flexShrink: 0 }}>Verified Email</span>
           <span style={{ width: '150px', flexShrink: 0 }}>Phone / Mobile</span>
           <span style={{ width: '120px', flexShrink: 0 }}>Status</span>
@@ -290,6 +364,14 @@ export default function LeadsTable({
             const compName = item['Company Name'] || item.company_name || 'Anonymous Business';
             const website = item['Website URL'] || item.website || '';
             const src = item.Source || item.source || 'Scraper';
+            const sourceUrl = item.source_url || '';
+            const score = aiScoreOf(item);
+            const categoryLabel = CATEGORY_LABELS[item.ai_category] || '';
+            const ago = postedAgo(item);
+            const pipelineStatus = String(item.Status || item.status || 'NEW').toUpperCase();
+            const stageOptions = PIPELINE_STAGES.includes(pipelineStatus)
+              ? PIPELINE_STAGES
+              : [pipelineStatus, ...PIPELINE_STAGES];
 
             return (
               <div 
@@ -323,8 +405,37 @@ export default function LeadsTable({
                       <span>{website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</span>
                       <ExternalLink size={10} />
                     </a>
+                  ) : sourceUrl ? (
+                    <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="theme-comp-url">
+                      <ExternalLink size={10} />
+                      <span>Open post</span>
+                    </a>
                   ) : (
                     <span className="theme-comp-empty">No website available</span>
+                  )}
+                  {item.ai_summary && (
+                    <div
+                      title={item.ai_requirement || item.ai_summary}
+                      style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '3px', lineHeight: 1.35 }}
+                    >
+                      {item.ai_summary}
+                    </div>
+                  )}
+                  {(categoryLabel || ago) && (
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {[categoryLabel, ago && `posted ${ago}`].filter(Boolean).join(' · ')}
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Score */}
+                <div style={{ width: '80px', flexShrink: 0 }}>
+                  {score !== null ? (
+                    <span style={scoreBadgeStyle(score)} title={item.ai_reason || ''}>
+                      {score}/10
+                    </span>
+                  ) : (
+                    <span className="theme-cell-empty" title="Not scored by AI yet">—</span>
                   )}
                 </div>
 
@@ -362,6 +473,29 @@ export default function LeadsTable({
                   <span className={`theme-status-tag ${isSent ? 'sent' : 'pending'}`}>
                     {isSent ? 'Sent' : 'Pending'}
                   </span>
+                  <select
+                    value={pipelineStatus}
+                    onChange={(e) => onStatusChange && onStatusChange(item.id, e.target.value)}
+                    title="Pipeline stage"
+                    aria-label={`Pipeline stage for ${compName}`}
+                    style={{
+                      display: 'block',
+                      marginTop: '4px',
+                      fontSize: '11px',
+                      padding: '1px 4px',
+                      border: '1px solid var(--border-med)',
+                      borderRadius: '6px',
+                      background: 'var(--bg-white)',
+                      color: 'var(--text-secondary)',
+                      maxWidth: '110px'
+                    }}
+                  >
+                    {stageOptions.map((stage) => (
+                      <option key={stage} value={stage}>
+                        {stage.charAt(0) + stage.slice(1).toLowerCase().replace('_', ' ')}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Lead Source */}

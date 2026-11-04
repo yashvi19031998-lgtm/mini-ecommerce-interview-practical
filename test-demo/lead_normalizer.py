@@ -13,6 +13,8 @@ import datetime
 from urllib.parse import urlparse
 from typing import Dict, Any, List, Tuple, Optional, Set
 
+from dateutil import parser as date_parser
+
 # Master CSV Canonical Field Definition
 MASTER_FIELDNAMES = [
     "lead_id",
@@ -32,6 +34,8 @@ MASTER_FIELDNAMES = [
     "last_updated_at",
     "email_status",
     "email_sent_at",
+    # When the original post/message was published (empty if the source gives no date)
+    "posted_at",
     # CRM pipeline status (NEW, CONTACTED, REPLIED, MEETING, WON, LOST, ...) - set from the UI
     "status",
     # How to reach this lead: email / phone / reddit / telegram / website / none
@@ -47,12 +51,15 @@ MASTER_FIELDNAMES = [
     "ai_qualified_at",
     # When this lead was posted to Slack (empty = not yet)
     "slack_notified_at",
+    # Website "needs work" signals (website_signals.py), e.g. "not mobile-friendly; old jQuery 1.12"
+    "website_signals",
 ]
 
 # Fields that are not derived from scraper output and must survive every re-save untouched
 PASSTHROUGH_FIELDS = [
     "contact_channel", "ai_category", "ai_score", "ai_summary", "ai_requirement",
     "ai_tech_stack", "ai_budget", "ai_reason", "ai_qualified_at", "slack_notified_at",
+    "website_signals",
 ]
 
 # Template / placeholder emails copied from website themes ("you@company.com")
@@ -65,6 +72,38 @@ PLACEHOLDER_EMAIL_DOMAINS = {
     "example.net", "email.com", "website.com", "yoursite.com", "mysite.com",
 }
 
+# How much post text we keep. The AI qualifier reads this, and budgets / tech / contact
+# details are often near the end of a post, so don't cut it short.
+MAX_DESCRIPTION_CHARS = int(os.getenv("MAX_DESCRIPTION_CHARS", "2000"))
+
+
+def normalize_datetime(value: Any) -> str:
+    """Parses most date formats (RFC 822, ISO 8601, epoch ms/s, 'YYYY-MM-DD') to local 'YYYY-MM-DD HH:MM:SS'."""
+    if value is None or str(value).strip() in ("", "None", "N/A", "nan"):
+        return ""
+    v = str(value).strip()
+    try:
+        if v.isdigit():  # epoch seconds or milliseconds
+            ts = int(v) / (1000 if len(v) >= 13 else 1)
+            return datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+        dt = date_parser.parse(v)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone().replace(tzinfo=None)
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except (ValueError, OverflowError, OSError):
+        return ""
+
+
+def lead_age_days(lead: Dict[str, Any]) -> Optional[float]:
+    """Age of the lead in days: from the post date if known, else from when we first saw it."""
+    stamp = lead.get("posted_at") or lead.get("first_seen_at") or ""
+    norm = normalize_datetime(stamp)
+    if not norm:
+        return None
+    then = datetime.datetime.strptime(norm, "%Y-%m-%d %H:%M:%S")
+    return max(0.0, (datetime.datetime.now() - then).total_seconds() / 86400)
+
+
 # Paid-ad click-trackers are never leads
 AD_URL_MARKERS = ("bing.com/aclick", "googleadservices.com", "doubleclick.net", "/aclk?")
 
@@ -75,7 +114,14 @@ INVALID_DOMAINS = {
     "instagram.com", "youtube.com", "wikipedia.org", "w3schools.com",
     "geeksforgeeks.org", "softonic.com", "microsoft.com", "apple.com",
     "imdb.com", "netflix.com", "simplilearn.com", "computerhope.com",
-    "techtarget.com", "britannica.com", "forms.gle", "docs.google.com"
+    "techtarget.com", "britannica.com", "forms.gle", "docs.google.com",
+    # Platforms / marketplaces / job boards / news: a post there is NOT the company's website.
+    # (If these were treated as websites, domain-based dedupe would merge every post into one lead.)
+    "linkedin.com", "freelancer.com", "upwork.com", "fiverr.com", "peopleperhour.com", "guru.com",
+    "ycombinator.com", "indeed.com", "glassdoor.com", "ziprecruiter.com", "naukri.com",
+    "weworkremotely.com", "remotive.com", "t.me", "telegram.me", "medium.com", "github.com",
+    "quora.com", "producthunt.com", "inc42.com", "yourstory.com", "justdial.com",
+    "indiamart.com", "tradeindia.com", "exportersindia.com",
 }
 
 EMAIL_BLACKLIST_DOMAINS = {
@@ -355,6 +401,9 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     lead_id = clean_text(raw.get("lead_id") or raw.get("Lead ID") or "")
     email_status = clean_text(raw.get("email_status") or raw.get("Email Status") or "NOT_SENT")
     email_sent_at = clean_text(raw.get("email_sent_at") or raw.get("Email Sent At") or "")
+    posted_at = normalize_datetime(
+        raw.get("posted_at") or raw.get("Posted Date") or raw.get("published") or raw.get("Date") or ""
+    )
     status = clean_text(raw.get("status") or raw.get("Status") or "NEW").upper()
 
     return {
@@ -364,7 +413,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
         "email": email,
         "mobile_number": phone,
         "website": website,
-        "description": description[:400],
+        "description": description[:MAX_DESCRIPTION_CHARS],
         "source": source,
         "source_url": source_url,
         "location": location,
@@ -375,6 +424,7 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
         "last_updated_at": last_updated,
         "email_status": email_status,
         "email_sent_at": email_sent_at,
+        "posted_at": posted_at,
         "status": status,
         **{k: str(raw.get(k) or "").strip() for k in PASSTHROUGH_FIELDS},
     }
@@ -550,6 +600,11 @@ class MasterLeadRegistry:
         # 7. Update Description if more comprehensive
         if len(new_lead.get("description", "")) > len(target.get("description", "")):
             target["description"] = new_lead["description"]
+            modified = True
+
+        # 7b. Fill in the original post date if we didn't have it
+        if not target.get("posted_at") and new_lead.get("posted_at"):
+            target["posted_at"] = new_lead["posted_at"]
             modified = True
 
         # 8. Update Intent Score if higher
