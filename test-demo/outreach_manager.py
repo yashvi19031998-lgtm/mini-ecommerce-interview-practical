@@ -283,5 +283,18 @@ def export_outreach_html_report(output_file: str = "hot_leads_outreach.html"):
 
 
 if __name__ == "__main__":
-    report_path = export_outreach_html_report()
-    print("Outreach Hub Report Ready! Opening...")
+    import argparse
+    parser = argparse.ArgumentParser(description="Outreach Campaign Manager")
+    parser.add_argument("--auto", action="store_true", help="Automatically dispatch cold emails to hot leads via SMTP")
+    parser.add_argument("--batch", type=int, default=5, help="Batch limit per run (default: 5)")
+    parser.add_argument("--report", action="store_true", help="Generate interactive HTML outreach dashboard")
+    args = parser.parse_args()
+
+    if args.auto:
+        print("[*] Running Automated Cold Email Outreach for Hot Leads...")
+        res = run_email_outreach(batch_limit=args.batch)
+        print(f"[*] Result: {res}")
+    else:
+        report_path = export_outreach_html_report()
+        print("[*] Outreach Hub Report Ready at 'hot_leads_outreach.html'!")
+        print("[*] Tip: Run 'python outreach_manager.py --auto' to dispatch automated emails.")
