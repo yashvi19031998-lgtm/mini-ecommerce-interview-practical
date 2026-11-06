@@ -37,12 +37,12 @@ STALE_SCORE_CAP = 4
 
 # Who you actually want as a client. Edit in .env to match your business.
 IDEAL_CLIENT_PROFILE = os.getenv("IDEAL_CLIENT_PROFILE", "").strip() or (
-    "Businesses, startups or individuals in India, USA, UK, Canada, Australia, UAE or Europe who need "
-    "a web app, website, mobile app (Flutter / React Native), custom software, SaaS/MVP, or AI automation, "
-    "or who want to hire dedicated developers (React, Node.js, Python, PHP/Laravel, Flutter). "
-    "Best fit: a stated budget of roughly USD 500 or more (or INR 40,000+), or an ongoing/long-term engagement. "
-    "Poor fit: tiny one-off fixes under USD 100, unpaid or equity-only work, academic assignments, "
-    "and roles that require being on-site outside India."
+    "Startups, scale-ups, and established businesses in the US, UK, Canada, Australia, Europe, UAE or India "
+    "seeking Senior Developers, Tech Leads, or Engineering Partners with 8-9+ years of industry experience. "
+    "Focus technologies: Next.js, React, TypeScript, Node.js, Python/FastAPI, AI/LLM agents, Flutter, mobile apps, "
+    "and scalable SaaS/cloud architecture. "
+    "Ideal budget: USD 1,000 to USD 20,000+ (or INR 80,000+), or ongoing monthly dedicated developer retainers ($2,500 - $6,000/mo). "
+    "Unfavorable fit: Entry-level/intern work, trivial $50 fixes, academic assignments, or unpaid commission/equity-only."
 )
 
 # Categories that represent someone who may BUY software/dev services from us
@@ -58,8 +58,10 @@ AI_CATEGORIES = [
     "irrelevant",         # non-IT work, articles, dictionaries, spam, ads
 ]
 
-SYSTEM_PROMPT = f"""You qualify sales leads for Sangeeta Infotech, a software agency in Ahmedabad, India \
-that builds web apps, mobile apps, custom software and AI automation, and provides dedicated developers.
+SYSTEM_PROMPT = f"""You qualify sales leads for Sangeeta Infotech, a premier software agency in Ahmedabad, India \
+with 8-9+ years of senior software engineering, technical architecture, and product delivery experience. \
+The agency provides seasoned Senior Developers, Tech Leads, and full engineering teams for web apps, \
+mobile apps, custom SaaS/software, and AI integrations.
 
 A good lead is a person or company that currently NEEDS software work done or wants to hire developers, \
 so the agency could offer its services. Sellers of the same services, job seekers, job boards, \
@@ -76,9 +78,12 @@ work soon - e.g. a startup that just raised funding, launched, or is expanding. 
 are to buy development work (tech/product startups high; non-tech or very large companies low).
 - irrelevant: anything else (non-IT work, articles, ads, spam)
 
-score (0-10) = how worthwhile this lead is for the agency to contact now: \
-10 = clear, specific, current software need with a reachable contact; 0 = not a lead. \
-Score service_provider, job_seeker, job_board_or_directory and irrelevant at 2 or below.
+Seniority & Quality Scoring Guide (0-10):
+- HIGHEST PRIORITY (Score 8-10): Clients looking for Senior Engineers, Tech Leads, Lead Developers, Staff/Architect \
+level engineers, 8+ or 9+ years of experience, or ambitious projects with healthy budgets ($1,000+ USD or ongoing retainers).
+- STANDARD BUYER (Score 6-7): Clear software or web project with reasonable scope and reachable contacts.
+- LOW PRIORITY / DISQUALIFIED (Score 0-3): Entry-level tasks, students, micro-tasks under $100, unpaid tests, competitors, \
+job seekers, and recruiters demanding on-site presence outside India.
 
 Base everything only on the text given. Use an empty string when a field is unknown; never invent budgets or tech."""
 
