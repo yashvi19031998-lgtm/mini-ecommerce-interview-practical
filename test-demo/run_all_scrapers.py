@@ -51,7 +51,19 @@ import feedly_scraper
 import intent_feeds
 import hn_hiring_scraper
 import freelancer_api_scraper
+import apollo_enricher
 from email_checks import can_receive_mail
+
+
+def run_apollo_prospect_adapter() -> List[Dict[str, Any]]:
+    """Adapter for Apollo.io B2B Prospect Search."""
+    keywords = os.getenv("APOLLO_SEARCH_KEYWORDS", "").strip()
+    api_key = os.getenv("APOLLO_API_KEY", "").strip()
+    if not keywords or not api_key:
+        return []
+    locs_raw = os.getenv("APOLLO_SEARCH_LOCATIONS", "United States,United Kingdom,Canada,Australia,India")
+    locs = [l.strip() for l in locs_raw.split(",") if l.strip()]
+    return apollo_enricher.search_apollo_prospects(keywords=keywords, locations=locs, per_page=15)
 
 SCRAPERS_CONFIG = [
     {
@@ -149,6 +161,12 @@ SCRAPERS_CONFIG = [
         "func": freelancer_api_scraper.run_freelancer_adapter,
         "enabled": True,
         "category": "Freelance Marketplaces"
+    },
+    {
+        "name": "apollo_enricher.py (Apollo.io Verified B2B Prospect Harvester)",
+        "func": run_apollo_prospect_adapter,
+        "enabled": bool(os.getenv("APOLLO_SEARCH_KEYWORDS", "").strip() and os.getenv("APOLLO_API_KEY", "").strip()),
+        "category": "B2B Intelligence"
     },
 ]
 
@@ -467,6 +485,15 @@ def run_all_scrapers():
         total_leads_updated += enriched_leads_count
     except Exception as e:
         print(f"[WARN] Website Contact Extractor notice: {e}")
+
+    # Step 4a.2: Apollo.io Decision Maker & Contact Enrichment
+    try:
+        if os.getenv("APOLLO_API_KEY", "").strip():
+            print("\n[*] Step 4a.2: Running Apollo.io Decision Maker Contact Enrichment...")
+            apollo_count = apollo_enricher.run_apollo_enrichment(master_csv_path=MASTER_CSV)
+            total_leads_updated += apollo_count
+    except Exception as e:
+        print(f"[WARN] Apollo Enrichment notice: {e}")
 
     # Step 4b: Cleanup + AI qualification
     if lead_quality:
