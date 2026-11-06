@@ -85,6 +85,10 @@ jobs:
           AI_QUALIFY_LIMIT: ${{ vars.AI_QUALIFY_LIMIT || '40' }}
           STALE_AFTER_DAYS: ${{ vars.STALE_AFTER_DAYS || '14' }}
           IDEAL_CLIENT_PROFILE: ${{ vars.IDEAL_CLIENT_PROFILE }}
+          FEEDLY_KEYWORDS: ${{ vars.FEEDLY_KEYWORDS || 'senior developer,tech lead,8+ years,9+ years,lead engineer,full stack architect,staff engineer,next.js,react,python,flutter,budget' }}
+          FREELANCER_QUERIES: ${{ vars.FREELANCER_QUERIES || 'senior developer,tech lead,full stack architect,nextjs react,python ai,flutter senior' }}
+          APOLLO_SEARCH_KEYWORDS: ${{ vars.APOLLO_SEARCH_KEYWORDS || '"Senior Developer" OR "Tech Lead" OR "Lead Engineer" OR "Software Architect" OR "8+ years" OR "Next.js" OR "Full Stack"' }}
+          APOLLO_ENRICH_LIMIT_PER_RUN: ${{ vars.APOLLO_ENRICH_LIMIT_PER_RUN || '15' }}
         run: python run_all_scrapers.py
 
       - name: Save HTML pages for the next run
