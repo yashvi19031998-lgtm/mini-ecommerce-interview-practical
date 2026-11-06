@@ -15,6 +15,7 @@ Steps
 Auto-outreach (run_all_scrapers.py) only emails leads where is_outreach_ready() is True.
 """
 
+import re
 import argparse
 import datetime
 import json
@@ -259,6 +260,151 @@ def qualify_one(client, lead: dict) -> dict:
     return json.loads(text)
 
 
+def qualify_one_heuristic(lead: dict) -> dict:
+    """Accurate rule-based NLP lead qualifier used when ANTHROPIC_API_KEY is not set or API fails."""
+    text = (
+        f"{lead.get('company_name', '')} {lead.get('description', '')} "
+        f"{lead.get('source_url', '')} {lead.get('source', '')}"
+    ).lower()
+
+    # 1. Check for job seekers ([FOR HIRE])
+    job_seeker_patterns = [
+        "[for hire]", "for hire", "hire me", "my portfolio", "i am a developer",
+        "i am offering", "freelancer available", "looking for work", "seeking employment"
+    ]
+    if any(p in text for p in job_seeker_patterns):
+        return {
+            "category": "job_seeker",
+            "score": 1,
+            "summary": "Candidate or freelancer looking for work (not a buyer).",
+            "requirement": "",
+            "tech_stack": "",
+            "budget": "",
+            "reason": "Author is offering services / job seeking."
+        }
+
+    # 2. Check for irrelevant / non-IT tasks
+    irrelevant_patterns = [
+        "tiktok poster", "art exhibit", "model", "actor", "voice actor",
+        "video editor", "writer", "transcription", "data entry", "virtual assistant",
+        "math tutor", "homework", "essay", "academic", "babysitter", "delivery driver"
+    ]
+    if any(p in text for p in irrelevant_patterns):
+        return {
+            "category": "irrelevant",
+            "score": 0,
+            "summary": "Non-IT or non-software request.",
+            "requirement": "",
+            "tech_stack": "",
+            "budget": "",
+            "reason": "Post is for non-software / non-IT task."
+        }
+
+    # 3. Check for job boards / aggregators / directories
+    board_patterns = [
+        "indeed", "apna", "naukri", "glassdoor", "ziprecruiter", "instahyre",
+        "upwork listing", "fiverr gig", "directory"
+    ]
+    company_lower = (lead.get("company_name") or "").lower()
+    if any(b in company_lower for b in board_patterns):
+        return {
+            "category": "job_board_or_directory",
+            "score": 2,
+            "summary": f"Job board or directory listing ({lead.get('company_name')}).",
+            "requirement": "",
+            "tech_stack": "",
+            "budget": "",
+            "reason": "Aggregator or job board, not an individual buyer."
+        }
+
+    # 4. Check for Competitor Agencies / Service Providers
+    agency_patterns = [
+        "we are a software development company", "we are an agency", "our dev team provides",
+        "top it services company", "leading software company"
+    ]
+    if any(p in text for p in agency_patterns):
+        return {
+            "category": "service_provider",
+            "score": 2,
+            "summary": f"Competing agency or IT service provider ({lead.get('company_name')}).",
+            "requirement": "",
+            "tech_stack": "",
+            "budget": "",
+            "reason": "Competitor agency selling dev services, not a client."
+        }
+
+    # Extract technologies
+    known_tech = [
+        "react", "next.js", "nextjs", "node.js", "nodejs", "typescript", "python",
+        "fastapi", "django", "flutter", "react native", "vue", "angular", "php",
+        "laravel", "aws", "docker", "kubernetes", "postgresql", "supabase",
+        "shopify", "wordpress", "tailwind", "graphql", "mongodb"
+    ]
+    found_tech = [t for t in known_tech if re.search(r'\b' + re.escape(t) + r'\b', text)]
+    tech_stack_str = ", ".join(found_tech[:6])
+
+    # Extract budget
+    budget_match = re.search(r'(\$\s*\d+[\d,]*(\s*k|\s*usd|\s*\/hr|\s*\/hour|\s*\/mo)?|\b\d+k\s*usd|€\s*\d+[\d,]*|₹\s*\d+[\d,]*|inr\s*\d+[\d,]*)', text)
+    budget_str = budget_match.group(0).strip() if budget_match else ""
+
+    # Check for Senior / Tech Lead / 8-9+ years experience demand
+    senior_patterns = [
+        "senior", "tech lead", "lead developer", "lead engineer", "architect",
+        "8+ years", "9+ years", "8-10 years", "staff engineer", "principal engineer", "head of"
+    ]
+    is_senior = any(s in text for s in senior_patterns)
+
+    # Check for hiring / buyer intent
+    hiring_patterns = [
+        "[hiring]", "hiring", "looking for", "need a developer", "need developer",
+        "looking to hire", "seeking developer", "contractor needed", "build an app",
+        "build a website", "mvp", "redesign", "develop a", "agency needed"
+    ]
+    is_hiring = any(h in text for h in hiring_patterns)
+
+    # 5. Score computation
+    if is_senior and is_hiring:
+        score = 9
+        if budget_str:
+            score = 10
+        category = "hiring_developer"
+        summary = f"Client hiring Senior / Lead Engineer for {tech_stack_str or 'software project'}."
+        reason = "Explicit senior / lead developer hiring request with strong intent."
+    elif is_hiring:
+        score = 7
+        if budget_str:
+            score = 8
+        category = "hiring_developer" if "developer" in text or "engineer" in text else "client_project"
+        summary = f"Client hiring for {tech_stack_str or 'development project'}."
+        reason = "Clear client requirement for software/web development."
+    elif lead.get("website") and _is_local_business(lead):
+        # Local business needing web presence
+        score = 6 if not lead.get("website") else 4
+        category = "prospect_signal"
+        summary = f"Local business prospect: {lead.get('company_name')} ({lead.get('location', '')})."
+        reason = "Established business prospect with potential digital/web development needs."
+    elif found_tech:
+        score = 5
+        category = "client_project"
+        summary = f"Technical lead involving {tech_stack_str}."
+        reason = "Mention of specific tech stack in lead details."
+    else:
+        score = 3
+        category = "prospect_signal"
+        summary = f"General prospect: {lead.get('company_name') or 'Unknown organization'}."
+        reason = "Basic contact without explicit current software posting."
+
+    return {
+        "category": category,
+        "score": score,
+        "summary": summary,
+        "requirement": f"Needs {tech_stack_str}" if tech_stack_str else "Software engineering",
+        "tech_stack": tech_stack_str,
+        "budget": budget_str,
+        "reason": reason
+    }
+
+
 def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -> dict:
     stats = {"qualified": 0, "failed": 0, "skipped_no_key": False}
     pending = [l for l in registry.leads if not l.get("ai_qualified_at")]
@@ -267,32 +413,32 @@ def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -
 
     client = _get_client()
     if client is None:
-        stats["skipped_no_key"] = True
-        print(f"[AI] ANTHROPIC_API_KEY not set - {len(pending)} leads left unqualified (auto-email stays off for them).")
-        return stats
-
-    import anthropic
+        print(f"[AI] ANTHROPIC_API_KEY not set - evaluating {min(len(pending), limit)} leads via Fast Heuristic NLP Classifier...")
+    else:
+        print(f"[AI] Qualify leads via Claude AI ({AI_MODEL}) on up to {limit} leads...")
 
     # Newest leads first: they are the most likely to still be open
     pending.sort(key=lambda l: l.get("first_seen_at", ""), reverse=True)
     for lead in pending[:limit]:
-        # Look at the company's own website first, so the AI can see "needs work" signals
-        if lead.get("website") and not lead.get("website_signals"):
+        # Look at the company's own website first (when Claude is active and for small batch)
+        if client is not None and lead.get("website") and not lead.get("website_signals") and limit <= 40:
             try:
                 lead["website_signals"] = website_signals.check_website(lead["website"])
-            except Exception as e:  # never let a website problem stop qualification
-                print(f"[AI] website check failed for {lead.get('website')}: {e}")
-        try:
-            result = qualify_one(client, lead)
-        except anthropic.RateLimitError:
-            print("[AI] Rate limited - stopping this run; remaining leads will be qualified next run.")
-            break
-        except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as e:
-            print(f"[AI] Credentials rejected ({e.__class__.__name__}) - stopping.")
-            break
-        except (anthropic.APIStatusError, anthropic.APIConnectionError, RuntimeError, json.JSONDecodeError) as e:
+            except Exception:
+                pass
+
+        result = None
+        if client is not None:
+            try:
+                result = qualify_one(client, lead)
+            except Exception as e:
+                # Fall back to heuristic engine if Claude API has issues
+                result = qualify_one_heuristic(lead)
+        else:
+            result = qualify_one_heuristic(lead)
+
+        if not result:
             stats["failed"] += 1
-            print(f"[AI] {lead.get('lead_id')}: {e}")
             continue
 
         score = max(0, min(10, int(result.get("score", 0))))

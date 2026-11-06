@@ -158,8 +158,10 @@ def normalize_email(email_str: Optional[str]) -> str:
         cand = cand.strip().lower()
         if not cand or "@" not in cand:
             continue
-        # Check extensions
+        # Check extensions & technical log ingest tokens
         if any(cand.endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".css", ".js")):
+            continue
+        if "ingest" in cand or "sentry" in cand or "track" in cand or "report" in cand:
             continue
         parts = cand.split("@")
         if len(parts) == 2 and parts[1] in EMAIL_BLACKLIST_DOMAINS:
