@@ -112,7 +112,8 @@ class QualityPipeline(unittest.TestCase):
             self._write_master(path, [{"lead_id": "LEAD-00001", "company_name": "Acme", "email": "info@acme.in"}])
             with mock.patch.object(lq, "_get_client", return_value=None):
                 stats = lq.run(path)
-            self.assertTrue(stats["skipped_no_key"])
+            # When API key is absent, fallback heuristic NLP qualifier runs
+            self.assertEqual(stats["qualified"], 1)
             self.assertEqual(stats["outreach_ready"], 0)
 
     def test_refusal_counts_as_failure(self):
@@ -121,7 +122,8 @@ class QualityPipeline(unittest.TestCase):
             self._write_master(path, [{"lead_id": "LEAD-00001", "company_name": "Acme", "email": "info@acme.in"}])
             fake_client = mock.MagicMock()
             fake_client.beta.messages.create.return_value = SimpleNamespace(stop_reason="refusal", content=[])
-            with mock.patch.object(lq, "_get_client", return_value=fake_client):
+            with mock.patch.object(lq, "_get_client", return_value=fake_client), \
+                 mock.patch.object(lq, "qualify_one_heuristic", return_value=None):
                 stats = lq.run(path)
             self.assertEqual(stats["failed"], 1)
             self.assertEqual(ln.MasterLeadRegistry(path).leads[0]["ai_qualified_at"], "")
