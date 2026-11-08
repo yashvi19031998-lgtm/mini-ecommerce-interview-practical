@@ -1,12 +1,12 @@
 source,leads,with_contact_pct,ai_scored,avg_ai_score,hot,hot_rate_pct,won
-Reddit,147,20,141,5.3,73,52,0
-DuckDuckGo Dork,100,25,100,4.3,26,26,0
+Reddit,150,20,144,5.3,75,52,0
+DuckDuckGo Dork,105,25,105,4.4,29,28,0
 Hacker News,68,44,68,3.6,24,35,0
-Reddit search,21,5,21,6.6,19,90,0
+Reddit search,26,4,26,6.7,24,92,0
+Hacker News Algolia API,43,23,40,5.0,19,48,0
 Search Engine,112,100,109,3.9,12,11,0
-Platform,43,19,43,4.3,10,23,0
-Freelancer.com,34,12,34,4.3,9,26,0
-Hacker News Algolia API,43,23,22,4.2,6,27,0
+Freelancer.com,42,10,42,4.4,12,29,0
+Platform,44,20,44,4.2,10,23,0
 LinkedIn,27,7,27,3.0,0,0,0
 RSS Feed,19,0,0,,0,,0
 B2B Portal,12,58,12,3.1,0,0,0
