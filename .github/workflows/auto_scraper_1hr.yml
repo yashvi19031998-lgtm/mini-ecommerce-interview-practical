@@ -77,8 +77,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           # --- settings (Settings -> Secrets and variables -> Actions -> Variables) ---
-          # Auto-email is OFF unless you create the variable AUTO_SEND_EMAIL = true
-          AUTO_SEND_EMAIL: ${{ vars.AUTO_SEND_EMAIL || 'false' }}
+          # Auto-email is ON by default in 1-hour auto scraper (can be overridden via repo vars)
+          AUTO_SEND_EMAIL: ${{ vars.AUTO_SEND_EMAIL || 'true' }}
           MAX_PENDING_EMAILS_PER_RUN: ${{ vars.MAX_PENDING_EMAILS_PER_RUN || '5' }}
           MIN_AI_SCORE_FOR_AUTO_EMAIL: ${{ vars.MIN_AI_SCORE_FOR_AUTO_EMAIL || '7' }}
           MIN_AI_SCORE_FOR_SLACK: ${{ vars.MIN_AI_SCORE_FOR_SLACK || '7' }}
