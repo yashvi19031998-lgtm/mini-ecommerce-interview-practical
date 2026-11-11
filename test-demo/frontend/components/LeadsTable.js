@@ -365,7 +365,7 @@ export default function LeadsTable({
 
             return (
               <div
-                key={item.id || idx}
+                key={`${item.id || 'lead'}-${idx}`}
                 className={`leadsgen-table-row ${isSelected ? 'selected' : ''}`}
                 onClick={() => setDossierLead(item)}
               >

@@ -77,8 +77,13 @@ def read_leads(source_file=None):
         df = pd.read_csv(target)
         df = df.fillna("")
         leads = df.to_dict(orient="records")
+        seen_ids = set()
         for idx, item in enumerate(leads):
-            item["id"] = str(item.get("No") or item.get("lead_id") or (idx + 1))
+            base_id = str(item.get("lead_id") or item.get("No") or (idx + 1))
+            if base_id in seen_ids:
+                base_id = f"{base_id}-{idx + 1}"
+            seen_ids.add(base_id)
+            item["id"] = base_id
             # Standardize names if reading from master format
             if "Company Name" not in item and "company_name" in item:
                 item["Company Name"] = item["company_name"]
