@@ -51,8 +51,8 @@ DEFAULT_INTENT_KEYWORDS = [
     "looking for an agency", "looking for agency", "development partner", "rfp", "request for proposal",
     "tender", "freelancer needed", "build an app", "build a website", "mvp", "outsource",
 ]
-INTENT_KEYWORDS = [k.strip().lower() for k in os.getenv("FEEDLY_KEYWORDS", "").split(",") if k.strip()] \
-    or DEFAULT_INTENT_KEYWORDS
+_custom_feedly_keywords = [k.strip().lower() for k in os.getenv("FEEDLY_KEYWORDS", "").split(",") if k.strip()]
+INTENT_KEYWORDS = list(dict.fromkeys(DEFAULT_INTENT_KEYWORDS + _custom_feedly_keywords))
 # Posts by people OFFERING services are skipped before the AI step
 EXCLUDE_KEYWORDS = ["[for hire]", "for hire", "available for work", "my portfolio", "hire me"]
 
