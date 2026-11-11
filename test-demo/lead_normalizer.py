@@ -133,6 +133,8 @@ INVALID_DOMAINS = {
     # Job portals (job_portals.py)
     "foundit.in", "shine.com", "internshala.com", "freshersworld.com", "apna.co", "instahyre.com",
     "remoteok.com", "arbeitnow.com", "adzuna.in", "adzuna.com", "jooble.org",
+    # CRM Sources directories (crm_sources.py)
+    "openstreetmap.org", "goodfirms.co", "zaubacorp.com", "sulekha.com",
 }
 
 EMAIL_BLACKLIST_DOMAINS = {

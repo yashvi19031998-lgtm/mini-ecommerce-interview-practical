@@ -273,6 +273,23 @@ export async function resetFollowupTemplates() {
   return await apiFetch('/api/followups/templates', { method: 'DELETE' });
 }
 
+// 33. CRM Sources: source catalog (directories + contact databases) and states
+export async function fetchCrmSources() {
+  return await apiFetch('/api/crm-sources');
+}
+
+// 34. CRM Sources: search selected sources (can take up to a minute)
+export async function searchCrmSources({ keywords, titles, state, city, sources }) {
+  return await apiFetch('/api/crm-sources/search', {
+    method: 'POST', body: JSON.stringify({ keywords, titles, state, city, sources })
+  });
+}
+
+// 35. CRM Sources: save selected businesses/contacts as leads
+export async function saveCrmResultsToLeads(results) {
+  return await apiFetch('/api/crm-sources/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

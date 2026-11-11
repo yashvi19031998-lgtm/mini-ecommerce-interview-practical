@@ -16,6 +16,7 @@ import SettingsView from '../components/SettingsView';
 import Dashboard from '../components/Dashboard';
 import JobPortalScraper from '../components/JobPortalScraper';
 import FollowUpHistory from '../components/FollowUpHistory';
+import CrmSources from '../components/CrmSources';
 import Toast from '../components/Toast';
 import { Loader2 } from 'lucide-react';
 
@@ -268,7 +269,7 @@ function DashboardContent() {
         <div className="theme-scrollable-content">
           <div className="theme-content-padding">
             {/* Real-time KPI Metric Summary (hidden on the Job Portal Scraper to give the form room) */}
-            {activeTab !== 'jobportal' && activeTab !== 'followups' && (
+            {!['jobportal', 'followups', 'crmsources'].includes(activeTab) && (
             <StatsCards 
               leads={leads} 
               activeFilter={tableFilter}
@@ -286,6 +287,11 @@ function DashboardContent() {
                 onOpenJobPortal={() => setActiveTab('jobportal')}
                 onOpenLeads={() => setActiveTab('leads')}
               />
+            )}
+
+            {/* CRM Sources */}
+            {activeTab === 'crmsources' && (
+              <CrmSources onLeadsSaved={() => loadLeads(true)} />
             )}
 
             {/* FollowUp History */}

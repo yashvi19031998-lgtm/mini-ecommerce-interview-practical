@@ -4,7 +4,7 @@ import React from 'react';
 import { 
   Database, Terminal, DownloadCloud, Settings, 
   Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
-  LayoutDashboard, Briefcase, History
+  LayoutDashboard, Briefcase, History, Building2
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -38,6 +38,11 @@ export default function Sidebar({
       id: 'followups',
       label: 'FollowUp History',
       icon: History
+    },
+    {
+      id: 'crmsources',
+      label: 'CRM Sources',
+      icon: Building2
     },
     {
       id: 'leads',
