@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../lib/auth-context';
 import { 
   Lock, Mail, User, Eye, EyeOff, ArrowRight, 
-  ShieldCheck, AlertCircle, CheckCircle2, Loader2
+  ShieldCheck, AlertCircle, CheckCircle2, Loader2, Sparkles
 } from 'lucide-react';
 
 export default function AuthScreen() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, bypassDemoLogin } = useAuth();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   
   const [fullName, setFullName] = useState('');
@@ -48,7 +48,9 @@ export default function AuthScreen() {
     } catch (err) {
       console.error('[AUTH ERROR]', err);
       const msg = err.message || '';
-      if (msg.toLowerCase().includes('is invalid')) {
+      if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
+        setErrorMsg('Supabase project is paused or offline on supabase.com. You can unpause it or click below to enter directly.');
+      } else if (msg.toLowerCase().includes('is invalid')) {
         setErrorMsg('This email address was rejected (mailbox does not exist). Please use your real email address.');
       } else if (msg.toLowerCase().includes('not confirmed')) {
         setErrorMsg('Your email is not confirmed yet. Open the confirmation link in your inbox, or ask the admin to confirm your account in the Supabase dashboard.');
@@ -179,6 +181,42 @@ export default function AuthScreen() {
             )}
           </button>
         </form>
+
+        {/* Quick Local Access */}
+        <div style={{ margin: '1.25rem 0 0.5rem', textAlign: 'center', position: 'relative' }}>
+          <span style={{ fontSize: '0.72rem', color: '#64748b', letterSpacing: '0.05em', background: '#0f172a', padding: '0 8px' }}>
+            OR LOCAL WORKSPACE ACCESS
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => bypassDemoLogin({
+            id: 'admin-' + Date.now(),
+            email: email.trim() || 'admin@sangeetainfotech.com',
+            user_metadata: { full_name: fullName.trim() || 'Lead Admin' }
+          })}
+          style={{
+            width: '100%',
+            padding: '0.65rem',
+            background: 'rgba(56, 189, 248, 0.1)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            borderRadius: '8px',
+            color: '#38bdf8',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            marginBottom: '1rem',
+            transition: 'background 0.2s'
+          }}
+        >
+          <Sparkles size={14} />
+          One-Click Admin Login (Offline / Local Dev)
+        </button>
 
         {/* Security Footer */}
         <div className="auth-footer-note">

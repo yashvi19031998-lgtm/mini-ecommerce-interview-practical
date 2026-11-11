@@ -11,16 +11,28 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Remove any fake "demo" user saved by the old bypass login.
-    //    The API now requires a real Supabase session, so a demo user would only see 401 errors.
+    // 1. Check local demo session first (for offline or local dev convenience)
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('lead_hub_demo_user');
+      const savedLocalUser = localStorage.getItem('lead_hub_demo_user');
+      if (savedLocalUser) {
+        try {
+          const parsed = JSON.parse(savedLocalUser);
+          if (parsed && parsed.email) {
+            setUser(parsed);
+            setLoading(false);
+          }
+        } catch (e) {
+          localStorage.removeItem('lead_hub_demo_user');
+        }
+      }
     }
 
     // 2. Check Supabase session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (session) {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
       setLoading(false);
     }).catch(() => {
       setLoading(false);
@@ -28,9 +40,10 @@ export function AuthProvider({ children }) {
 
     // 3. Listen for Supabase auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      // Also clears the user when the session ends (sign-out / expired token)
-      setUser(session?.user ?? null);
+      if (session) {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
       setLoading(false);
     });
 
@@ -68,6 +81,9 @@ export function AuthProvider({ children }) {
 
   // Sign Out
   const signOut = async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('lead_hub_demo_user');
+    }
     try {
       await supabase.auth.signOut();
     } catch (e) {
@@ -75,6 +91,19 @@ export function AuthProvider({ children }) {
     }
     setUser(null);
     setSession(null);
+  };
+
+  // Quick Demo / Local Login (persists in localStorage when offline or demo)
+  const bypassDemoLogin = (customUser = null) => {
+    const userToSet = customUser || {
+      id: 'demo-admin-id',
+      email: 'admin@sangeetainfotech.com',
+      user_metadata: { full_name: 'Lead Admin' }
+    };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lead_hub_demo_user', JSON.stringify(userToSet));
+    }
+    setUser(userToSet);
   };
 
   return (
@@ -86,6 +115,7 @@ export function AuthProvider({ children }) {
         signIn,
         signUp,
         signOut,
+        bypassDemoLogin,
       }}
     >
       {children}
