@@ -38,6 +38,7 @@ function DashboardContent() {
   const [backendOnline, setBackendOnline] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+  const [tableFilter, setTableFilter] = useState('all');
 
   // Scraper State
   const [isScraperRunning, setIsScraperRunning] = useState(false);
@@ -260,12 +261,20 @@ function DashboardContent() {
         <div className="theme-scrollable-content">
           <div className="theme-content-padding">
             {/* Real-time KPI Metric Summary */}
-            <StatsCards leads={leads} />
+            <StatsCards 
+              leads={leads} 
+              activeFilter={tableFilter}
+              onFilterClick={(f) => {
+                setTableFilter(f);
+                if (activeTab !== 'leads') setActiveTab('leads');
+              }}
+            />
 
             {/* TAB 1: Leads CRM & Database */}
             {activeTab === 'leads' && (
               <LeadsTable
                 leads={leads}
+                externalFilter={tableFilter}
                 onSelectLeadForEmail={(lead) => setSelectedLeadForEmail(lead)}
                 onSelectLeadForWhatsApp={(lead) => setSelectedLeadForWhatsApp(lead)}
                 onBulkEmailOpen={(ids) => {

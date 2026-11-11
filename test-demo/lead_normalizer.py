@@ -53,13 +53,21 @@ MASTER_FIELDNAMES = [
     "slack_notified_at",
     # Website "needs work" signals (website_signals.py), e.g. "not mobile-friendly; old jQuery 1.12"
     "website_signals",
+    # LeadsGen AI Intelligence & B2B Enrichment Fields
+    "decision_maker_title",
+    "linkedin_url",
+    "deal_size_estimate",
+    "seniority_fit",
+    "whatsapp_status",
+    "last_contacted_at",
 ]
 
 # Fields that are not derived from scraper output and must survive every re-save untouched
 PASSTHROUGH_FIELDS = [
     "contact_channel", "ai_category", "ai_score", "ai_summary", "ai_requirement",
     "ai_tech_stack", "ai_budget", "ai_reason", "ai_qualified_at", "slack_notified_at",
-    "website_signals",
+    "website_signals", "decision_maker_title", "linkedin_url", "deal_size_estimate",
+    "seniority_fit", "whatsapp_status", "last_contacted_at",
 ]
 
 # Template / placeholder emails copied from website themes ("you@company.com")

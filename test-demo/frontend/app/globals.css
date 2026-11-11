@@ -1323,3 +1323,768 @@ input, button, select, textarea {
   background: var(--bg-subtle-2);
 }
 
+/* ==============================================================================
+   LEADSGEN AI — DESIGN SYSTEM EXTENSIONS
+   Modern, Sleek B2B Intelligence UI (Apollo / Clay inspired)
+   ============================================================================== */
+
+/* KPI Card Enhancements */
+.theme-kpi-card.active-filter {
+  outline: 2px solid var(--primary-blue);
+  box-shadow: 0 4px 16px rgba(26, 109, 255, 0.12);
+}
+.theme-kpi-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.theme-kpi-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theme-kpi-icon-wrap.icon-blue { background: #dbeafe; color: #1d4ed8; }
+.theme-kpi-icon-wrap.icon-peach { background: #ffedd5; color: #c2410c; }
+.theme-kpi-icon-wrap.icon-lavender { background: #ede9fe; color: #6d28d9; }
+.theme-kpi-icon-wrap.icon-green { background: #dcfce7; color: #15803d; }
+
+.badge-amber { background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.badge-purple { background: #f3e8ff; color: #6b21a8; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.theme-kpi-subtext {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Quick Filter Pills Bar */
+.leadsgen-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.leadsgen-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 6px 0;
+  overflow-x: auto;
+}
+.leadsgen-pills-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.leadsgen-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.leadsgen-filter-pill:hover {
+  background: var(--bg-subtle-2);
+  border-color: var(--border-med);
+}
+.leadsgen-filter-pill.active {
+  background: #1e293b;
+  color: #ffffff;
+  border-color: #1e293b;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.leadsgen-filter-pill .pill-count {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.06);
+  color: inherit;
+}
+.leadsgen-filter-pill.active .pill-count {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Table Header & Row for LeadsGen AI */
+.leadsgen-table-header-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-light);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  gap: 12px;
+}
+.leadsgen-table-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-white);
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.leadsgen-table-row:hover {
+  background: #f8fafc;
+}
+.leadsgen-table-row.selected {
+  background: #f0f7ff;
+}
+
+/* Table Cells */
+.leadsgen-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: #334155;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.leadsgen-avatar.avatar-hot {
+  background: linear-gradient(135deg, #fed7aa 0%, #fecdd3 100%);
+  color: #9a3412;
+}
+
+.leadsgen-col-comp {
+  flex: 1 1 240px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.comp-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.comp-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.comp-ago {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.comp-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.comp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--primary-blue);
+}
+.comp-link:hover {
+  text-decoration: underline;
+}
+.decision-title-tag {
+  font-size: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.comp-summary {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+  margin-top: 2px;
+}
+
+/* AI Fit & Seniority Column */
+.leadsgen-col-score {
+  width: 130px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.leadsgen-score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  width: fit-content;
+}
+.leadsgen-score-badge.hot {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.leadsgen-score-badge.warm {
+  background: #f1f5f9;
+  color: #475569;
+}
+.seniority-pill {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.seniority-pill.senior-fit {
+  color: #4338ca;
+  font-weight: 600;
+}
+
+/* Deal Size & Tech Stack */
+.leadsgen-col-deal {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.deal-estimate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #047857;
+  background: #ecfdf5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+.tech-stack-preview {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Contact Column */
+.leadsgen-col-contact {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.contact-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+.copy-mini-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.copy-mini-btn:hover {
+  color: var(--text-primary);
+}
+.wa-mini-tag {
+  font-size: 9px;
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Stage Selector */
+.leadsgen-col-stage {
+  width: 120px;
+  flex-shrink: 0;
+}
+.stage-selector {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-white);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.stage-selector:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+}
+
+/* Action Buttons */
+.leadsgen-col-actions {
+  width: 130px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.leadsgen-action-btn {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.leadsgen-action-btn:hover:not(:disabled) {
+  background: var(--bg-subtle-2);
+  border-color: var(--border-med);
+  color: var(--text-primary);
+}
+.leadsgen-action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.leadsgen-action-btn.dossier {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+.leadsgen-action-btn.dossier:hover {
+  background: #dbeafe;
+}
+.leadsgen-action-btn.email.sent {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+.leadsgen-action-btn.whatsapp:hover:not(:disabled) {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+/* ==============================================================================
+   SLIDE-OVER AI LEAD DOSSIER DRAWER
+   ============================================================================== */
+.dossier-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+.dossier-drawer {
+  width: 580px;
+  max-width: 92vw;
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: dossierSlideIn 0.22s ease-out;
+}
+@keyframes dossierSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.dossier-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+  background: #f8fafc;
+}
+.dossier-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.dossier-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1e40af;
+  background: #dbeafe;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.dossier-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+.dossier-close-btn:hover {
+  color: var(--text-primary);
+  background: var(--border-light);
+}
+
+.dossier-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.dossier-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dossier-hero-info {
+  flex: 1;
+}
+.dossier-company-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+.dossier-sub-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.dossier-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--primary-blue);
+}
+.dossier-dot-sep {
+  color: var(--border-med);
+}
+.dossier-loc-pill, .dossier-source-pill {
+  color: var(--text-secondary);
+}
+
+.dossier-score-card {
+  padding: 8px 14px;
+  border-radius: 12px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.dossier-score-card.hot {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+.dossier-score-card.warm {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+.dossier-score-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: #065f46;
+}
+.dossier-score-card.warm .dossier-score-num {
+  color: #334155;
+}
+.dossier-score-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #047857;
+}
+
+/* Action Bar */
+.dossier-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border-light);
+  background: #ffffff;
+}
+.dossier-action-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+.dossier-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.dossier-action-btn.primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+.dossier-action-btn.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+.dossier-action-btn.whatsapp {
+  background: #10b981;
+  color: #ffffff;
+}
+.dossier-action-btn.whatsapp:hover:not(:disabled) {
+  background: #059669;
+}
+.dossier-action-btn.linkedin {
+  background: #0a66c2;
+  color: #ffffff;
+}
+.dossier-action-btn.neutral {
+  background: var(--bg-subtle);
+  border-color: var(--border-med);
+  color: var(--text-secondary);
+}
+
+/* Scrollable Dossier Content */
+.dossier-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dossier-card {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  background: #ffffff;
+}
+.dossier-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+.dossier-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.dossier-metric-item {
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+.metric-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.metric-val {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 3px;
+}
+.metric-val.highlight-blue { color: #1d4ed8; }
+.metric-val.highlight-green { color: #047857; }
+
+.dossier-field-row {
+  margin-bottom: 10px;
+}
+.dossier-field-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.dossier-field-val.brief-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+.dossier-category-pill {
+  font-size: 10px;
+  font-weight: 700;
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.dossier-tech-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dossier-tech-tag {
+  font-size: 11px;
+  font-weight: 600;
+  background: #f5f3ff;
+  color: #5b21b6;
+  border: 1px solid #ddd6fe;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+.dossier-signals-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.signals-title {
+  font-weight: 600;
+  margin-right: 6px;
+  color: var(--text-primary);
+}
+
+.dossier-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dossier-contact-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.contact-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.contact-info {
+  flex: 1;
+}
+.contact-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.contact-title {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.contact-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.contact-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.contact-val {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.dossier-copy-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.dossier-wa-ready-tag {
+  font-size: 10px;
+  font-weight: 700;
+  background: #dcfce7;
+  color: #15803d;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.dossier-pipeline-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dossier-stage-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.dossier-stage-pill:hover {
+  background: var(--bg-subtle-2);
+}
+.dossier-stage-pill.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+

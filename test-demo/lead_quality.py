@@ -394,6 +394,19 @@ def qualify_one_heuristic(lead: dict) -> dict:
         summary = f"General prospect: {lead.get('company_name') or 'Unknown organization'}."
         reason = "Basic contact without explicit current software posting."
 
+    seniority_fit = "Senior / Lead (8-9+ Yrs)" if is_senior else ("Mid-Level Specialist" if found_tech else "Standard Web")
+    deal_size = budget_str if budget_str else ("$3,000 - $8,000" if is_senior else ("$1,500 - $4,000" if is_hiring else ""))
+    has_phone = bool(str(lead.get("mobile_number") or "").strip())
+    whatsapp_status = "READY" if has_phone else "N/A"
+
+    # Extract LinkedIn URL from text or source
+    linkedin_match = re.search(r'https?://[a-zA-Z0-9.\-_]*linkedin\.com/[^\s"\']+', text)
+    linkedin_url = linkedin_match.group(0).strip() if linkedin_match else str(lead.get("linkedin_url") or "")
+
+    # Extract decision maker title if present
+    title_match = re.search(r'\((founder|co-founder|ceo|owner|cto|managing director|vp of engineering|head of it|director)\)', text, re.I)
+    decision_title = title_match.group(1).title() if title_match else str(lead.get("decision_maker_title") or "")
+
     return {
         "category": category,
         "score": score,
@@ -401,7 +414,12 @@ def qualify_one_heuristic(lead: dict) -> dict:
         "requirement": f"Needs {tech_stack_str}" if tech_stack_str else "Software engineering",
         "tech_stack": tech_stack_str,
         "budget": budget_str,
-        "reason": reason
+        "reason": reason,
+        "seniority_fit": seniority_fit,
+        "deal_size_estimate": deal_size,
+        "whatsapp_status": whatsapp_status,
+        "linkedin_url": linkedin_url,
+        "decision_maker_title": decision_title
     }
 
 
@@ -455,6 +473,11 @@ def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -
             "ai_budget": result.get("budget", "")[:100],
             "ai_reason": reason[:300],
             "ai_qualified_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "seniority_fit": result.get("seniority_fit", lead.get("seniority_fit", "Standard Web")),
+            "deal_size_estimate": result.get("deal_size_estimate", lead.get("deal_size_estimate", "")),
+            "whatsapp_status": result.get("whatsapp_status", lead.get("whatsapp_status", "N/A")),
+            "decision_maker_title": result.get("decision_maker_title", lead.get("decision_maker_title", "")),
+            "linkedin_url": result.get("linkedin_url", lead.get("linkedin_url", "")),
         })
         stats["qualified"] += 1
         print(f"[AI] {lead.get('lead_id')}: {lead['ai_category']} ({score}/10) - {lead['ai_summary'][:80]}")

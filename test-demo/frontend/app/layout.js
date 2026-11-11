@@ -14,8 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata = {
-  title: "Sangeeta Infotech — Autonomous Lead Discovery & Cold Outreach Engine",
-  description: "Enterprise Lead Generation, Deep Crawl Harvesters, Multi-Channel Deduplication, and Gmail SMTP Outreach Suite.",
+  title: "LeadsGen AI — Autonomous B2B Prospecting & Intelligence Engine",
+  description: "AI-Powered B2B Lead Generation, Seniority-Fit Matching, Deal Size Intelligence, and Autonomous Multi-Channel Outreach.",
 };
 
 export default function RootLayout({ children }) {

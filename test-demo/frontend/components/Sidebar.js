@@ -25,7 +25,7 @@ export default function Sidebar({
   const navItems = [
     {
       id: 'leads',
-      label: 'Leads Database',
+      label: 'Leads Intelligence',
       icon: Database,
       badge: totalLeads > 0 ? totalLeads.toLocaleString() : '0'
     },
@@ -79,21 +79,18 @@ export default function Sidebar({
         {/* Workspace Brand / Business Row */}
         <div className="theme-business-stack">
           <div className="theme-business-active">
-            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ flexShrink: 0 }}>
-              <path d="M3 7.5 4.5 4h11L17 7.5M3.5 7.5h13V16h-13z" />
-              <path d="M3.5 7.5h13" />
-            </svg>
+            <Zap size={17} color="#2563eb" style={{ flexShrink: 0 }} />
             {!isCollapsed && (
               <>
-                <span className="theme-business-name">Sangeeta Infotech</span>
-                <ChevronDown size={14} color="#8a8f98" style={{ marginLeft: 'auto', flexShrink: 0 }} />
+                <span className="theme-business-name" style={{ fontWeight: 700, letterSpacing: '-0.02em' }}>LeadsGen AI</span>
+                <span style={{ fontSize: '10px', background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '999px', fontWeight: 600, marginLeft: 'auto' }}>PRO</span>
               </>
             )}
           </div>
           {!isCollapsed && (
-            <div className="theme-business-alt" title="Lead Generation Pipeline">
+            <div className="theme-business-alt" title="Autonomous B2B Prospecting & Intelligence">
               <span className={`theme-status-dot ${backendOnline ? 'online' : 'standby'}`}></span>
-              <span className="theme-business-sub">{backendOnline ? 'Python DB Online' : 'Python Standby'}</span>
+              <span className="theme-business-sub">{backendOnline ? 'Autonomous Engine Online' : 'Engine Standby'}</span>
             </div>
           )}
         </div>

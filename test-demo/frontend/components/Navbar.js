@@ -18,10 +18,10 @@ export default function Navbar({
       <div className="header-inner">
         {/* Brand Section */}
         <div className="brand-section">
-          <div className="brand-avatar">S</div>
+          <div className="brand-avatar">⚡</div>
           <div>
-            <h1 className="brand-title">Sangeeta Infotech</h1>
-            <p className="brand-subtitle">Autonomous Lead Discovery & Cold Outreach Engine</p>
+            <h1 className="brand-title">LeadsGen AI</h1>
+            <p className="brand-subtitle">Autonomous B2B Prospecting & Intelligence Engine</p>
           </div>
         </div>
 

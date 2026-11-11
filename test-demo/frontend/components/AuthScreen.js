@@ -69,9 +69,9 @@ export default function AuthScreen() {
       <div className="auth-card">
         {/* Brand Header */}
         <div className="auth-header">
-          <div className="auth-logo">S</div>
-          <h2 className="auth-title">Sangeeta Infotech</h2>
-          <p className="auth-subtitle">Lead Discovery & Autonomous Outreach Engine</p>
+          <div className="auth-logo">⚡</div>
+          <h2 className="auth-title">LeadsGen AI</h2>
+          <p className="auth-subtitle">Autonomous B2B Prospecting & Intelligence Engine</p>
         </div>
 
         {/* Tab Switcher */}

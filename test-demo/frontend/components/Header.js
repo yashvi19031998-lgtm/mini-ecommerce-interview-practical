@@ -22,10 +22,10 @@ export default function Header({
   onSearchChange = null
 }) {
   const tabTitles = {
-    leads: { root: 'Workspace', leaf: 'Leads Database' },
-    scraper: { root: 'Workspace', leaf: 'Live Scrapers' },
-    import: { root: 'Growth', leaf: 'Import & Parse' },
-    settings: { root: 'Configuration', leaf: 'Settings & SMTP' }
+    leads: { root: 'LeadsGen AI', leaf: 'B2B Intelligence Database' },
+    scraper: { root: 'LeadsGen AI', leaf: '12 Autonomous Scrapers' },
+    import: { root: 'LeadsGen AI', leaf: 'Import & Enrichment' },
+    settings: { root: 'LeadsGen AI', leaf: 'Intelligence & SMTP Settings' }
   };
 
   const crumb = tabTitles[activeTab] || tabTitles.leads;
@@ -66,7 +66,7 @@ export default function Header({
           </svg>
           <input 
             type="text" 
-            placeholder="Search leads, companies, emails..." 
+            placeholder="Search leads, decision makers, tech stack..." 
             value={searchQuery || ''}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
           />
