@@ -3,7 +3,8 @@
 import React from 'react';
 import { 
   Database, Terminal, DownloadCloud, Settings, 
-  Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap
+  Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
+  LayoutDashboard, Briefcase, History
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -23,6 +24,21 @@ export default function Sidebar({
   isCollapsed = false
 }) {
   const navItems = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard
+    },
+    {
+      id: 'jobportal',
+      label: 'Job Portal Scraper',
+      icon: Briefcase
+    },
+    {
+      id: 'followups',
+      label: 'FollowUp History',
+      icon: History
+    },
     {
       id: 'leads',
       label: 'Leads Intelligence',

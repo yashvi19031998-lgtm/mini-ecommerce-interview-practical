@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, MessageSquare, ExternalLink } from 'lucide-react';
-import { buildWhatsAppLink } from '../lib/api';
+import { buildWhatsAppLink, logFollowupActivity } from '../lib/api';
 
 export default function WhatsAppModal({
   lead,
@@ -44,6 +44,15 @@ export default function WhatsAppModal({
   const handleOpenWhatsApp = () => {
     if (waUrl) {
       window.open(waUrl, '_blank', 'noopener,noreferrer');
+      // Record it in FollowUp History. We can only know the chat was opened, not that it was sent.
+      if (lead.id) {
+        logFollowupActivity({
+          lead_id: lead.id,
+          type: 'whatsapp',
+          summary: `WhatsApp chat opened (${String(phone).split(',')[0].trim()})`,
+          details: filledMsg
+        }).catch(() => { /* logging must never block outreach */ });
+      }
       onClose();
     }
   };

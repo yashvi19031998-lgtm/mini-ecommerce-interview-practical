@@ -55,7 +55,7 @@ jobs:
       # If the code is broken, stop here - before any scraping or emailing happens.
       - name: Run tests
         id: tests
-        run: python -m unittest test_lead_system test_quality_and_auth test_feedly test_accuracy test_html_cache test_sources test_website_signals test_apollo
+        run: python -m unittest test_lead_system test_quality_and_auth test_feedly test_accuracy test_html_cache test_sources test_website_signals test_apollo test_job_portals test_followups test_followup_phase2 test_followup_extras
 
       - name: Run all scrapers, AI qualification and alerts
         env:
@@ -74,6 +74,9 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM_EMAIL: ${{ secrets.SMTP_FROM_EMAIL }}
+          # Gmail reply check (defaults to SMTP_USER / SMTP_PASS when not set)
+          IMAP_USER: ${{ secrets.IMAP_USER }}
+          IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           # --- settings (Settings -> Secrets and variables -> Actions -> Variables) ---
@@ -85,6 +88,10 @@ jobs:
           AI_QUALIFY_LIMIT: ${{ vars.AI_QUALIFY_LIMIT || '40' }}
           STALE_AFTER_DAYS: ${{ vars.STALE_AFTER_DAYS || '14' }}
           IDEAL_CLIENT_PROFILE: ${{ vars.IDEAL_CLIENT_PROFILE }}
+          # Follow-up sequence: OFF unless the variable FOLLOWUP_AUTO_SEND = true
+          FOLLOWUP_AUTO_SEND: ${{ vars.FOLLOWUP_AUTO_SEND || 'false' }}
+          FOLLOWUP_SEQUENCE_DAYS: ${{ vars.FOLLOWUP_SEQUENCE_DAYS || '3,7,14' }}
+          FOLLOWUP_MAX_PER_RUN: ${{ vars.FOLLOWUP_MAX_PER_RUN || '10' }}
           FEEDLY_KEYWORDS: ${{ vars.FEEDLY_KEYWORDS || 'senior developer,tech lead,8+ years,9+ years,lead engineer,full stack architect,staff engineer,next.js,react,python,flutter,budget' }}
           FREELANCER_QUERIES: ${{ vars.FREELANCER_QUERIES || 'senior developer,tech lead,full stack architect,nextjs react,python ai,flutter senior' }}
           APOLLO_SEARCH_KEYWORDS: ${{ vars.APOLLO_SEARCH_KEYWORDS || '"Senior Developer" OR "Tech Lead" OR "Lead Engineer" OR "Software Architect" OR "8+ years" OR "Next.js" OR "Full Stack"' }}

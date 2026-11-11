@@ -172,6 +172,107 @@ export async function importRawTextData(text, crawl_urls = true) {
   });
 }
 
+// 16. Job Portal Scraper: portal catalog + Indian states for the form
+export async function fetchJobPortals() {
+  return await apiFetch('/api/job-portals');
+}
+
+// 17. Job Portal Scraper: search the selected portals (can take 10-60 seconds)
+export async function searchJobPortals({ titles, state, portals }) {
+  return await apiFetch('/api/job-portals/search', {
+    method: 'POST',
+    body: JSON.stringify({ titles, state, portals })
+  });
+}
+
+// 18. Job Portal Scraper: save selected job postings as leads (hiring company = lead)
+export async function saveJobsToLeads(jobs) {
+  return await apiFetch('/api/job-portals/save', {
+    method: 'POST',
+    body: JSON.stringify({ jobs })
+  });
+}
+
+// 19. FollowUp History: counts for overdue / today / upcoming follow-ups
+export async function fetchFollowupSummary() {
+  return await apiFetch('/api/followups/summary');
+}
+
+// 20. FollowUp History: pending follow-ups ('all' | 'overdue' | 'today' | 'upcoming' | 'later')
+export async function fetchFollowupQueue(bucket = 'all') {
+  return await apiFetch(`/api/followups/queue?bucket=${encodeURIComponent(bucket)}`);
+}
+
+// 21. FollowUp History: activity feed (newest first)
+export async function fetchFollowupHistory({ leadId = '', types = [], q = '', limit = 50, offset = 0 } = {}) {
+  const params = new URLSearchParams({ lead_id: leadId, types: types.join(','), q, limit, offset });
+  return await apiFetch(`/api/followups/history?${params.toString()}`);
+}
+
+// 22. FollowUp History: one lead's timeline + its pending follow-up
+export async function fetchLeadTimeline(leadId) {
+  return await apiFetch(`/api/leads/${encodeURIComponent(leadId)}/timeline`);
+}
+
+// 23. FollowUp History: log a call / meeting / note / WhatsApp / email (+ optional next follow-up)
+export async function logFollowupActivity(payload) {
+  return await apiFetch('/api/followups/activities', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+// 24. FollowUp History: plan the next follow-up for a lead
+export async function scheduleFollowup({ lead_id, due_at, note }) {
+  return await apiFetch('/api/followups/schedule', { method: 'POST', body: JSON.stringify({ lead_id, due_at, note }) });
+}
+
+// 25. FollowUp History: mark done / cancel / reschedule a follow-up
+export async function updateFollowup(activityId, action, dueAt = '') {
+  return await apiFetch(`/api/followups/${encodeURIComponent(activityId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action, due_at: dueAt })
+  });
+}
+
+// 26. FollowUp History: import emails sent before this feature existed (safe to repeat)
+export async function importSentEmailsHistory() {
+  return await apiFetch('/api/followups/import-sent-emails', { method: 'POST' });
+}
+
+// 27. FollowUp Phase 2: sequence settings + follow-ups that are due (with email preview)
+export async function fetchFollowupSequence() {
+  return await apiFetch('/api/followups/sequence');
+}
+
+// 28. FollowUp Phase 2: send selected due follow-ups now
+export async function sendSequenceFollowups(leadIds) {
+  return await apiFetch('/api/followups/sequence/send', { method: 'POST', body: JSON.stringify({ lead_ids: leadIds }) });
+}
+
+// 29. FollowUp Phase 2: stop the sequence for one lead
+export async function stopSequence(leadId, reason = '') {
+  return await apiFetch('/api/followups/sequence/stop', { method: 'POST', body: JSON.stringify({ lead_id: leadId, reason }) });
+}
+
+// 30. FollowUp Phase 2: read Gmail for replies / bounces / opt-outs now
+export async function checkGmailReplies() {
+  return await apiFetch('/api/followups/check-replies', { method: 'POST' });
+}
+
+// 31. FollowUp Phase 2: reply-rate report
+export async function fetchFollowupReport() {
+  return await apiFetch('/api/followups/report');
+}
+
+// 32. FollowUp Phase 2: follow-up email templates (get / save / reset to default)
+export async function fetchFollowupTemplates() {
+  return await apiFetch('/api/followups/templates');
+}
+export async function saveFollowupTemplates(templates) {
+  return await apiFetch('/api/followups/templates', { method: 'PUT', body: JSON.stringify({ templates }) });
+}
+export async function resetFollowupTemplates() {
+  return await apiFetch('/api/followups/templates', { method: 'DELETE' });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

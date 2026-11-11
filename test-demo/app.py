@@ -11,6 +11,7 @@ from email_service import send_smtp_email
 import sync_to_supabase
 
 from api_auth import init_auth
+import followup_store
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -156,6 +157,26 @@ def update_lead_record(lead_id, updates):
         print(f"Error updating {LEADS_CSV}: {e}")
     return False
 
+def _lead_index():
+    """lead id -> {"id", "name", "email", "status", "source", "phone"} from the leads file."""
+    index = {}
+    for l in read_leads():
+        index[str(l.get("id"))] = {
+            "id": str(l.get("id")),
+            "name": str(l.get("Company Name") or l.get("company_name") or l.get("full_name") or ""),
+            "email": str(l.get("Email") or "").split(",")[0].strip(),
+            "status": str(l.get("Status") or "NEW"),
+            "source": str(l.get("Source") or ""),
+            # some scraped rows hold hundreds of numbers - show only the first one
+            "phone": str(l.get("Mobile Number") or "").split(",")[0].strip(),
+        }
+    return index
+
+
+def _lead_info(lead_id):
+    return _lead_index().get(str(lead_id)) if lead_id not in (None, "") else None
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -171,7 +192,13 @@ def patch_lead_status(lead_id):
     new_status = data.get("status")
     if not new_status:
         return jsonify({"success": False, "error": "status is required"}), 400
+    lead = _lead_info(lead_id)
+    old_status = str((lead or {}).get("status") or "NEW").upper()
     success = update_lead_record(lead_id, {"Status": new_status})
+    if success and str(new_status).upper() != old_status:
+        followup_store.safe_log(lead_id, "status_change", f"Status: {old_status} → {str(new_status).upper()}",
+                                source="dashboard", lead_name=(lead or {}).get("name", ""),
+                                lead_email=(lead or {}).get("email", ""))
     return jsonify({"success": success})
 
 @app.route("/api/leads/send-email", methods=["POST"])
@@ -194,6 +221,9 @@ def send_single_lead_email():
             "Email Sent At": now_str,
             "Status": "EMAIL_SENT"
         })
+        lead = _lead_info(lead_id) or {}
+        followup_store.safe_log(lead_id, "email_sent", f"Email sent: {subject}", details=message,
+                                source="dashboard", lead_name=lead.get("name", ""), lead_email=to_email)
         return jsonify({"success": True, "message": "Email sent successfully via Gmail SMTP!"})
     else:
         return jsonify({"success": False, "error": result.get("error", "SMTP send failed")}), 500
@@ -256,6 +286,8 @@ def send_bulk_leads_email():
                 "Email Sent At": now_str,
                 "Status": "EMAIL_SENT"
             })
+            followup_store.safe_log(lid, "email_sent", f"Email sent: {sub}", details=body,
+                                    source="bulk email", lead_name=comp, lead_email=to_email)
             results.append({"id": lid, "email": to_email, "success": True})
         else:
             failed_count += 1
@@ -507,6 +539,309 @@ def import_commit():
         return jsonify({"success": True, "result": result})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ==============================================================================
+# JOB PORTAL SCRAPER (job_portals.py)
+# ==============================================================================
+import job_portals
+from lead_normalizer import MasterLeadRegistry
+
+MAX_JOBS_PER_SAVE = 500
+job_save_lock = threading.Lock()
+
+
+@app.route("/api/job-portals", methods=["GET"])
+def get_job_portals():
+    return jsonify({
+        "success": True,
+        "portals": job_portals.list_portals(),
+        "states": [job_portals.ALL_INDIA] + sorted(job_portals.INDIAN_STATES.keys()),
+        "maxTitles": job_portals.MAX_TITLES,
+    })
+
+
+@app.route("/api/job-portals/search", methods=["POST"])
+def search_job_portals():
+    data = request.get_json(silent=True) or {}
+    try:
+        result = job_portals.search_jobs(data.get("titles"), data.get("state"), data.get("portals"))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, **result})
+
+
+@app.route("/api/job-portals/save", methods=["POST"])
+def save_job_portal_results():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    jobs = data.get("jobs")
+    if not isinstance(jobs, list) or not jobs:
+        return jsonify({"success": False, "error": "Select at least one job to save."}), 400
+    if len(jobs) > MAX_JOBS_PER_SAVE:
+        return jsonify({"success": False, "error": f"Save at most {MAX_JOBS_PER_SAVE} jobs at a time."}), 400
+    valid = [j for j in jobs if isinstance(j, dict) and (j.get("company") or j.get("title")) and j.get("url")]
+    if not valid:
+        return jsonify({"success": False, "error": "The selected jobs have no company/title or link."}), 400
+
+    counts = {"added": 0, "updated": 0, "duplicate": 0, "skipped_invalid": len(jobs) - len(valid)}
+    with job_save_lock:
+        registry = MasterLeadRegistry(MASTER_PATH)
+        for job in valid:
+            outcome, _ = registry.add_lead(job_portals.job_to_raw_lead(job), default_source="Job Portal")
+            counts[outcome] = counts.get(outcome, 0) + 1
+        if not registry.save_master_safely():
+            return jsonify({"success": False, "error": "Could not write the leads file."}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **counts})
+
+
+# ==============================================================================
+# FOLLOWUP HISTORY (followup_store.py) - Phase 1: activity log + follow-up queue
+# ==============================================================================
+
+def _with_lead(rows, leads=None):
+    """Adds current lead details (name, status, ...) to activity/follow-up rows."""
+    leads = leads if leads is not None else _lead_index()
+    out = []
+    for r in rows:
+        lead = leads.get(r.get("lead_id")) or {}
+        out.append({**r, "lead": lead, "lead_name": lead.get("name") or r.get("lead_name", ""),
+                    "lead_exists": bool(lead)})
+    return out
+
+
+@app.route("/api/followups/summary", methods=["GET"])
+def followups_summary():
+    return jsonify({"success": True, **followup_store.summary()})
+
+
+@app.route("/api/followups/queue", methods=["GET"])
+def followups_queue():
+    try:
+        rows = followup_store.queue(request.args.get("bucket", "all"))
+    except followup_store.FollowupError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    last = followup_store.last_contact_by_lead()
+    items = _with_lead(rows)
+    for item in items:
+        contact = last.get(item["lead_id"])
+        item["last_contact"] = {"type": contact["type"], "summary": contact["summary"],
+                                "occurred_at": contact["occurred_at"]} if contact else None
+    return jsonify({"success": True, "items": items, "total": len(items)})
+
+
+@app.route("/api/followups/history", methods=["GET"])
+def followups_history():
+    try:
+        types = [t for t in request.args.get("types", "").split(",") if t]
+        res = followup_store.history(lead_id=request.args.get("lead_id", ""), types=types,
+                                     q=request.args.get("q", ""), limit=request.args.get("limit", 100),
+                                     offset=request.args.get("offset", 0))
+    except (followup_store.FollowupError, ValueError) as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "items": _with_lead(res["items"]), "total": res["total"]})
+
+
+@app.route("/api/leads/<lead_id>/timeline", methods=["GET"])
+def lead_timeline(lead_id):
+    lead = _lead_info(lead_id)
+    res = followup_store.history(lead_id=lead_id, limit=500)
+    if not lead and not res["total"]:
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+    pending = [r for r in followup_store.queue("all") if r["lead_id"] == str(lead_id)]
+    return jsonify({"success": True, "lead": lead or {"id": lead_id, "name": ""},
+                    "items": res["items"], "pending_followup": pending[0] if pending else None})
+
+
+@app.route("/api/followups/activities", methods=["POST"])
+def followups_add_activity():
+    data = request.get_json(silent=True) or {}
+    lead = _lead_info(data.get("lead_id"))
+    if not lead:
+        return jsonify({"success": False, "error": "Select a valid lead"}), 400
+    try:
+        activity = followup_store.add_activity(
+            lead["id"], data.get("type", ""), data.get("summary", ""), details=data.get("details", ""),
+            occurred_at=data.get("occurred_at", ""), source="manual",
+            lead_name=lead["name"], lead_email=lead["email"])
+        followup = None
+        if data.get("next_followup_at"):
+            followup = followup_store.schedule_followup(
+                lead["id"], data["next_followup_at"], data.get("next_followup_note", ""),
+                lead_name=lead["name"], lead_email=lead["email"])
+    except followup_store.FollowupError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "activity": activity, "followup": followup})
+
+
+@app.route("/api/followups/schedule", methods=["POST"])
+def followups_schedule():
+    data = request.get_json(silent=True) or {}
+    lead = _lead_info(data.get("lead_id"))
+    if not lead:
+        return jsonify({"success": False, "error": "Select a valid lead"}), 400
+    try:
+        row = followup_store.schedule_followup(lead["id"], data.get("due_at", ""), data.get("note", ""),
+                                               lead_name=lead["name"], lead_email=lead["email"])
+    except followup_store.FollowupError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "followup": row})
+
+
+@app.route("/api/followups/<activity_id>", methods=["PATCH"])
+def followups_update(activity_id):
+    data = request.get_json(silent=True) or {}
+    try:
+        row = followup_store.update_followup(activity_id, data.get("action", ""), data.get("due_at", ""))
+    except LookupError as e:
+        return jsonify({"success": False, "error": str(e)}), 404
+    except followup_store.FollowupError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "followup": row})
+
+
+@app.route("/api/followups/import-sent-emails", methods=["POST"])
+def followups_import_sent_emails():
+    by_email = {}
+    for l in read_leads():  # a lead can have several emails: match on any of them
+        name = str(l.get("Company Name") or l.get("company_name") or "")
+        for email in str(l.get("Email") or "").split(","):
+            email = email.strip().lower()
+            if email and "@" in email:
+                by_email.setdefault(email, {"id": str(l.get("id")), "name": name})
+    return jsonify({"success": True, **followup_store.import_sent_emails(by_email)})
+
+
+# ------------------------------------------------------------------------------
+# FOLLOWUP PHASE 2: automatic sequence, Gmail reply check, reply-rate report
+# ------------------------------------------------------------------------------
+import followup_sequence
+import reply_checker
+
+# A reply only moves a lead forward from these statuses (never downgrades MEETING / WON / ...)
+REPLY_UPGRADEABLE = {"", "NEW", "CONTACTED", "EMAIL_SENT"}
+
+
+def _source_family(source):
+    return str(source or "Unknown").split("|")[0].split(" (")[0].strip() or "Unknown"
+
+
+def _apply_lead_updates(updates, leads):
+    """Applies reply_checker updates to the leads file; returns how many leads changed."""
+    changed = 0
+    for u in updates:
+        lead = leads.get(str(u["lead_id"]))
+        if not lead:
+            continue
+        if u.get("status") and lead["status"].upper() in REPLY_UPGRADEABLE:
+            if update_lead_record(lead["id"], {"Status": u["status"]}):
+                followup_store.safe_log(lead["id"], "status_change", f"Status: {lead['status'].upper()} → {u['status']}",
+                                        source="gmail", lead_name=lead["name"], lead_email=lead["email"])
+                lead["status"] = u["status"]
+                changed += 1
+        if u.get("email_status") and update_lead_record(lead["id"], {"Email Status": u["email_status"]}):
+            changed += 1
+    return changed
+
+
+@app.route("/api/followups/sequence", methods=["GET"])
+def followups_sequence():
+    plan = followup_sequence.plan(_lead_index())
+    signature = format_signature(load_settings())
+    due = [{**item, "preview": followup_sequence.render(item, signature)} for item in plan["due"]]
+    return jsonify({
+        "success": True,
+        "config": followup_sequence.config(),
+        "imap_configured": reply_checker.is_configured(),
+        "last_checked_at": reply_checker.last_checked_at(),
+        "due": due,
+        "waiting": plan["waiting"][:50], "waiting_total": len(plan["waiting"]),
+        "stopped": plan["stopped"][:50], "stopped_total": len(plan["stopped"]),
+    })
+
+
+@app.route("/api/followups/sequence/send", methods=["POST"])
+def followups_sequence_send():
+    data = request.get_json(silent=True) or {}
+    lead_ids = data.get("lead_ids")
+    if not isinstance(lead_ids, list) or not lead_ids:
+        return jsonify({"success": False, "error": "Select at least one follow-up to send."}), 400
+    if len(lead_ids) > 50:
+        return jsonify({"success": False, "error": "Send at most 50 follow-ups at a time."}), 400
+    wanted = {str(x) for x in lead_ids}
+    due = [i for i in followup_sequence.plan(_lead_index())["due"] if i["lead_id"] in wanted]
+    if not due:
+        return jsonify({"success": False, "error": "None of the selected follow-ups are due any more."}), 400
+    # Follow-ups go to an address we already emailed, so the one-email-per-address shield is bypassed
+    # here on purpose - only for steps the sequence planner marked as due.
+    result = followup_sequence.send(
+        due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True),
+        signature=format_signature(load_settings()))
+    return jsonify({"success": True, **result, "not_due": len(wanted) - len(due)})
+
+
+@app.route("/api/followups/sequence/stop", methods=["POST"])
+def followups_sequence_stop():
+    data = request.get_json(silent=True) or {}
+    lead = _lead_info(data.get("lead_id"))
+    if not lead:
+        return jsonify({"success": False, "error": "Select a valid lead"}), 400
+    try:
+        row = followup_sequence.stop(lead["id"], data.get("reason", ""), lead["name"], lead["email"])
+    except followup_store.FollowupError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "activity": row})
+
+
+@app.route("/api/followups/check-replies", methods=["POST"])
+def followups_check_replies():
+    if not reply_checker.is_configured():
+        return jsonify({"success": False, "error": "Gmail reply check is not set up. Add IMAP_USER and "
+                                                   "IMAP_PASSWORD (a Gmail App Password) to .env."}), 400
+    leads = _lead_index()
+    email_to_lead = {}
+    for l in read_leads():
+        for em in str(l.get("Email") or "").split(","):
+            em = em.strip().lower()
+            if em and "@" in em:
+                email_to_lead.setdefault(em, leads.get(str(l.get("id")), {}))
+    try:
+        events = reply_checker.fetch_events(reply_checker.contacted_emails())
+    except RuntimeError as e:
+        return jsonify({"success": False, "error": str(e)}), 502
+    result = reply_checker.record_events(events, email_to_lead)
+    changed = _apply_lead_updates(result["updates"], leads)
+    counts = {t: sum(1 for e in events if e["type"] == t) for t in ("reply", "opted_out", "bounce")}
+    return jsonify({"success": True, "checked_at": reply_checker.last_checked_at(), "new_events": result["logged"],
+                    "already_known": result["skipped"], "leads_updated": changed, **counts})
+
+
+@app.route("/api/followups/templates", methods=["GET", "PUT", "DELETE"])
+def followups_templates():
+    try:
+        if request.method == "PUT":
+            data = request.get_json(silent=True) or {}
+            templates = followup_sequence.save_templates(data.get("templates"))
+        elif request.method == "DELETE":
+            templates = followup_sequence.reset_templates()
+        else:
+            templates = followup_sequence.load_templates()
+    except followup_sequence.TemplateError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({
+        "success": True, "templates": templates,
+        "customized": followup_sequence.templates_customized(),
+        "defaults": followup_sequence.DEFAULT_TEMPLATES,
+        "placeholders": list(followup_sequence.PLACEHOLDERS),
+        "opt_out_line": followup_sequence.OPT_OUT_LINE,
+    })
+
+
+@app.route("/api/followups/report", methods=["GET"])
+def followups_report():
+    sources = {lid: _source_family(l["source"]) for lid, l in _lead_index().items()}
+    return jsonify({"success": True, **followup_store.report(sources)})
 
 
 if __name__ == "__main__":

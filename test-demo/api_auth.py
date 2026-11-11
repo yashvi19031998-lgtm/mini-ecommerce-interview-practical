@@ -118,8 +118,13 @@ def init_auth(app, bind_host: str):
         if not request.path.startswith("/api/") or request.method == "OPTIONS":
             return None
 
-        # Allow local developer mode when on localhost
-        if request.headers.get("X-Demo-User") and (request.remote_addr in LOOPBACK_HOSTS or bind_host in LOOPBACK_HOSTS):
+        # Local one-click login (X-Demo-User header). Only when the server itself is bound to localhost
+        # AND the request comes from this machine - never when the API is exposed (FLASK_HOST=0.0.0.0),
+        # otherwise anyone reaching the server could skip login. LOCAL_DEMO_LOGIN=false turns it off.
+        if (request.headers.get("X-Demo-User")
+                and os.getenv("LOCAL_DEMO_LOGIN", "true").lower() not in ("0", "false", "no")
+                and bind_host in LOOPBACK_HOSTS
+                and request.remote_addr in LOOPBACK_HOSTS):
             request.environ["auth.email"] = "admin@sangeetainfotech.com"
             return None
 

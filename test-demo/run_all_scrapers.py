@@ -53,6 +53,7 @@ import hn_hiring_scraper
 import freelancer_api_scraper
 import apollo_enricher
 from email_checks import can_receive_mail
+import followup_store
 
 
 def run_apollo_prospect_adapter() -> List[Dict[str, Any]]:
@@ -343,6 +344,9 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
             lead_obj["email_status"] = "SENT"
             lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             sent_emails_seen.add(email_lower)
+            followup_store.safe_log(lead_obj.get("lead_id", ""), "email_sent", f"Email sent: {custom_sub}",
+                                    details=custom_msg, source="auto outreach", lead_name=comp_name,
+                                    lead_email=raw_email)
             print(f"       -> [AUTO-MAIL-PENDING] [SUCCESS] Delivered via Gmail SMTP.")
             dispatched += 1
             if delay_sec > 0:
@@ -352,6 +356,63 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
             print(f"       -> [AUTO-MAIL-PENDING] [FAILED] {mail_res.get('error')}")
 
     return dispatched
+
+
+REPLY_UPGRADEABLE = {"", "NEW", "CONTACTED", "EMAIL_SENT"}
+
+
+def run_followup_step(registry: MasterLeadRegistry) -> None:
+    """Reply check (if Gmail IMAP is configured) and follow-up sequence (auto-send only if enabled)."""
+    import followup_sequence
+    import reply_checker
+
+    registry.load_master()
+    by_id = {l.get("lead_id"): l for l in registry.leads}
+    changed = False
+
+    if reply_checker.is_configured():
+        print("\n[*] Step 5a: Checking Gmail for replies, bounces and opt-outs...")
+        email_to_lead = {}
+        for l in registry.leads:
+            for em in str(l.get("email", "")).split(","):
+                em = em.strip().lower()
+                if em:
+                    email_to_lead.setdefault(em, {"id": l.get("lead_id", ""), "name": l.get("company_name", "")})
+        events = reply_checker.fetch_events(reply_checker.contacted_emails())
+        result = reply_checker.record_events(events, email_to_lead)
+        for u in result["updates"]:
+            lead = by_id.get(u["lead_id"])
+            if not lead:
+                continue
+            if u.get("status") and str(lead.get("status", "")).upper() in REPLY_UPGRADEABLE:
+                followup_store.safe_log(u["lead_id"], "status_change",
+                                        f"Status: {str(lead.get('status') or 'NEW').upper()} → {u['status']}",
+                                        source="gmail", lead_name=lead.get("company_name", ""))
+                lead["status"] = u["status"]
+                changed = True
+            if u.get("email_status"):
+                lead["email_status"] = u["email_status"]
+                changed = True
+        print(f"[*] Gmail: {result['logged']} new replies/bounces/opt-outs logged.")
+    else:
+        print("\n[*] Step 5a: Gmail reply check not configured (IMAP_USER / IMAP_PASSWORD) - skipped.")
+
+    cfg = followup_sequence.config()
+    leads_index = {l.get("lead_id"): {"name": l.get("company_name", ""), "status": l.get("status", ""),
+                                      "email": str(l.get("email", "")).split(",")[0].strip()}
+                   for l in registry.leads if l.get("lead_id")}
+    due = followup_sequence.plan(leads_index)["due"]
+    if not cfg["auto_send"]:
+        print(f"[*] Follow-up sequence: {len(due)} due (auto-send OFF - send them from the dashboard).")
+    elif due and send_smtp_email:
+        sig = format_signature(load_settings()) if (format_signature and load_settings) else ""
+        res = followup_sequence.send(
+            due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True),
+            signature=sig, limit=cfg["max_per_run"])
+        print(f"[*] Follow-up sequence: sent {res['sent']}, failed {res['failed']} (limit {cfg['max_per_run']}).")
+
+    if changed and not registry.save_master_safely():
+        print(f"[FATAL] Failed to save reply statuses to '{MASTER_CSV}'!")
 
 
 def run_all_scrapers():
@@ -511,6 +572,12 @@ def run_all_scrapers():
         print(f"[*] Outreach emails sent this run: {pending_sent}")
         if not registry.save_master_safely():
             print(f"[FATAL] Failed to save email statuses to '{MASTER_CSV}'!")
+
+    # Step 5a: Follow-ups - Gmail reply check, then (only if FOLLOWUP_AUTO_SEND=true) due sequence emails
+    try:
+        run_followup_step(registry)
+    except Exception as e:  # never let follow-ups break the scraper run
+        print(f"[WARN] Follow-up step notice: {e}")
 
     # Step 5b: Direct Sync to Supabase Database
     if AUTO_SYNC_SUPABASE and sync_to_supabase:

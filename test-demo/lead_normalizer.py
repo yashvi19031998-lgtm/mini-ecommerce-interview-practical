@@ -130,6 +130,9 @@ INVALID_DOMAINS = {
     "weworkremotely.com", "remotive.com", "t.me", "telegram.me", "medium.com", "github.com",
     "quora.com", "producthunt.com", "inc42.com", "yourstory.com", "justdial.com",
     "indiamart.com", "tradeindia.com", "exportersindia.com",
+    # Job portals (job_portals.py)
+    "foundit.in", "shine.com", "internshala.com", "freshersworld.com", "apna.co", "instahyre.com",
+    "remoteok.com", "arbeitnow.com", "adzuna.in", "adzuna.com", "jooble.org",
 }
 
 EMAIL_BLACKLIST_DOMAINS = {

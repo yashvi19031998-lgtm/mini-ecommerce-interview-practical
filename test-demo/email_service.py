@@ -2,6 +2,7 @@ import os
 import smtplib
 import csv
 import datetime
+import html
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -105,7 +106,7 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
         # HTML formatting
         html_content = f"""<html>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #222; max-width: 650px; margin: 0 auto; padding: 20px;">
-  <div style="font-size: 14px; white-space: pre-wrap;">{message_body}</div>
+  <div style="font-size: 14px; white-space: pre-wrap;">{html.escape(message_body)}</div>
 </body>
 </html>"""
         part_html = MIMEText(html_content, "html", "utf-8")

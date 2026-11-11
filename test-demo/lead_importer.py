@@ -477,6 +477,11 @@ def commit_imported_leads(leads_to_commit: List[Dict[str, Any]], send_outreach_e
                         lead_obj["email_status"] = "SENT"
                         lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         emails_sent_count += 1
+                        import followup_store
+                        followup_store.safe_log(lead_obj.get("lead_id", ""), "email_sent",
+                                                f"Email sent: {custom_sub}", details=custom_msg,
+                                                source="import outreach", lead_name=comp_name,
+                                                lead_email=raw_email)
                     else:
                         lead_obj["email_status"] = "FAILED"
         elif outcome == "updated":

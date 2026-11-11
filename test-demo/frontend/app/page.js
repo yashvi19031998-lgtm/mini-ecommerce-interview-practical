@@ -13,6 +13,9 @@ import WhatsAppModal from '../components/WhatsAppModal';
 import ScraperConsole from '../components/ScraperConsole';
 import LeadImporter from '../components/LeadImporter';
 import SettingsView from '../components/SettingsView';
+import Dashboard from '../components/Dashboard';
+import JobPortalScraper from '../components/JobPortalScraper';
+import FollowUpHistory from '../components/FollowUpHistory';
 import Toast from '../components/Toast';
 import { Loader2 } from 'lucide-react';
 
@@ -31,7 +34,7 @@ import {
 function DashboardContent() {
   const { user, signOut, loading: authLoading } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('leads'); // 'leads' | 'scraper' | 'import' | 'settings'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'jobportal' | 'followups' | 'leads' | 'scraper' | 'import' | 'settings'
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [leads, setLeads] = useState([]);
@@ -253,14 +256,19 @@ function DashboardContent() {
           onSyncSupabase={handleSyncSupabase}
           user={user}
           onSignOut={signOut}
-          onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
+          onToggleCollapse={() => {
+            // Small screens: open/close the sidebar as a drawer. Desktop: collapse/expand it.
+            if (typeof window !== 'undefined' && window.innerWidth <= 900) setIsMobileOpen(prev => !prev);
+            else setIsSidebarCollapsed(prev => !prev);
+          }}
           searchQuery={globalSearch}
           onSearchChange={setGlobalSearch}
         />
 
         <div className="theme-scrollable-content">
           <div className="theme-content-padding">
-            {/* Real-time KPI Metric Summary */}
+            {/* Real-time KPI Metric Summary (hidden on the Job Portal Scraper to give the form room) */}
+            {activeTab !== 'jobportal' && activeTab !== 'followups' && (
             <StatsCards 
               leads={leads} 
               activeFilter={tableFilter}
@@ -269,6 +277,29 @@ function DashboardContent() {
                 if (activeTab !== 'leads') setActiveTab('leads');
               }}
             />
+            )}
+
+            {/* Dashboard overview */}
+            {activeTab === 'dashboard' && (
+              <Dashboard
+                leads={leads}
+                onOpenJobPortal={() => setActiveTab('jobportal')}
+                onOpenLeads={() => setActiveTab('leads')}
+              />
+            )}
+
+            {/* FollowUp History */}
+            {activeTab === 'followups' && (
+              <FollowUpHistory leads={leads} showToast={showToast} />
+            )}
+
+            {/* Job Portal Scraper */}
+            {activeTab === 'jobportal' && (
+              <JobPortalScraper
+                showToast={showToast}
+                onLeadsSaved={() => loadLeads(true)}
+              />
+            )}
 
             {/* TAB 1: Leads CRM & Database */}
             {activeTab === 'leads' && (
@@ -369,16 +400,8 @@ function DashboardContent() {
       )}
 
       {/* Global Toast Container */}
-      <div className="toast-container">
-        {toasts.map(t => (
-          <Toast
-            key={t.id}
-            id={t.id}
-            message={t.message}
-            type={t.type}
-            onClose={() => dismissToast(t.id)}
-          />
-        ))}
+      <div className="toast-container" aria-live="polite">
+        <Toast toasts={toasts} onDismiss={dismissToast} />
       </div>
     </div>
   );

@@ -22,6 +22,9 @@ export default function Header({
   onSearchChange = null
 }) {
   const tabTitles = {
+    dashboard: { root: 'LeadsGen AI', leaf: 'Dashboard' },
+    jobportal: { root: 'LeadsGen AI', leaf: 'Job Portal Scraper' },
+    followups: { root: 'LeadsGen AI', leaf: 'FollowUp History' },
     leads: { root: 'LeadsGen AI', leaf: 'B2B Intelligence Database' },
     scraper: { root: 'LeadsGen AI', leaf: '12 Autonomous Scrapers' },
     import: { root: 'LeadsGen AI', leaf: 'Import & Enrichment' },
