@@ -7,18 +7,18 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 // Attach the signed-in user's Supabase access token so the Python API can verify it.
 async function authHeaders() {
+  if (typeof window !== 'undefined') {
+    const localUser = localStorage.getItem('lead_hub_demo_user');
+    if (localUser) {
+      return { 'X-Demo-User': 'true' };
+    }
+  }
   try {
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
     if (token) return { Authorization: `Bearer ${token}` };
   } catch (e) {
     // Supabase unreachable
-  }
-  if (typeof window !== 'undefined') {
-    const localUser = localStorage.getItem('lead_hub_demo_user');
-    if (localUser) {
-      return { 'X-Demo-User': 'true' };
-    }
   }
   return {};
 }
