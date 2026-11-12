@@ -173,6 +173,14 @@ def _rank_emails(emails: List[str], domain: str) -> List[str]:
     return (on_domain + [e for e in uniq if e not in on_domain])[:3]
 
 
+INDIA_HINT = re.compile(r"\bindia\b|\+\s?91[\s-]?[2-9]", re.I)
+INDIA_TEL = re.compile(r"tel:\s*(?:\+|00)91", re.I)
+
+
+def is_indian_domain(url: str) -> bool:
+    return se.domain_of(url).endswith(".in")
+
+
 def crawl_site(website: str) -> Dict[str, Any]:
     """Homepage + up to MAX_SUBPAGES contact/about pages."""
     sc = _scraper()
@@ -204,12 +212,15 @@ def crawl_site(website: str) -> Dict[str, Any]:
         if html:
             pages.append((link, html))
     emails, phones, socials, jl_all = [], [], {}, {"emails": [], "phones": [], "same_as": [], "address": ""}
+    indian = is_indian_domain(root)
     for url, html in pages:
         s = BeautifulSoup(html, "html.parser")
         emails += sc.extract_clean_emails(html, s)
         # Phones only from visible text + tel: links. Raw HTML contains script / JSON ids (e.g. Shopify asset
         # numbers) that look like phone numbers: they produced fake phones and merged unrelated companies.
-        phones += sc.extract_clean_indian_phones(visible_text(s), s)
+        text = visible_text(s)
+        indian = indian or bool(INDIA_HINT.search(text)) or bool(INDIA_TEL.search(html))
+        phones += sc.extract_clean_indian_phones(text, s)
         for k, v in extract_socials(html).items():
             socials.setdefault(k, v)
         jl = extract_jsonld(s)
@@ -228,6 +239,8 @@ def crawl_site(website: str) -> Dict[str, Any]:
         for k, v in extract_socials(str(link)).items():
             socials.setdefault(k, v)
     out["emails"] = _rank_emails(jl_all["emails"] + emails, se.domain_of(root))
+    if not indian:
+        phones = []     # the extractor reads any 10-digit 6-9 number as Indian: on a foreign site 949-387-0117 became +91
     out["phones"] = list(dict.fromkeys(phones))[:2]
     out["address"] = (jl_all["address"] or out["address"])[:200]
     out["socials"] = socials

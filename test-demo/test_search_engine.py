@@ -384,6 +384,18 @@ class Extraction(unittest.TestCase):
             out = ds.crawl_site("https://shop.in")
         self.assertEqual(out["phones"], ["+91 98250 33333"])
 
+    def test_foreign_site_numbers_not_made_indian(self):
+        """Bug 2026-11-12: US numbers on .com sites (949-387-0117) became '+91 94938 70117'."""
+        us = '<html><body><p>Call (949) 387-0117 or 626-965-9966. Irvine, CA</p></body></html>'
+        with mock.patch.object(ds, "fetch", side_effect=lambda u: us if u == "https://weareenvoy.com/" else ""):
+            self.assertEqual(ds.crawl_site("https://weareenvoy.com")["phones"], [])
+        india = '<html><body><p>Call 98250 44444. Ahmedabad, Gujarat, India</p></body></html>'
+        with mock.patch.object(ds, "fetch", side_effect=lambda u: india if u == "https://acmefoods.com/" else ""):
+            self.assertEqual(ds.crawl_site("https://acmefoods.com")["phones"], ["+91 98250 44444"])
+        tel = '<html><body><a href="tel:+919825055555">Call</a></body></html>'
+        with mock.patch.object(ds, "fetch", side_effect=lambda u: tel if u == "https://acmetools.com/" else ""):
+            self.assertEqual(ds.crawl_site("https://acmetools.com")["phones"], ["+91 98250 55555"])
+
     def test_unreachable_site(self):
         with mock.patch.object(ds, "fetch", return_value=""):
             self.assertEqual(ds.crawl_site("https://down.in")["error"], "website could not be opened")
