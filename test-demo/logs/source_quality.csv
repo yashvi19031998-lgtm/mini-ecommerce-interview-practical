@@ -1,17 +1,17 @@
 source,leads,with_contact_pct,ai_scored,avg_ai_score,hot,hot_rate_pct,won
 Reddit,173,20,173,5.4,98,57,0
-DuckDuckGo Dork,123,21,123,4.5,40,33,0
+DuckDuckGo Dork,124,21,124,4.5,40,32,0
 Reddit search,41,5,41,6.9,39,95,0
-Freelancer.com,109,4,109,4.2,33,30,0
-Hacker News,73,41,73,3.7,26,36,0
+Freelancer.com,112,4,112,4.2,34,30,0
+Hacker News,74,43,74,3.7,27,36,0
 Hacker News Algolia API,45,22,45,4.8,20,44,0
 Platform,51,18,51,4.5,13,25,0
 Search Engine,117,100,117,3.8,12,10,0
 RSS Feed,23,0,23,3.4,6,26,0
-RemoteOK API,35,0,35,3.3,3,9,0
+RemoteOK API,36,0,36,3.3,3,8,0
 LinkedIn,49,4,49,3.0,0,0,0
 B2B Portal,25,28,25,3.0,0,0,0
-Funding news,16,0,16,3.0,0,0,0
+Funding news,18,0,18,3.0,0,0,0
 Imported,8,50,8,3.8,0,0,0
 www.reddit.com,7,29,7,2.3,0,0,0
 "hire software development company"" Ahmedabad",6,100,6,2.7,0,0,0
