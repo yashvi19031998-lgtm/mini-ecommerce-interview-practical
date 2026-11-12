@@ -51,7 +51,9 @@ function csvDownload(rows, cols, name) {
 
 const Badge = ({ status, title }) => <span className={`se-badge ${STATUS_CLASS[status] || 'deep-none'}`} title={title || ''}>{String(status).replace('_', ' ')}</span>;
 
-export default function BulkContacts({ tool, onLeadsSaved }) {
+// preset (used by File Uploads): { kind: 'csv', name, text } opens the column mapping for that CSV text;
+// { kind: 'result', name, results, counts } shows already-checked contacts ready to save. The upload controls are hidden.
+export default function BulkContacts({ tool, onLeadsSaved, preset = null }) {
   const meta = META[tool] || META.websites;
   const Icon = meta.icon;
   const [opts, setOpts] = useState(null);
@@ -122,22 +124,37 @@ export default function BulkContacts({ tool, onLeadsSaved }) {
     if (!/\.(csv|txt)$/i.test(f.name)) { setError('Choose a .csv file (Excel: File → Save As → CSV)'); return; }
     if (f.size > (opts?.maxCsvBytes || 5242880)) { setError('The file is larger than 5 MB — split it into smaller files'); return; }
     const reader = new FileReader();
-    reader.onload = async () => {
-      const content = String(reader.result || '');
-      setCsvText(content); setFileName(f.name); setSourceLabel(f.name.replace(/\.[^.]+$/, '').slice(0, 60));
-      setBusy(true);
-      try {
-        const p = await bulkImportPreview(content);
-        setPreview(p); setMapping(p.mapping);
-      } catch (err) {
-        setError(err.message || 'Could not read the file');
-      } finally {
-        setBusy(false);
-      }
-    };
+    reader.onload = () => loadCsv(String(reader.result || ''), f.name);
     reader.onerror = () => setError('Could not read the file');
     reader.readAsText(f);
   };
+
+  const loadCsv = async (content, name) => {
+    setCsvText(content); setFileName(name); setSourceLabel(name.replace(/\.[^.]+$/, '').slice(0, 60));
+    setBusy(true);
+    try {
+      const p = await bulkImportPreview(content);
+      setPreview(p); setMapping(p.mapping);
+    } catch (err) {
+      setError(err.message || 'Could not read the file');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!preset || !opts) return;
+    setError(''); setPreview(null); reset();
+    if (preset.kind === 'csv') {
+      loadCsv(preset.text, preset.name);
+    } else {
+      setSourceLabel(preset.name.replace(/\.[^.]+$/, '').slice(0, 60));
+      setRows(preset.results); setCounts(preset.counts);
+      setPicked(new Set(preset.results.filter(r => r.status === 'new').map(r => r.line)));
+      const c = preset.counts || {};
+      setNotice({ type: 'success', text: `${c.new || 0} new contact${c.new === 1 ? '' : 's'} ready to save — ${c.in_leads || 0} already in Leads, ${c.duplicate || 0} repeated in the file, ${c.invalid || 0} unusable` });
+    }
+  }, [preset, opts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const runCheck = async () => {
     setError(''); reset(); setBusy(true);
@@ -220,10 +237,12 @@ export default function BulkContacts({ tool, onLeadsSaved }) {
 
   const importInput = tool === 'import' && (
     <div>
-      <label className="theme-pill-btn neutral" style={{ cursor: 'pointer', display: 'inline-flex' }}>
-        <Upload size={14} /> {fileName ? `Change file (${fileName})` : 'Choose CSV file'}
-        <input type="file" accept=".csv,.txt,text/csv" onChange={onFile} style={{ display: 'none' }} aria-label="Choose CSV file" />
-      </label>
+      {!preset && (
+        <label className="theme-pill-btn neutral" style={{ cursor: 'pointer', display: 'inline-flex' }}>
+          <Upload size={14} /> {fileName ? `Change file (${fileName})` : 'Choose CSV file'}
+          <input type="file" accept=".csv,.txt,text/csv" onChange={onFile} style={{ display: 'none' }} aria-label="Choose CSV file" />
+        </label>
+      )}
       {preview && (
         <div style={{ marginTop: '1rem' }}>
           <div className="jp-hint" style={{ marginBottom: 8 }}>{preview.rows} data rows. Check which column is which (guessed from the headers):</div>
@@ -298,22 +317,28 @@ export default function BulkContacts({ tool, onLeadsSaved }) {
     websites: ['Website', 'Emails', 'Phones', 'Social', 'Result'],
     emails: ['E-mail', 'Result', 'Why'],
     phones: ['Input', 'Clean number', 'Type', 'Result', 'Why'],
-    import: ['Line', 'Contact', 'Email', 'Phone', 'Website', 'Result']
+    import: [preset?.kind === 'result' ? 'Found in' : 'Line', 'Contact', 'Email', 'Phone', 'Website', 'Result']
   }[tool];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div className="theme-card-panel" style={{ marginBottom: 0 }}>
-        <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
-          <div>
-            <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icon size={18} /> {meta.title}</div>
-            <div className="theme-panel-sub">{meta.sub}</div>
-          </div>
+      {(!preset || preset.kind === 'csv' || error) && (
+        <div className="theme-card-panel" style={{ marginBottom: 0 }}>
+          {!preset && (
+            <>
+              <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
+                <div>
+                  <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icon size={18} /> {meta.title}</div>
+                  <div className="theme-panel-sub">{meta.sub}</div>
+                </div>
+              </div>
+              <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}><ShieldCheck size={14} /><span>{meta.note}</span></div>
+            </>
+          )}
+          {error && <div role="alert" className="jp-alert jp-alert-error" style={{ marginBottom: '0.75rem' }}><AlertTriangle size={14} /> {error}</div>}
+          {textInput}{importInput}
         </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}><ShieldCheck size={14} /><span>{meta.note}</span></div>
-        {error && <div role="alert" className="jp-alert jp-alert-error" style={{ marginBottom: '0.75rem' }}><AlertTriangle size={14} /> {error}</div>}
-        {textInput}{importInput}
-      </div>
+      )}
 
       {notice && (
         <div role="status" className={`jp-alert ${notice.type === 'error' ? 'jp-alert-error' : 'jp-alert-success'}`}>
@@ -325,7 +350,7 @@ export default function BulkContacts({ tool, onLeadsSaved }) {
       {rows && (
         <div className="theme-table-container">
           <div className="theme-table-controls" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <select className="theme-form-input" style={{ width: 'auto', height: 32 }} value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Show">
+            <select className="theme-form-input" style={{ width: 'auto', height: 34, padding: '0 10px' }} value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Show">
               {statuses.map(s => <option key={s} value={s}>{s === 'All' ? `Show: all (${rows.length})` : `${s.replace('_', ' ')} (${rows.filter(r => (s === 'in leads' ? r.in_leads : r.status === s && !(r.in_leads && tool !== 'import'))).length})`}</option>)}
             </select>
             {counts && <span className="jp-hint">{Object.entries(counts).filter(([, v]) => v).map(([k, v]) => `${v} ${k.replace('_', ' ')}`).join(' · ')}</span>}

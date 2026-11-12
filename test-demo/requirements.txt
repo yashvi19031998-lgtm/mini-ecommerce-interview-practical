@@ -10,3 +10,7 @@ lxml>=4.9.0
 python-dateutil>=2.8.0
 anthropic>=2.4.0
 dnspython>=2.6.0
+pypdf>=5,<7
+# Visiting-card OCR (File Uploads): also needs the Tesseract OCR program installed on the machine
+pytesseract>=0.3.10,<0.4
+Pillow>=10,<13

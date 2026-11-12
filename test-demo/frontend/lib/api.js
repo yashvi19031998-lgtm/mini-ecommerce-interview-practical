@@ -493,6 +493,21 @@ export async function runWebCrawler(tool, params) {
   return await apiFetch(`/api/web-crawler/${tool}`, { method: 'POST', body: JSON.stringify(params) });
 }
 
+// File Uploads: supported types + OCR status
+export async function fetchFileUploadOptions() {
+  return await apiFetch('/api/file-uploads');
+}
+
+// File Uploads: send one file (base64) -> contacts (checked) or Excel sheets as CSV
+export async function parseUploadedFile(name, data) {
+  return await apiFetch('/api/file-uploads/parse', { method: 'POST', body: JSON.stringify({ name, data }) });
+}
+
+// Utilities: Website Analyzer (up to 5 sites per request)
+export async function analyzeWebsites(urls) {
+  return await apiFetch('/api/utilities/website-analyzer', { method: 'POST', body: JSON.stringify({ urls }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

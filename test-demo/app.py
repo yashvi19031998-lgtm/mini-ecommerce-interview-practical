@@ -1568,6 +1568,42 @@ def web_crawler_run(tool):
         return jsonify({"success": False, "error": "Unknown tool"}), 404
     return _bulk(fn)
 
+
+# ==============================================================================
+# File Uploads (module: file_uploads.py) - contacts from Excel, vCard, Word, e-mail, PDF, text and card photos.
+# Excel sheets continue in the Contact Import flow; results are saved through /api/bulk-contacts/save (kind "import").
+# ==============================================================================
+import file_uploads
+
+
+@app.route("/api/file-uploads", methods=["GET"])
+def file_uploads_catalog():
+    return jsonify({"success": True, "types": file_uploads.TYPES, "maxFileBytes": file_uploads.MAX_FILE_BYTES,
+                    "ocr": {k: v for k, v in file_uploads.ocr_status().items() if k != "exe"}})
+
+
+@app.route("/api/file-uploads/parse", methods=["POST"])
+def file_uploads_parse():
+    if (request.content_length or 0) > 15 * 1024 * 1024:
+        return jsonify({"success": False, "error": "The file is larger than 10 MB"}), 400
+    data = request.get_json(silent=True) or {}
+    try:
+        return jsonify({"success": True, **file_uploads.parse_upload(data.get("name"), data.get("data"), master_path=MASTER_PATH)})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+# ==============================================================================
+# Utilities -> Website Analyzer (module: website_analyzer.py). Save goes through /api/bulk-contacts/save
+# (kind "websites"); the problems found are stored in the lead's website_signals column.
+# ==============================================================================
+import website_analyzer
+
+
+@app.route("/api/utilities/website-analyzer", methods=["POST"])
+def utilities_website_analyzer():
+    return _bulk(lambda d: website_analyzer.analyze(d.get("urls")))
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

@@ -296,7 +296,7 @@ export default function WebCrawler({ tool, onLeadsSaved }) {
               <input type="text" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter results" />
             </div>
             {tool === 'site' && (
-              <select className="theme-form-input" style={{ width: 'auto', height: 32 }} value={view} onChange={(e) => { setView(e.target.value); setPicked(new Set()); }} aria-label="View">
+              <select className="theme-form-input" style={{ width: 'auto', height: 34, padding: '0 10px' }} value={view} onChange={(e) => { setView(e.target.value); setPicked(new Set()); }} aria-label="View">
                 <option value="sites">By site ({result.sites.length})</option>
                 <option value="pages">By page ({result.results.length})</option>
               </select>

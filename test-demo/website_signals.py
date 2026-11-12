@@ -42,8 +42,9 @@ def analyze_html(html: str, url: str = "") -> List[str]:
     if years and max(years) <= datetime.date.today().year - 3:
         signals.append(f"copyright year {max(years)} (site not updated recently)")
 
-    for marker, name in (("wixstatic.com", "Wix"), ("blogspot.com", "Blogger"), ("godaddysites.com", "GoDaddy builder"),
-                         ("weebly.com", "Weebly"), ("site123", "SITE123")):
+    # builder asset hosts / generator tags only: a link to some blogspot or weebly site is not proof
+    for marker, name in (("wixstatic.com", "Wix"), ("www.blogger.com/static", "Blogger"), ("godaddysites.com", "GoDaddy builder"),
+                         ("editmysite.com", "Weebly"), ("site123", "SITE123")):
         if marker in lower:
             signals.append(f"built with {name} (site builder)")
             break

@@ -49,6 +49,8 @@ export default function Header({
     'wc-links': { root: 'Web Crawler', leaf: 'Link Harvester' },
     'wc-keywords': { root: 'Web Crawler', leaf: 'Keyword Page Finder' },
     'wc-sitemap': { root: 'Web Crawler', leaf: 'Sitemap Explorer' },
+    fileuploads: { root: 'LeadsGen AI', leaf: 'File Uploads' },
+    'ut-analyzer': { root: 'Utilities', leaf: 'Website Analyzer' },
     followups: { root: 'LeadsGen AI', leaf: 'FollowUp History' },
     crmsources: { root: 'LeadsGen AI', leaf: 'CRM Sources' },
     leads: { root: 'LeadsGen AI', leaf: 'B2B Intelligence Database' },

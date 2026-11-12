@@ -408,18 +408,28 @@ def _clean_mapping(mapping: Any, headers: List[str]) -> Dict[int, str]:
 def check_csv(text: Any, mapping: Any, source: str = "", master_path: str = "") -> Dict[str, Any]:
     headers, rows = _read_csv(text)
     cols = _clean_mapping(mapping, headers)
-    source = " ".join(str(source or "").split())[:60] or "CSV import"
-    out, in_file = [], {}
+    items = []
     for n, r in rows:                                         # line numbers as in the spreadsheet
         raw: Dict[str, str] = {}
         for i, f in cols.items():
             v = r[i].strip() if i < len(r) else ""
             if v:
                 raw[f] = f"{raw[f]}; {v}" if f == "description" and raw.get(f) else v
-        lead = {"line": n, "company_name": raw.get("company_name", ""), "full_name": raw.get("full_name", ""),
+        items.append((n, raw))
+    return {**check_leads(items, source or "CSV import", master_path), "rows": len(rows)}
+
+
+def check_leads(items: List[Tuple[Any, Dict[str, str]]], source: str, master_path: str = "",
+                where: str = "line") -> Dict[str, Any]:
+    """[(line / item number, raw {lead field: text})] -> normalised leads marked new / in_leads / duplicate / invalid.
+    Shared by the CSV import and File Uploads."""
+    source = " ".join(str(source or "").split())[:60] or "Import"
+    out, in_file = [], {}
+    for n, raw in items:
+        lead = {"line": n, "company_name": raw.get("company_name", "")[:150], "full_name": raw.get("full_name", "")[:100],
                 "email": ln.normalize_email(raw.get("email", "")), "mobile_number": ln.normalize_phone(raw.get("mobile_number", "")),
-                "website": ln.clean_url(raw.get("website", "")), "location": raw.get("location", ""),
-                "description": raw.get("description", ""), "source": f"Bulk Contacts ({source})",
+                "website": ln.clean_url(raw.get("website", "")), "location": raw.get("location", "")[:200],
+                "description": raw.get("description", "")[:600], "source": f"Bulk Contacts ({source})",
                 "status": "new", "reason": ""}
         if lead["website"] and se.domain_of(lead["website"]) in ln.INVALID_DOMAINS:
             lead["website"] = ""
@@ -436,7 +446,7 @@ def check_csv(text: Any, mapping: Any, source: str = "", master_path: str = "") 
                             ("w", se.domain_of(lead["website"]))) if k[1]]
         first = next((in_file[k] for k in keys if k in in_file), None)
         if first:
-            lead.update(status="duplicate", reason=f"Same contact as line {first} in this file")
+            lead.update(status="duplicate", reason=f"Same contact as {where} {first} in this file")
         else:
             for k in keys:
                 in_file[k] = n
@@ -449,7 +459,7 @@ def check_csv(text: Any, mapping: Any, source: str = "", master_path: str = "") 
             if r.get("in_leads"):
                 r.update(status="in_leads", reason=f"Already in Leads ({r['match']})")
     counts = {s: sum(r["status"] == s for r in out) for s in ("new", "in_leads", "duplicate", "invalid")}
-    return {"results": out, "counts": counts, "rows": len(rows)}
+    return {"results": out, "counts": counts}
 
 
 def save_rows(rows: Any, master_path: str) -> Dict[str, Any]:
@@ -465,7 +475,7 @@ def save_rows(rows: Any, master_path: str) -> Dict[str, Any]:
             continue
         raw = {k: str(r.get(k) or "")[:600] for k in LEAD_FIELDS}
         raw.update(source=str(r.get("source") or "Bulk Contacts")[:80], lead_type="Imported Contact",
-                   source_url=str(r.get("source_url") or ""))
+                   source_url=str(r.get("source_url") or ""), website_signals=str(r.get("website_signals") or "")[:500])
         outcome, _ = registry.add_lead(raw, default_source="Bulk Contacts")
         counts[outcome] = counts.get(outcome, 0) + 1
     if not registry.save_master_safely():
@@ -496,7 +506,8 @@ def _mark_in_leads(rows: List[Dict[str, Any]], master_path: str, to_lead,
             r["match"] = reg.leads[idx].get("company_name", "") or reg.leads[idx].get("lead_id", "")
 
 
-LEAD_SOURCES = {"Bulk Contacts (Website Contacts)", "Web Crawler (Site Crawler)", "Web Crawler (Link Harvester)"}
+LEAD_SOURCES = {"Bulk Contacts (Website Contacts)", "Web Crawler (Site Crawler)", "Web Crawler (Link Harvester)",
+                "Utilities (Website Analyzer)"}
 
 
 def _lead_source(v: Any) -> str:
@@ -515,5 +526,6 @@ def website_rows_to_leads(rows: Any) -> List[Dict[str, str]]:
                     "mobile_number": ", ".join(str(p) for p in (r.get("phones") or [])[:3]),
                     "website": str(r["website"]), "location": str(r.get("address") or "")[:200],
                     "description": "; ".join(f"{k}: {v}" for k, v in list(socials.items())[:5]),
-                    "source": _lead_source(r.get("lead_source")), "source_url": str(r["website"])})
+                    "source": _lead_source(r.get("lead_source")), "source_url": str(r["website"]),
+                    "website_signals": str(r.get("website_signals") or "")[:500]})
     return out

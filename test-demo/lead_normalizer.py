@@ -168,7 +168,8 @@ def normalize_email(email_str: Optional[str]) -> str:
     raw_candidates = re.split(r"[,|;\s]+", str(email_str))
     valid_emails = set()
 
-    email_regex = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$")
+    # sub-domains allowed: name@acme.co.in, hr@mail.acme.org.in (the old pattern dropped every .co.in address)
+    email_regex = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$")
 
     for cand in raw_candidates:
         cand = cand.strip().lower()

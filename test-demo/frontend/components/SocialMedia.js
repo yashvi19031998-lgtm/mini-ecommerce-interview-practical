@@ -236,7 +236,7 @@ export default function SocialMedia({ onLeadsSaved }) {
               <Search size={14} color="#a3a7ae" />
               <input type="text" placeholder="Filter results…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter results" />
             </div>
-            <select className="theme-form-input" style={{ width: 'auto', height: 32 }} value={network} onChange={(e) => setNetwork(e.target.value)} aria-label="Network">
+            <select className="theme-form-input" style={{ width: 'auto', height: 34, padding: '0 10px' }} value={network} onChange={(e) => setNetwork(e.target.value)} aria-label="Network">
               {NETWORKS.map(n => <option key={n} value={n}>{n === 'All' ? 'Network: All' : n}</option>)}
             </select>
             <span className="jp-hint">{visible.length} of {rows.length} · {picked.size} selected</span>
