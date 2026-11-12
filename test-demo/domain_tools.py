@@ -24,8 +24,12 @@ import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
-import dns.exception
-import dns.resolver
+try:
+    import dns.exception
+    import dns.resolver
+    DNS_AVAILABLE = True
+except ImportError:
+    DNS_AVAILABLE = False
 import requests
 
 import bulk_contacts as bc
@@ -169,7 +173,9 @@ def parse_rdap(data: Dict[str, Any]) -> Dict[str, Any]:
             "status": [str(s) for s in data.get("status", [])][:6]}
 
 
-def dns_exists(domain: str, resolver: Optional[dns.resolver.Resolver] = None) -> Optional[bool]:
+def dns_exists(domain: str, resolver=None) -> Optional[bool]:
+    if not DNS_AVAILABLE:
+        return None
     r = resolver or _resolver()
     try:
         r.resolve(domain, "NS")
@@ -253,7 +259,9 @@ def age_report(domains: Any, today: Optional[datetime.date] = None) -> Dict[str,
 # Email & DNS
 # ---------------------------------------------------------------------------
 
-def _resolver() -> dns.resolver.Resolver:
+def _resolver():
+    if not DNS_AVAILABLE:
+        return None
     r = dns.resolver.Resolver()
     r.lifetime = bc.DNS_TIMEOUT
     return r
@@ -262,10 +270,12 @@ def _resolver() -> dns.resolver.Resolver:
 RETRY_PAUSE = 1.5
 
 
-def _q(r: dns.resolver.Resolver, name: str, rtype: str, sleep=None) -> Tuple[str, List[Any]]:
+def _q(r, name: str, rtype: str, sleep=None) -> Tuple[str, List[Any]]:
     """-> ("ok" | "none" | "nxdomain" | "error", answers).
     One retry on a timeout, after a short pause: home routers often time out on the first query for a new name
     while they look it up, then answer the repeat from their cache."""
+    if not DNS_AVAILABLE or r is None:
+        return "error", []
     for attempt in (1, 2):
         if attempt == 2:
             (sleep or time.sleep)(RETRY_PAUSE)
@@ -301,7 +311,9 @@ def mail_provider(mx_hosts: List[str]) -> str:
     return "Own / other mail server" if mx_hosts else ""
 
 
-def dns_check(domain: str, resolver: Optional[dns.resolver.Resolver] = None) -> Dict[str, Any]:
+def dns_check(domain: str, resolver=None) -> Dict[str, Any]:
+    if not DNS_AVAILABLE:
+        return {"domain": domain, "status": "unknown", "problems": ["DNS library not available"], "pitches": []}
     r = resolver or _resolver()
     out: Dict[str, Any] = {"domain": domain, "status": "ok"}
     st, mx = _q(r, domain, "MX")

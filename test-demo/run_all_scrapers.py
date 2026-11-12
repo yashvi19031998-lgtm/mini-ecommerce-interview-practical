@@ -38,9 +38,19 @@ except ImportError:
     lead_quality = None
     is_outreach_ready = lambda lead: False  # without the quality module, never auto-email
 
-AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "false").lower() in ("true", "1", "yes")
+try:
+    _loaded_s = load_settings() if load_settings else {}
+except Exception:
+    _loaded_s = {}
+
+_env_auto_email = os.getenv("AUTO_SEND_EMAIL")
+if _env_auto_email is not None:
+    AUTO_SEND_EMAIL = _env_auto_email.lower() in ("true", "1", "yes")
+else:
+    AUTO_SEND_EMAIL = bool(_loaded_s.get("auto_send_email", True))
+
 AUTO_SYNC_SUPABASE = os.getenv("AUTO_SYNC_SUPABASE", "true").lower() in ("true", "1", "yes")
-MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "5"))  # Safe batch of 5 new leads per run
+MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "10"))  # Batch of leads per run
 
 MASTER_CSV = "all_leads_master.csv"
 RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")

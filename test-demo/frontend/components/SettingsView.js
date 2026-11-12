@@ -22,7 +22,10 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
     smtp_pass: '',
     sender_name: '',
     default_subject: '',
-    default_template: ''
+    default_template: '',
+    default_keywords: '',
+    target_cities: '',
+    auto_send_email: true
   });
 
   const [formattedSignature, setFormattedSignature] = useState('');
@@ -34,6 +37,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
     fetchSettings().then(res => {
       if (res && res.settings) {
         const s = res.settings;
+        const kwList = Array.isArray(s.default_keywords) ? s.default_keywords.join(', ') : (s.default_keywords || '');
+        const citiesList = Array.isArray(s.target_cities) ? s.target_cities.join(', ') : (s.target_cities || '');
         setSettings(prev => ({
           company_name: s.company_name || s.companyName || prev.company_name || '',
           tagline: s.tagline || prev.tagline || '',
@@ -47,7 +52,10 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
           smtp_pass: s.smtp_pass || s.smtpPass || prev.smtp_pass || '',
           sender_name: s.sender_name || s.senderName || prev.sender_name || '',
           default_subject: s.default_subject || s.defaultSubject || prev.default_subject || '',
-          default_template: s.default_template || s.defaultMessage || prev.default_template || ''
+          default_template: s.default_template || s.defaultMessage || prev.default_template || '',
+          default_keywords: kwList,
+          target_cities: citiesList,
+          auto_send_email: s.auto_send_email !== false
         }));
         setFormattedSignature(res.formattedSignature || '');
       }
@@ -62,15 +70,24 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
     e.preventDefault();
     setIsSaving(true);
     try {
+      const kwArr = settings.default_keywords
+        ? settings.default_keywords.split(',').map(k => k.trim()).filter(Boolean)
+        : [];
+      const cityArr = settings.target_cities
+        ? settings.target_cities.split(',').map(c => c.trim()).filter(Boolean)
+        : [];
+
       const payload = {
         ...settings,
         companyName: settings.company_name,
         senderName: settings.sender_name,
         defaultSubject: settings.default_subject,
-        defaultMessage: settings.default_template
+        defaultMessage: settings.default_template,
+        default_keywords: kwArr,
+        target_cities: cityArr
       };
       await saveSettings(payload);
-      showToast('Settings & signature saved successfully!', 'success');
+      showToast('Settings, search keywords & cities saved successfully!', 'success');
     } catch (err) {
       showToast(err.message || 'Failed saving configuration', 'error');
     } finally {
@@ -249,7 +266,65 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                   For Gmail, generate a 16-character App Password at myaccount.google.com/apppasswords
                 </span>
+              <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    checked={settings.auto_send_email}
+                    onChange={(e) => handleChange('auto_send_email', e.target.checked)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span>Enable Autonomous Direct Email Outreach to Qualified Leads</span>
+                </label>
+                <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                  When enabled, all scrapers will immediately dispatch outreach emails to verified prospective buyers.
+                </span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Global Multi-City & Keywords Configuration Panel */}
+        <div className="glass-panel" style={{ marginBottom: '1.5rem', border: '1px solid var(--border-subtle)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div className="settings-header-icon" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#0284c7' }}>
+              <Globe size={18} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>All Cities & Scraper Keywords Automation</h3>
+              <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', margin: 0 }}>
+                Configure target locations and service search queries used across all background scrapers.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div className="form-group">
+              <label className="form-label">Target Cities / Locations (Comma Separated)</label>
+              <textarea
+                className="form-input"
+                style={{ minHeight: '90px', resize: 'vertical' }}
+                placeholder="Ahmedabad, Mumbai, Bengaluru, Pune, Delhi NCR, Remote / Worldwide, United States, UK..."
+                value={settings.target_cities || ''}
+                onChange={(e) => handleChange('target_cities', e.target.value)}
+              />
+              <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                All scrapers will rotate and discover prospects across these regions automatically.
+              </span>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Default Search Keywords (Comma Separated)</label>
+              <textarea
+                className="form-input"
+                style={{ minHeight: '90px', resize: 'vertical' }}
+                placeholder="software development company, web development agency, hire dedicated software developers..."
+                value={settings.default_keywords || ''}
+                onChange={(e) => handleChange('default_keywords', e.target.value)}
+              />
+              <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                Used by search engines, dork harvesters, and B2B directories to extract leads.
+              </span>
             </div>
           </div>
         </div>
