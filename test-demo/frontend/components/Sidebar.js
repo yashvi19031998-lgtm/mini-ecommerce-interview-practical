@@ -11,12 +11,12 @@ import {
 // Scraping / Mining submenu (order as requested). soon = planned module (MiningComingSoon.js)
 export const MINING_ITEMS = [
   { id: 'searchengines', label: 'Search Engines', icon: SearchCode },
-  { id: 'mining-maps', label: 'Google Maps', icon: MapPin, soon: true },
+  { id: 'mining-maps', label: 'Google Maps', icon: MapPin },
   { id: 'mining-social', label: 'Social Media', icon: Share2, soon: true },
   { id: 'mining-adlibrary', label: 'Ad Library', icon: Megaphone, soon: true },
   { id: 'mining-ecommerce', label: 'Ecommerce Platforms', icon: ShoppingCart, soon: true },
   { id: 'jobportal', label: 'Job Portals', icon: Briefcase },
-  { id: 'mining-directories', label: 'Global Directories', icon: Globe, soon: true },
+  { id: 'mining-directories', label: 'Global Directories', icon: Globe },
   { id: 'mining-whatsapp', label: 'WhatsApp Groups', icon: MessageCircle, soon: true },
   { id: 'mining-realestate', label: 'Real Estate', icon: House, soon: true }
 ];

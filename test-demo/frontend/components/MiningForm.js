@@ -52,7 +52,7 @@ function SourcesSelect({ id, label, items, selected, setSelected, error, groups,
   const update = (next) => { setSelected(next); if (next.size && onClear) onClear(); };
   const toggle = (sid) => { const n = new Set(selected); if (n.has(sid)) n.delete(sid); else n.add(sid); update(n); };
   const text = !selected.size ? placeholder
-    : allSelected ? `${allLabel} (${selected.size})`
+    : allSelected && available.length > 1 ? `${allLabel} (${selected.size})`
       : items.filter(s => selected.has(s.id)).map(s => s.name).join(', ');
   return (
     <div className="form-group jp-span-2" ref={ref} style={{ position: 'relative' }}>

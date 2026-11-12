@@ -324,6 +324,36 @@ export async function saveGlobalDirectoryResults(results) {
   return await apiFetch('/api/global-directories/save', { method: 'POST', body: JSON.stringify({ results }) });
 }
 
+// 43. Scraping / Mining -> Google Maps: sources + states
+export async function fetchMapsSources() {
+  return await apiFetch('/api/maps');
+}
+
+// 44. Google Maps: search ({ keywords, audience, state, city, sources, min_rating, website, refresh })
+export async function searchMaps(params) {
+  return await apiFetch('/api/maps/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// 45. Google Maps: save selected businesses as leads
+export async function saveMapsResults(results) {
+  return await apiFetch('/api/maps/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
+// 46. Scraping / Mining -> Ecommerce Platforms: sources, engines, states
+export async function fetchEcommerceSources() {
+  return await apiFetch('/api/ecommerce');
+}
+
+// 47. Ecommerce: search ({ keywords, audience, state, city, sources, engine, refresh })
+export async function searchEcommerce(params) {
+  return await apiFetch('/api/ecommerce/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// 48. Ecommerce: save selected stores / sellers as leads
+export async function saveEcommerceResults(results) {
+  return await apiFetch('/api/ecommerce/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });
