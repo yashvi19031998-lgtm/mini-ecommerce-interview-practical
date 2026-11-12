@@ -518,6 +518,19 @@ export async function runDomainTool(tool, params) {
   return await apiFetch(`/api/domain-tools/${tool}`, { method: 'POST', body: JSON.stringify(params) });
 }
 
+// Lead Care: Data Cleanup (scan = dry run, apply = fill empty fields with backup + log, undo)
+export async function scanLeadCleanup() {
+  return await apiFetch('/api/lead-care/cleanup');
+}
+
+export async function applyLeadCleanup(fixes) {
+  return await apiFetch('/api/lead-care/cleanup/apply', { method: 'POST', body: JSON.stringify({ fixes }) });
+}
+
+export async function undoLeadCleanup(logId) {
+  return await apiFetch('/api/lead-care/cleanup/undo', { method: 'POST', body: JSON.stringify({ log_id: logId }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

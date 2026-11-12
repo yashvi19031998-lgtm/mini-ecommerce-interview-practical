@@ -1628,6 +1628,48 @@ def domain_tools_run(tool):
         return jsonify({"success": False, "error": "Unknown tool"}), 404
     return _bulk(fn)
 
+
+# ==============================================================================
+# Lead Care -> Data Cleanup (module: lead_cleanup.py). Never deletes: fills empty fields only, backs up the leads
+# file first, logs every change, and can undo.
+# ==============================================================================
+import lead_cleanup
+
+
+@app.route("/api/lead-care/cleanup", methods=["GET"])
+def lead_care_cleanup_scan():
+    return jsonify({"success": True, **lead_cleanup.scan(MASTER_PATH)})
+
+
+@app.route("/api/lead-care/cleanup/apply", methods=["POST"])
+def lead_care_cleanup_apply():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    try:
+        with job_save_lock:
+            res = lead_cleanup.apply(MASTER_PATH, data.get("fixes"))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except IOError as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **res})
+
+
+@app.route("/api/lead-care/cleanup/undo", methods=["POST"])
+def lead_care_cleanup_undo():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    try:
+        with job_save_lock:
+            res = lead_cleanup.undo(MASTER_PATH, data.get("log_id"))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except IOError as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **res})
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

@@ -524,8 +524,12 @@ class MasterLeadRegistry:
                     norm = normalize_lead_record(row)
                     if not norm.get("lead_id"):
                         norm["lead_id"] = f"LEAD-{len(self.leads) + 1:05d}"
+                    # Stored values are kept exactly as they are in the file: loading + saving must never change or
+                    # blank an existing value when a normalising rule changes. The normalised copy is used only for
+                    # the duplicate indexes, and to fill fields that are empty in the file (lead_id, defaults).
+                    stored = {k: (row.get(k) if row.get(k) not in (None, "") else norm.get(k, "")) for k in MASTER_FIELDNAMES}
                     idx = len(self.leads)
-                    self.leads.append(norm)
+                    self.leads.append(stored)
                     self._index_lead(idx, norm)
         except Exception as e:
             print(f"[WARN] Error reading existing master CSV: {e}")

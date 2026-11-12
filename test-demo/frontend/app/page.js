@@ -22,6 +22,7 @@ import WebCrawler from '../components/WebCrawler';
 import FileUploads from '../components/FileUploads';
 import WebsiteAnalyzer from '../components/WebsiteAnalyzer';
 import DomainTools from '../components/DomainTools';
+import LeadCleanup from '../components/LeadCleanup';
 import LeadsTable from '../components/LeadsTable';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
@@ -358,6 +359,9 @@ function DashboardContent() {
             )}
             {activeTab.startsWith('dt-') && (
               <DomainTools key={activeTab} tool={activeTab.slice(3)} onLeadsSaved={() => loadLeads(true)} />
+            )}
+            {activeTab === 'lc-cleanup' && (
+              <LeadCleanup onLeadsChanged={() => loadLeads(true)} />
             )}
             {activeTab === 'crmsources' && (
               <CrmSources onLeadsSaved={() => loadLeads(true)} />
