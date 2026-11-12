@@ -6,7 +6,7 @@ import {
   Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
   LayoutDashboard, Briefcase, History, Building2, Pickaxe, SearchCode, MapPin, Share2, Megaphone,
   ShoppingCart, Globe, MessageCircle, House, FileSearch, Network, Factory, Phone, Wrench, Ship, Store,
-  Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Network as NetworkIcon, Link2, TextSearch, ListTree, FolderUp, Wrench as WrenchIcon, Gauge
+  Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Network as NetworkIcon, Link2, TextSearch, ListTree, FolderUp, Wrench as WrenchIcon, Gauge, Globe as GlobeIcon, CalendarClock, MailSearch, Sparkles, CheckSquare
 } from 'lucide-react';
 
 // Scraping / Mining submenu (order as requested). soon = planned module (MiningComingSoon.js)
@@ -51,6 +51,14 @@ export const CRAWLER_ITEMS = [
   { id: 'wc-links', label: 'Link Harvester', icon: Link2 },
   { id: 'wc-keywords', label: 'Keyword Page Finder', icon: TextSearch },
   { id: 'wc-sitemap', label: 'Sitemap Explorer', icon: ListTree }
+];
+
+// Domain Tools submenu: DomainTools.js with tool 'age' | 'dns' | 'new' | 'available' (tab id 'dt-<tool>')
+export const DOMAIN_ITEMS = [
+  { id: 'dt-age', label: 'Domain Age & Expiry', icon: CalendarClock },
+  { id: 'dt-dns', label: 'Email & DNS Checker', icon: MailSearch },
+  { id: 'dt-new', label: 'New Domains Finder', icon: Sparkles },
+  { id: 'dt-available', label: 'Domain Availability', icon: CheckSquare }
 ];
 
 // Utilities submenu (tab id 'ut-<tool>')
@@ -105,6 +113,12 @@ export default function Sidebar({
       children: CRAWLER_ITEMS
     },
     {
+      id: 'domains',
+      label: 'Domain Tools',
+      icon: GlobeIcon,
+      children: DOMAIN_ITEMS
+    },
+    {
       id: 'utilities',
       label: 'Utilities',
       icon: WrenchIcon,
@@ -150,7 +164,7 @@ export default function Sidebar({
   ];
 
   // Groups with a submenu: open by default (main work areas); the group of the active page always opens
-  const [openGroups, setOpenGroups] = useState({ mining: true, extraction: true, bulk: true, crawler: true, utilities: true });
+  const [openGroups, setOpenGroups] = useState({ mining: true, extraction: true, bulk: true, crawler: true, utilities: true, domains: true });
   const activeGroup = navItems.find(i => i.children && i.children.some(c => c.id === activeTab))?.id;
   useEffect(() => { if (activeGroup) setOpenGroups(prev => (prev[activeGroup] ? prev : { ...prev, [activeGroup]: true })); }, [activeGroup]);
   const toggleGroup = (id) => setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));

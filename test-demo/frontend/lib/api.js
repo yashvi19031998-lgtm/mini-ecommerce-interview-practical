@@ -508,6 +508,16 @@ export async function analyzeWebsites(urls) {
   return await apiFetch('/api/utilities/website-analyzer', { method: 'POST', body: JSON.stringify({ urls }) });
 }
 
+// Domain Tools: limits and domain endings
+export async function fetchDomainToolOptions() {
+  return await apiFetch('/api/domain-tools');
+}
+
+// Domain Tools: run a tool ('age' | 'dns' | 'new' | 'available')
+export async function runDomainTool(tool, params) {
+  return await apiFetch(`/api/domain-tools/${tool}`, { method: 'POST', body: JSON.stringify(params) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

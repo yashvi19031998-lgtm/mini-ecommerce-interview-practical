@@ -135,7 +135,9 @@ def website_contacts(urls: Any) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 class _MxCache:
-    def __init__(self, resolver=None):
+    def __init__(self, resolver=None, sleep=None):
+        import time as _time
+        self.sleep = sleep or _time.sleep
         self.resolver = resolver or dns.resolver.Resolver()
         self.resolver.lifetime = DNS_TIMEOUT
         self.cache: Dict[str, Tuple[str, str]] = {}
@@ -152,10 +154,12 @@ class _MxCache:
         return out
 
     def _resolve(self, domain: str, rtype: str):
-        """One retry on a timeout: home routers sometimes drop a query when many arrive at once."""
+        """One retry on a timeout, after a short pause: home routers often time out on the first query for a new
+        name while they look it up, then answer the repeat from their cache."""
         try:
             return self.resolver.resolve(domain, rtype)
         except dns.exception.Timeout:
+            self.sleep(1.5)
             return self.resolver.resolve(domain, rtype)
 
     def _lookup(self, domain: str) -> Tuple[str, str]:
@@ -507,7 +511,7 @@ def _mark_in_leads(rows: List[Dict[str, Any]], master_path: str, to_lead,
 
 
 LEAD_SOURCES = {"Bulk Contacts (Website Contacts)", "Web Crawler (Site Crawler)", "Web Crawler (Link Harvester)",
-                "Utilities (Website Analyzer)"}
+                "Utilities (Website Analyzer)", "Domain Tools"}
 
 
 def _lead_source(v: Any) -> str:

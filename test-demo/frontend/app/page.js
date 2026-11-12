@@ -21,6 +21,7 @@ import BulkContacts from '../components/BulkContacts';
 import WebCrawler from '../components/WebCrawler';
 import FileUploads from '../components/FileUploads';
 import WebsiteAnalyzer from '../components/WebsiteAnalyzer';
+import DomainTools from '../components/DomainTools';
 import LeadsTable from '../components/LeadsTable';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
@@ -354,6 +355,9 @@ function DashboardContent() {
             )}
             {activeTab === 'ut-analyzer' && (
               <WebsiteAnalyzer onLeadsSaved={() => loadLeads(true)} />
+            )}
+            {activeTab.startsWith('dt-') && (
+              <DomainTools key={activeTab} tool={activeTab.slice(3)} onLeadsSaved={() => loadLeads(true)} />
             )}
             {activeTab === 'crmsources' && (
               <CrmSources onLeadsSaved={() => loadLeads(true)} />

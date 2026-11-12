@@ -1604,6 +1604,30 @@ import website_analyzer
 def utilities_website_analyzer():
     return _bulk(lambda d: website_analyzer.analyze(d.get("urls")))
 
+
+# ==============================================================================
+# Domain Tools (module: domain_tools.py) - age & expiry (RDAP), email & DNS, new domains, availability.
+# Save goes through /api/bulk-contacts/save (kind "websites").
+# ==============================================================================
+import domain_tools
+
+
+@app.route("/api/domain-tools", methods=["GET"])
+def domain_tools_catalog():
+    d = domain_tools
+    return jsonify({"success": True, "maxDomains": d.MAX_DOMAINS, "dayChoices": list(d.DAY_CHOICES),
+                    "newTlds": d.NEW_TLDS, "availTlds": d.AVAIL_TLDS, "maxNewKeywords": d.MAX_NEW_KEYWORDS})
+
+
+@app.route("/api/domain-tools/<tool>", methods=["POST"])
+def domain_tools_run(tool):
+    fn = {"age": lambda d: domain_tools.age_report(d.get("domains")),
+          "dns": lambda d: domain_tools.dns_report(d.get("domains")),
+          "new": domain_tools.new_domains, "available": domain_tools.availability}.get(tool)
+    if not fn:
+        return jsonify({"success": False, "error": "Unknown tool"}), 404
+    return _bulk(fn)
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

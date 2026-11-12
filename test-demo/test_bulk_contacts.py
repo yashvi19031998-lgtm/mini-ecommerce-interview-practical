@@ -53,7 +53,7 @@ def master(rows):
 class Emails(unittest.TestCase):
     def run_check(self, text, master_path=""):
         fake = FakeResolver()
-        return bc.verify_emails(text, mx=bc._MxCache(fake), master_path=master_path), fake
+        return bc.verify_emails(text, mx=bc._MxCache(fake, sleep=lambda s: None), master_path=master_path), fake
 
     def test_statuses(self):
         res, fake = self.run_check("ravi@acmefoods.in, info@acmefoods.in, x@gmial.com, t@mailinator.com, bad@@x, "
@@ -81,7 +81,7 @@ class Emails(unittest.TestCase):
         self.assertTrue(res["results"][0]["in_leads"])
         for bad in ("", [], ["x"] * 501, 5):
             with self.assertRaises(ValueError):
-                bc.verify_emails(bad, mx=bc._MxCache(FakeResolver()))
+                bc.verify_emails(bad, mx=bc._MxCache(FakeResolver(), sleep=lambda s: None))
 
 
 class Phones(unittest.TestCase):
