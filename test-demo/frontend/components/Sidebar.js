@@ -6,7 +6,7 @@ import {
   Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
   LayoutDashboard, Briefcase, History, Building2, Pickaxe, SearchCode, MapPin, Share2, Megaphone,
   ShoppingCart, Globe, MessageCircle, House, FileSearch, Network, Factory, Phone, Wrench, Ship, Store,
-  Landmark, BadgeCheck, Receipt
+  Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp
 } from 'lucide-react';
 
 // Scraping / Mining submenu (order as requested). soon = planned module (MiningComingSoon.js)
@@ -35,6 +35,14 @@ export const EXTRACTION_ITEMS = [
   { id: 'cr-company', label: 'Company Scraper', icon: Landmark, section: 'Corporate Registries' },
   { id: 'cr-pvtltd', label: 'PVT LTD Scraper', icon: BadgeCheck, section: 'Corporate Registries' },
   { id: 'cr-gst', label: 'GST No Scraper', icon: Receipt, section: 'Corporate Registries' }
+];
+
+// Bulk Contacts submenu: BulkContacts.js with tool 'websites' | 'emails' | 'phones' | 'import' (tab id 'bc-<tool>')
+export const BULK_ITEMS = [
+  { id: 'bc-websites', label: 'Bulk Website Contacts', icon: Globe2 },
+  { id: 'bc-emails', label: 'Bulk Email Verifier', icon: MailCheck },
+  { id: 'bc-phones', label: 'Bulk Phone Cleaner', icon: PhoneCall },
+  { id: 'bc-import', label: 'Contact Import & Dedupe', icon: FileUp }
 ];
 
 export default function Sidebar({
@@ -72,6 +80,12 @@ export default function Sidebar({
       children: EXTRACTION_ITEMS
     },
     {
+      id: 'bulk',
+      label: 'Bulk Contacts',
+      icon: Contact,
+      children: BULK_ITEMS
+    },
+    {
       id: 'followups',
       label: 'FollowUp History',
       icon: History
@@ -106,7 +120,7 @@ export default function Sidebar({
   ];
 
   // Groups with a submenu: open by default (main work areas); the group of the active page always opens
-  const [openGroups, setOpenGroups] = useState({ mining: true, extraction: true });
+  const [openGroups, setOpenGroups] = useState({ mining: true, extraction: true, bulk: true });
   const activeGroup = navItems.find(i => i.children && i.children.some(c => c.id === activeTab))?.id;
   useEffect(() => { if (activeGroup) setOpenGroups(prev => (prev[activeGroup] ? prev : { ...prev, [activeGroup]: true })); }, [activeGroup]);
   const toggleGroup = (id) => setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));

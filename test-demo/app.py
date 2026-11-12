@@ -1469,6 +1469,81 @@ def save_corporate_registries_results():
     _cached_leads_data.clear()
     return jsonify({"success": True, **counts})
 
+
+# ==============================================================================
+# Bulk Contacts (module: bulk_contacts.py) - website contacts, e-mail verifier, phone cleaner, CSV import
+# ==============================================================================
+import bulk_contacts
+
+BULK_MAX_REQUEST = 6 * 1024 * 1024
+
+
+def _bulk_json():
+    if (request.content_length or 0) > BULK_MAX_REQUEST:
+        raise ValueError("The request is larger than 6 MB - split the file")
+    return request.get_json(silent=True) or {}
+
+
+def _bulk(fn):
+    try:
+        return jsonify({"success": True, **fn(_bulk_json())})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/bulk-contacts", methods=["GET"])
+def bulk_contacts_catalog():
+    b = bulk_contacts
+    return jsonify({"success": True, "maxUrlsPerCall": b.MAX_URLS_PER_CALL, "maxEmails": b.MAX_EMAILS,
+                    "maxPhones": b.MAX_PHONES, "maxCsvRows": b.MAX_CSV_ROWS, "maxCsvBytes": b.MAX_CSV_BYTES,
+                    "maxSaveRows": b.MAX_SAVE_ROWS, "fields": b.LEAD_FIELDS})
+
+
+@app.route("/api/bulk-contacts/websites", methods=["POST"])
+def bulk_contacts_websites():
+    return _bulk(lambda d: bulk_contacts.website_contacts(d.get("urls")))
+
+
+@app.route("/api/bulk-contacts/emails", methods=["POST"])
+def bulk_contacts_emails():
+    return _bulk(lambda d: bulk_contacts.verify_emails(d.get("emails"), master_path=MASTER_PATH))
+
+
+@app.route("/api/bulk-contacts/phones", methods=["POST"])
+def bulk_contacts_phones():
+    return _bulk(lambda d: bulk_contacts.clean_phones(d.get("text"), master_path=MASTER_PATH))
+
+
+@app.route("/api/bulk-contacts/import/preview", methods=["POST"])
+def bulk_contacts_import_preview():
+    return _bulk(lambda d: bulk_contacts.preview_csv(d.get("text")))
+
+
+@app.route("/api/bulk-contacts/import/check", methods=["POST"])
+def bulk_contacts_import_check():
+    return _bulk(lambda d: bulk_contacts.check_csv(d.get("text"), d.get("mapping"), d.get("source"), master_path=MASTER_PATH))
+
+
+@app.route("/api/bulk-contacts/save", methods=["POST"])
+def bulk_contacts_save():
+    """kind = 'import' (checked CSV rows) or 'websites' (website-contact results)."""
+    global _cached_leads_data
+    try:
+        data = _bulk_json()
+        rows = data.get("rows")
+        if data.get("kind") == "websites":
+            rows = bulk_contacts.website_rows_to_leads(rows)
+        elif data.get("kind") != "import":
+            raise ValueError("Unknown kind")
+        with job_save_lock:
+            counts = bulk_contacts.save_rows(rows, MASTER_PATH)
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except IOError as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **counts})
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

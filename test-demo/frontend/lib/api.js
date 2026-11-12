@@ -449,6 +449,40 @@ export async function saveCorporateRegistryResults(results) {
   return await apiFetch('/api/corporate-registries/save', { method: 'POST', body: JSON.stringify({ results }) });
 }
 
+// Bulk Contacts: limits
+export async function fetchBulkContactsOptions() {
+  return await apiFetch('/api/bulk-contacts');
+}
+
+// Bulk Contacts: contacts from up to 10 websites per call
+export async function bulkWebsiteContacts(urls) {
+  return await apiFetch('/api/bulk-contacts/websites', { method: 'POST', body: JSON.stringify({ urls }) });
+}
+
+// Bulk Contacts: verify e-mail addresses (syntax, typos, disposable, role, MX)
+export async function bulkVerifyEmails(emails) {
+  return await apiFetch('/api/bulk-contacts/emails', { method: 'POST', body: JSON.stringify({ emails }) });
+}
+
+// Bulk Contacts: clean / classify phone numbers
+export async function bulkCleanPhones(text) {
+  return await apiFetch('/api/bulk-contacts/phones', { method: 'POST', body: JSON.stringify({ text }) });
+}
+
+// Bulk Contacts: CSV import - preview (headers + guessed mapping), check (normalise + duplicates)
+export async function bulkImportPreview(text) {
+  return await apiFetch('/api/bulk-contacts/import/preview', { method: 'POST', body: JSON.stringify({ text }) });
+}
+
+export async function bulkImportCheck(text, mapping, source) {
+  return await apiFetch('/api/bulk-contacts/import/check', { method: 'POST', body: JSON.stringify({ text, mapping, source }) });
+}
+
+// Bulk Contacts: save rows as leads (kind: 'import' | 'websites')
+export async function bulkSaveContacts(kind, rows) {
+  return await apiFetch('/api/bulk-contacts/save', { method: 'POST', body: JSON.stringify({ kind, rows }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });
