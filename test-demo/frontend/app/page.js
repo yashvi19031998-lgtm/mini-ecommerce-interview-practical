@@ -11,6 +11,8 @@ import MiningComingSoon from '../components/MiningComingSoon';
 import GlobalDirectories from '../components/GlobalDirectories';
 import GoogleMaps from '../components/GoogleMaps';
 import Ecommerce from '../components/Ecommerce';
+import RealEstate from '../components/RealEstate';
+import SocialMedia from '../components/SocialMedia';
 import LeadsTable from '../components/LeadsTable';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
@@ -309,7 +311,13 @@ function DashboardContent() {
             {activeTab === 'mining-ecommerce' && (
               <Ecommerce onLeadsSaved={() => loadLeads(true)} onOpenSearchEngine={() => setActiveTab('searchengines')} />
             )}
-            {activeTab.startsWith('mining-') && !['mining-directories', 'mining-maps', 'mining-ecommerce'].includes(activeTab) && (
+            {activeTab === 'mining-realestate' && (
+              <RealEstate onLeadsSaved={() => loadLeads(true)} />
+            )}
+            {activeTab === 'mining-social' && (
+              <SocialMedia onLeadsSaved={() => loadLeads(true)} onOpenSearchEngine={() => setActiveTab('searchengines')} />
+            )}
+            {activeTab.startsWith('mining-') && !['mining-directories', 'mining-maps', 'mining-ecommerce', 'mining-realestate', 'mining-social'].includes(activeTab) && (
               <MiningComingSoon id={activeTab} onOpenSearchEngine={() => setActiveTab('searchengines')} />
             )}
 

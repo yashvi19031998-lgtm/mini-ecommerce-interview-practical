@@ -285,6 +285,15 @@ class Extraction(unittest.TestCase):
         self.assertTrue(out["jsonld"])
         self.assertEqual(out["name"], "Acme Infotech")
 
+    def test_phones_never_come_from_scripts(self):
+        """Bug 2026-11-12: Shopify asset ids inside <script> became phone numbers and merged two companies."""
+        page = ('<html><body><script>var cfg = {"id": 0145039034, "v": "4815527494"};</script>'
+                '<p>Call us: <a href="tel:+919825033333">98250 33333</a></p>'
+                '<style>.x{width:1782880009px}</style></body></html>')
+        with mock.patch.object(ds, "fetch", side_effect=lambda u: page if u == "https://shop.in/" else ""):
+            out = ds.crawl_site("https://shop.in")
+        self.assertEqual(out["phones"], ["+91 98250 33333"])
+
     def test_unreachable_site(self):
         with mock.patch.object(ds, "fetch", return_value=""):
             self.assertEqual(ds.crawl_site("https://down.in")["error"], "website could not be opened")

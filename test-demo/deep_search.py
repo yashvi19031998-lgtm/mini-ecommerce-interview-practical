@@ -74,6 +74,15 @@ def public_url_guard(url: str) -> None:
             raise hcm.BlockedUrl(f"{p.hostname} points to a private address")
 
 
+GOV_SUFFIXES = (".gov.in", ".nic.in", ".gov", ".gov.uk", ".gouv.fr")
+
+
+def is_government(url: str) -> bool:
+    """Government sites (RERA, MCA, SEC...) list companies - their contacts are not the company's."""
+    host = se.domain_of(url)
+    return bool(host) and (host.endswith(GOV_SUFFIXES) or host in ("sec.gov", "find-and-update.company-information.service.gov.uk"))
+
+
 def fetch(url: str) -> str:
     try:
         public_url_guard(url)
@@ -145,6 +154,15 @@ def extract_jsonld(soup: BeautifulSoup) -> Dict[str, Any]:
     return found
 
 
+def visible_text(soup: BeautifulSoup) -> str:
+    """Text a visitor can read: no <script>, <style>, <noscript>, <svg> or <template> content.
+    Works on a copy so the caller's soup (used for mailto: / tel: links) is not changed."""
+    copy = BeautifulSoup(str(soup), "html.parser")
+    for tag in copy(["script", "style", "noscript", "svg", "template"]):
+        tag.decompose()
+    return copy.get_text(" ")
+
+
 def _rank_emails(emails: List[str], domain: str) -> List[str]:
     uniq = []
     for e in emails:
@@ -189,7 +207,9 @@ def crawl_site(website: str) -> Dict[str, Any]:
     for url, html in pages:
         s = BeautifulSoup(html, "html.parser")
         emails += sc.extract_clean_emails(html, s)
-        phones += sc.extract_clean_indian_phones(html, s)
+        # Phones only from visible text + tel: links. Raw HTML contains script / JSON ids (e.g. Shopify asset
+        # numbers) that look like phone numbers: they produced fake phones and merged unrelated companies.
+        phones += sc.extract_clean_indian_phones(visible_text(s), s)
         for k, v in extract_socials(html).items():
             socials.setdefault(k, v)
         jl = extract_jsonld(s)
@@ -306,7 +326,8 @@ def enrich(item: Dict[str, Any], engine: str, use_hunter: bool, place: str = "")
                 "steps": ["skipped: this is a list article (e.g. 'Top 10 companies') - open it and search the companies by name"]}
     website = (item.get("website") or "").strip()
     url = (item.get("url") or "").strip()
-    if not website and url and not se.is_platform(url):
+    # a listing page (platform, government register) is never the company's own website
+    if not website and url and not se.is_platform(url) and not is_government(url):
         website = url
     out = {"key": item.get("key") or url or website or company, "website": "", "emails": [], "phones": [],
            "address": "", "socials": {}, "contacts": [], "email_guess": "", "cin": "", "company": "",

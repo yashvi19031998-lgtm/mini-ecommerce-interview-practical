@@ -354,6 +354,36 @@ export async function saveEcommerceResults(results) {
   return await apiFetch('/api/ecommerce/save', { method: 'POST', body: JSON.stringify({ results }) });
 }
 
+// 49. Scraping / Mining -> Real Estate: sources, engines, states
+export async function fetchRealEstateSources() {
+  return await apiFetch('/api/realestate');
+}
+
+// 50. Real Estate: search ({ keywords, audience, state, city, sources, looking_for, engine, refresh })
+export async function searchRealEstate(params) {
+  return await apiFetch('/api/realestate/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// 51. Real Estate: save selected builders / agents as leads
+export async function saveRealEstateResults(results) {
+  return await apiFetch('/api/realestate/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
+// Scraping / Mining -> SocialMedia: catalog
+export async function fetchSocialSources() {
+  return await apiFetch('/api/social');
+}
+
+// SocialMedia: search
+export async function searchSocial(params) {
+  return await apiFetch('/api/social/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// SocialMedia: save selected results as leads
+export async function saveSocialResults(results) {
+  return await apiFetch('/api/social/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });
