@@ -55,7 +55,7 @@ jobs:
       # If the code is broken, stop here - before any scraping or emailing happens.
       - name: Run tests
         id: tests
-        run: python -m unittest test_lead_system test_quality_and_auth test_feedly test_accuracy test_html_cache test_sources test_website_signals test_apollo test_job_portals test_followups test_followup_phase2 test_followup_extras test_crm_sources test_api_keys test_search_cache test_search_engine test_supabase_sync test_maps_sources test_global_directories test_realestate_sources test_ecommerce_sources test_adlibrary_sources test_whatsapp_sources test_social_sources test_indian_directories test_corporate_registries test_bulk_contacts
+        run: python -m unittest test_lead_system test_quality_and_auth test_feedly test_accuracy test_html_cache test_sources test_website_signals test_apollo test_job_portals test_followups test_followup_phase2 test_followup_extras test_crm_sources test_api_keys test_search_cache test_search_engine test_supabase_sync test_maps_sources test_global_directories test_realestate_sources test_ecommerce_sources test_adlibrary_sources test_whatsapp_sources test_social_sources test_indian_directories test_corporate_registries test_bulk_contacts test_web_crawler
 
       - name: Run all scrapers, AI qualification and alerts
         env:

@@ -18,6 +18,7 @@ import SocialMedia from '../components/SocialMedia';
 import IndianDirectory from '../components/IndianDirectory';
 import CorporateRegistry from '../components/CorporateRegistry';
 import BulkContacts from '../components/BulkContacts';
+import WebCrawler from '../components/WebCrawler';
 import LeadsTable from '../components/LeadsTable';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
@@ -342,6 +343,9 @@ function DashboardContent() {
             )}
             {activeTab.startsWith('bc-') && (
               <BulkContacts key={activeTab} tool={activeTab.slice(3)} onLeadsSaved={() => loadLeads(true)} />
+            )}
+            {activeTab.startsWith('wc-') && (
+              <WebCrawler key={activeTab} tool={activeTab.slice(3)} onLeadsSaved={() => loadLeads(true)} />
             )}
             {activeTab === 'crmsources' && (
               <CrmSources onLeadsSaved={() => loadLeads(true)} />

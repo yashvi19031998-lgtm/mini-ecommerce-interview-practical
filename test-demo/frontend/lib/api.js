@@ -483,6 +483,16 @@ export async function bulkSaveContacts(kind, rows) {
   return await apiFetch('/api/bulk-contacts/save', { method: 'POST', body: JSON.stringify({ kind, rows }) });
 }
 
+// Web Crawler: limits
+export async function fetchWebCrawlerOptions() {
+  return await apiFetch('/api/web-crawler');
+}
+
+// Web Crawler: run a tool ('site' | 'links' | 'keywords' | 'sitemap')
+export async function runWebCrawler(tool, params) {
+  return await apiFetch(`/api/web-crawler/${tool}`, { method: 'POST', body: JSON.stringify(params) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

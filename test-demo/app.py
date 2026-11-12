@@ -1544,6 +1544,30 @@ def bulk_contacts_save():
     _cached_leads_data.clear()
     return jsonify({"success": True, **counts})
 
+
+# ==============================================================================
+# Web Crawler (module: web_crawler.py) - site crawler, link harvester, keyword finder, sitemap explorer
+# Results are saved through /api/bulk-contacts/save (kind "websites").
+# ==============================================================================
+import web_crawler
+
+
+@app.route("/api/web-crawler", methods=["GET"])
+def web_crawler_catalog():
+    w = web_crawler
+    return jsonify({"success": True, "pageChoices": list(w.PAGE_CHOICES), "depthChoices": list(w.DEPTH_CHOICES),
+                    "maxSeeds": w.MAX_SEEDS, "maxKeywords": w.MAX_KEYWORDS, "timeBudget": w.TIME_BUDGET,
+                    "maxSitemapUrls": w.MAX_SITEMAP_URLS, "bulkBatch": bulk_contacts.MAX_URLS_PER_CALL})
+
+
+@app.route("/api/web-crawler/<tool>", methods=["POST"])
+def web_crawler_run(tool):
+    fn = {"site": web_crawler.site_crawl, "links": web_crawler.harvest_links,
+          "keywords": web_crawler.find_keywords, "sitemap": web_crawler.sitemap}.get(tool)
+    if not fn:
+        return jsonify({"success": False, "error": "Unknown tool"}), 404
+    return _bulk(fn)
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

@@ -496,6 +496,13 @@ def _mark_in_leads(rows: List[Dict[str, Any]], master_path: str, to_lead,
             r["match"] = reg.leads[idx].get("company_name", "") or reg.leads[idx].get("lead_id", "")
 
 
+LEAD_SOURCES = {"Bulk Contacts (Website Contacts)", "Web Crawler (Site Crawler)", "Web Crawler (Link Harvester)"}
+
+
+def _lead_source(v: Any) -> str:
+    return v if v in LEAD_SOURCES else "Bulk Contacts (Website Contacts)"
+
+
 def website_rows_to_leads(rows: Any) -> List[Dict[str, str]]:
     """Bulk website results chosen in the UI -> rows for save_rows."""
     out = []
@@ -508,5 +515,5 @@ def website_rows_to_leads(rows: Any) -> List[Dict[str, str]]:
                     "mobile_number": ", ".join(str(p) for p in (r.get("phones") or [])[:3]),
                     "website": str(r["website"]), "location": str(r.get("address") or "")[:200],
                     "description": "; ".join(f"{k}: {v}" for k, v in list(socials.items())[:5]),
-                    "source": "Bulk Contacts (Website Contacts)", "source_url": str(r["website"])})
+                    "source": _lead_source(r.get("lead_source")), "source_url": str(r["website"])})
     return out

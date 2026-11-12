@@ -17,9 +17,7 @@ Company data is the public Ministry of Corporate Affairs (MCA) register, read fr
 """
 import re
 import time
-from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
-from urllib import robotparser
 from urllib.parse import quote, urlparse
 
 import requests
@@ -27,6 +25,7 @@ from bs4 import BeautifulSoup
 
 import indian_directories as idr
 import maps_sources
+import robots_policy
 import search_engine as se
 from job_portals import ALL_INDIA, INDIAN_STATES
 
@@ -409,20 +408,8 @@ def details(items: Any, sleep=time.sleep) -> Dict[str, Any]:
 # GST
 # ---------------------------------------------------------------------------
 
-@lru_cache(maxsize=16)
-def _robots(host: str) -> Optional[robotparser.RobotFileParser]:
-    try:
-        r = requests.get(f"https://{host}/robots.txt", headers=idr.HEADERS, timeout=15)
-        rp = robotparser.RobotFileParser()
-        rp.parse(r.text.splitlines() if r.status_code == 200 else [])
-        return rp
-    except requests.RequestException:
-        return None
-
-
 def robots_allowed(url: str) -> bool:
-    rp = _robots(urlparse(url).hostname or "")
-    return bool(rp) and rp.can_fetch(idr.HEADERS["User-Agent"], url)
+    return robots_policy.allowed(url)
 
 
 def gstins_in(html: str) -> List[str]:
