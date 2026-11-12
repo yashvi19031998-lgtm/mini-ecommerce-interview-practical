@@ -3,11 +3,12 @@
 // Job Portal Scraper: search job portals for companies hiring for given job titles in a state,
 // then save the chosen postings as leads (backend: job_portals.py via /api/job-portals/*).
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Briefcase, Search, Loader2, X, ChevronDown, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Briefcase, Search, Loader2, X, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { fetchJobPortals, searchJobPortals, saveJobsToLeads } from '../lib/api';
+import CacheNote from './CacheNote';
+import MiningForm from './MiningForm';
 
-const MAX_TITLE_LENGTH = 80;
 
 const STATUS_LABELS = {
   available: 'Available',
@@ -51,12 +52,9 @@ export default function JobPortalScraper({ showToast, onLeadsSaved }) {
 
   // Form
   const [titles, setTitles] = useState([]);
-  const [titleInput, setTitleInput] = useState('');
   const [state, setState] = useState('');
   const [selectedPortals, setSelectedPortals] = useState(new Set());
-  const [portalMenuOpen, setPortalMenuOpen] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const portalMenuRef = useRef(null);
 
   // Results
   const [isSearching, setIsSearching] = useState(false);
@@ -78,83 +76,22 @@ export default function JobPortalScraper({ showToast, onLeadsSaved }) {
       .catch(err => setCatalogError(err.message || 'Could not load job portals. Is the Python backend running?'));
   }, []);
 
-  // Close the portal dropdown when clicking outside it
-  useEffect(() => {
-    const onClick = (e) => {
-      if (portalMenuRef.current && !portalMenuRef.current.contains(e.target)) setPortalMenuOpen(false);
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
-
-  const availablePortals = useMemo(() => portals.filter(p => p.status === 'available'), [portals]);
-  const allAvailableSelected = availablePortals.length > 0 && availablePortals.every(p => selectedPortals.has(p.id));
-
-  // ---- Job titles (chips) ----
-  const addTitles = (raw) => {
-    const parts = String(raw).split(',').map(t => t.trim()).filter(Boolean);
-    if (!parts.length) return;
-    const errors = [];
-    const next = [...titles];
-    for (const t of parts) {
-      if (t.length > MAX_TITLE_LENGTH) { errors.push(`"${t.slice(0, 20)}…" is longer than ${MAX_TITLE_LENGTH} characters`); continue; }
-      if (next.some(x => x.toLowerCase() === t.toLowerCase())) continue;
-      if (next.length >= maxTitles) { errors.push(`You can add at most ${maxTitles} job titles`); break; }
-      next.push(t);
-    }
-    setTitles(next);
-    setTitleInput('');
-    setFormErrors(prev => ({ ...prev, titles: errors.join('. ') }));
-  };
-
-  const onTitleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      addTitles(titleInput);
-    } else if (e.key === 'Backspace' && !titleInput && titles.length) {
-      setTitles(titles.slice(0, -1));
-    }
-  };
-
-  // ---- Portals (multi-select) ----
   const clearError = (field) => setFormErrors(prev => (prev[field] ? { ...prev, [field]: '' } : prev));
 
-  const togglePortal = (id) => {
-    const next = new Set(selectedPortals);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setSelectedPortals(next);
-    if (next.size) clearError('portals');
-  };
-  const toggleAllPortals = () => {
-    const next = allAvailableSelected ? new Set() : new Set(availablePortals.map(p => p.id));
-    setSelectedPortals(next);
-    if (next.size) clearError('portals');
-  };
-
-  const portalButtonLabel = selectedPortals.size === 0
-    ? 'Select job portals'
-    : allAvailableSelected
-      ? `All available portals (${selectedPortals.size})`
-      : portals.filter(p => selectedPortals.has(p.id)).map(p => p.name).join(', ');
-
   // ---- Search ----
-  const validate = () => {
-    const pendingTitles = titleInput.trim() ? [...titles, titleInput.trim()] : titles;
+  const validate = (searchTitles) => {
     const errors = {};
-    if (!pendingTitles.length) errors.titles = 'Enter at least one job title';
+    if (!searchTitles.length) errors.titles = 'Enter at least one job title';
     if (!state) errors.state = 'Select a state';
     if (!selectedPortals.size) errors.portals = 'Select at least one job portal';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (titleInput.trim()) addTitles(titleInput);
-    if (!validate()) return;
-    const searchTitles = titleInput.trim()
-      ? [...titles, ...titleInput.split(',').map(t => t.trim()).filter(Boolean)].slice(0, maxTitles)
-      : titles;
+  const handleSearch = async (e, final = null, refresh = false) => {
+    e?.preventDefault();
+    const searchTitles = (final?.keywords || titles).slice(0, maxTitles);
+    if (!validate(searchTitles)) return;
 
     setIsSearching(true);
     setSearchError('');
@@ -163,9 +100,9 @@ export default function JobPortalScraper({ showToast, onLeadsSaved }) {
     setResultFilter('');
     setNotice(null);
     try {
-      const res = await searchJobPortals({ titles: searchTitles, state, portals: [...selectedPortals] });
+      const res = await searchJobPortals({ titles: searchTitles, state, portals: [...selectedPortals], refresh });
       setResult(res);
-      const msg = `Found ${res.total} jobs across ${Object.keys(res.portals || {}).length} portals`;
+      const msg = `Found ${res.total} jobs across ${Object.keys(res.portals || {}).length} portals${res.cache?.hit ? ' (saved results)' : ''}`;
       setNotice({ type: 'success', text: msg });
     } catch (err) {
       setSearchError(err.message || 'Search failed');
@@ -239,120 +176,19 @@ export default function JobPortalScraper({ showToast, onLeadsSaved }) {
           </div>
         )}
 
-        <form onSubmit={handleSearch} noValidate>
-          <div className="jp-form-grid">
-            {/* 1. Job titles */}
-            <div className="form-group jp-span-2">
-              <label className="form-label" htmlFor="jp-title-input">
-                Job Titles <span className="jp-hint">(press Enter or comma to add, up to {maxTitles})</span>
-              </label>
-              <div className={`jp-chip-input ${formErrors.titles ? 'has-error' : ''}`}>
-                {titles.map(t => (
-                  <span key={t} className="jp-chip">
-                    {t}
-                    <button type="button" aria-label={`Remove ${t}`} onClick={() => setTitles(titles.filter(x => x !== t))}>
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-                <input
-                  id="jp-title-input"
-                  type="text"
-                  value={titleInput}
-                  maxLength={MAX_TITLE_LENGTH * 3}
-                  placeholder={titles.length ? 'Add another title…' : 'e.g. React Developer, Python Developer'}
-                  onChange={(e) => { setTitleInput(e.target.value); if (e.target.value.trim()) clearError('titles'); }}
-                  onKeyDown={onTitleKeyDown}
-                  onBlur={() => titleInput.trim() && addTitles(titleInput)}
-                  aria-invalid={!!formErrors.titles}
-                />
-              </div>
-              {formErrors.titles && <div className="jp-field-error">{formErrors.titles}</div>}
-            </div>
-
-            {/* 2. State */}
-            <div className="form-group">
-              <label className="form-label" htmlFor="jp-state">State</label>
-              <select
-                id="jp-state"
-                className="theme-form-input"
-                value={state}
-                onChange={(e) => { setState(e.target.value); if (e.target.value) clearError('state'); }}
-                aria-invalid={!!formErrors.state}
-              >
-                <option value="">Select state…</option>
-                {states.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              {formErrors.state && <div className="jp-field-error">{formErrors.state}</div>}
-            </div>
-
-            {/* 3. Job portals (multi-select) */}
-            <div className="form-group" ref={portalMenuRef} style={{ position: 'relative' }}>
-              <label className="form-label" id="jp-portal-label">Job Portals</label>
-              <button
-                type="button"
-                className={`theme-form-input jp-multiselect ${formErrors.portals ? 'has-error' : ''}`}
-                onClick={() => setPortalMenuOpen(!portalMenuOpen)}
-                aria-haspopup="listbox"
-                aria-expanded={portalMenuOpen}
-                aria-labelledby="jp-portal-label"
-              >
-                <span className="jp-multiselect-text">{portalButtonLabel}</span>
-                <ChevronDown size={14} />
-              </button>
-              {formErrors.portals && <div className="jp-field-error">{formErrors.portals}</div>}
-
-              {portalMenuOpen && (
-                <div className="jp-menu" role="listbox" aria-multiselectable="true">
-                  <label className="jp-menu-item jp-menu-all">
-                    <input type="checkbox" checked={allAvailableSelected} onChange={toggleAllPortals} />
-                    <span>Select all available ({availablePortals.length})</span>
-                  </label>
-                  {['available', 'needs_key', 'unavailable'].map(group => {
-                    const items = portals.filter(p => p.status === group);
-                    if (!items.length) return null;
-                    return (
-                      <div key={group}>
-                        <div className="jp-menu-group">{STATUS_LABELS[group]}</div>
-                        {items.map(p => {
-                          const disabled = p.status !== 'available';
-                          return (
-                            <label
-                              key={p.id}
-                              className={`jp-menu-item ${disabled ? 'disabled' : ''}`}
-                              title={disabled ? p.reason : p.note || p.region}
-                            >
-                              <input
-                                type="checkbox"
-                                disabled={disabled}
-                                checked={selectedPortals.has(p.id)}
-                                onChange={() => togglePortal(p.id)}
-                              />
-                              <span className="jp-menu-text">
-                                <span>{p.name}</span>
-                                <span className="jp-menu-sub">{disabled ? p.reason : (p.note || p.region)}</span>
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '0.5rem' }}>
-            <button type="submit" className="theme-pill-btn primary" disabled={isSearching || !!catalogError}>
-              {isSearching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-              {isSearching ? 'Searching…' : 'Search Jobs'}
-            </button>
-            {isSearching && (
-              <span className="jp-hint">Searching {selectedPortals.size} portal(s) — this can take up to a minute.</span>
-            )}
-          </div>
-        </form>
+        <MiningForm
+          idPrefix="jp" onSubmit={handleSearch} busy={isSearching} disabled={!!catalogError}
+          submitLabel="Search Jobs" busyHint={`Searching ${selectedPortals.size} portal(s) — this can take up to a minute.`}
+          keywords={{ id: 'jp-title-input', label: 'Job Titles', hint: `(press Enter or comma to add, up to ${maxTitles})`,
+            values: titles, setValues: setTitles, max: maxTitles, error: formErrors.titles, onClear: () => clearError('titles'),
+            placeholder: 'e.g. React Developer, Python Developer' }}
+          location={{ mode: 'india', state, setState, states, stateRequired: true, stateError: formErrors.state,
+            showCity: false, onClear: clearError }}
+          sources={{ label: 'Job Portals', items: portals, selected: selectedPortals, setSelected: setSelectedPortals,
+            error: formErrors.portals, onClear: () => clearError('portals'), placeholder: 'Select job portals',
+            allLabel: 'All available portals',
+            groups: ['available', 'needs_key', 'unavailable'].map(st => ({ status: st, label: STATUS_LABELS[st] })) }}
+        />
       </div>
 
       {searchError && (
@@ -368,6 +204,7 @@ export default function JobPortalScraper({ showToast, onLeadsSaved }) {
           </button>
         </div>
       )}
+      {result && <CacheNote cache={result.cache} busy={isSearching} onRefresh={() => handleSearch(null, null, true)} />}
 
       {/* ---------- Per-portal status ---------- */}
       {portalStatusList.length > 0 && (

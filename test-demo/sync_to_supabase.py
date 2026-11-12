@@ -36,14 +36,15 @@ SUPABASE_KEY = (
 CSV_FILE = "leads_new.csv"
 
 def sync(csv_filepath=None):
+    """Upload the CSV to Supabase. Returns True if it reached Supabase, False if it could not sync."""
     if not SUPABASE_URL or not SUPABASE_KEY:
         print("Error: Missing SUPABASE_URL or SUPABASE_KEY in environment or .env file.")
-        return
+        return False
 
     target_file = csv_filepath or CSV_FILE
     if not os.path.exists(target_file):
         print(f"Error: {target_file} does not exist.")
-        return
+        return False
 
     df = pd.read_csv(target_file)
     print(f"Read {len(df)} leads from {target_file}")
@@ -124,6 +125,7 @@ def sync(csv_filepath=None):
     print(f"\n==========================================")
     print(f"Successfully synced {success_count} / {len(df)} leads to Supabase!")
     print(f"==========================================")
+    return success_count > 0 or len(df) == 0
 
 if __name__ == "__main__":
     sync()

@@ -1,11 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Database, Terminal, DownloadCloud, Settings, 
   Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
-  LayoutDashboard, Briefcase, History, Building2
+  LayoutDashboard, Briefcase, History, Building2, Pickaxe, SearchCode, MapPin, Share2, Megaphone,
+  ShoppingCart, Globe, MessageCircle, House
 } from 'lucide-react';
+
+// Scraping / Mining submenu (order as requested). soon = planned module (MiningComingSoon.js)
+export const MINING_ITEMS = [
+  { id: 'searchengines', label: 'Search Engines', icon: SearchCode },
+  { id: 'mining-maps', label: 'Google Maps', icon: MapPin, soon: true },
+  { id: 'mining-social', label: 'Social Media', icon: Share2, soon: true },
+  { id: 'mining-adlibrary', label: 'Ad Library', icon: Megaphone, soon: true },
+  { id: 'mining-ecommerce', label: 'Ecommerce Platforms', icon: ShoppingCart, soon: true },
+  { id: 'jobportal', label: 'Job Portals', icon: Briefcase },
+  { id: 'mining-directories', label: 'Global Directories', icon: Globe, soon: true },
+  { id: 'mining-whatsapp', label: 'WhatsApp Groups', icon: MessageCircle, soon: true },
+  { id: 'mining-realestate', label: 'Real Estate', icon: House, soon: true }
+];
+const MINING_IDS = MINING_ITEMS.map(i => i.id);
 
 export default function Sidebar({
   activeTab,
@@ -30,9 +45,10 @@ export default function Sidebar({
       icon: LayoutDashboard
     },
     {
-      id: 'jobportal',
-      label: 'Job Portal Scraper',
-      icon: Briefcase
+      id: 'mining',
+      label: 'Scraping / Mining',
+      icon: Pickaxe,
+      children: MINING_ITEMS
     },
     {
       id: 'followups',
@@ -67,6 +83,10 @@ export default function Sidebar({
       icon: Settings
     }
   ];
+
+  const miningActive = MINING_IDS.includes(activeTab);
+  const [miningOpen, setMiningOpen] = useState(true); // main work area: open by default
+  useEffect(() => { if (miningActive) setMiningOpen(true); }, [miningActive]);
 
   const handleNavClick = (id) => {
     setActiveTab(id);
@@ -149,6 +169,53 @@ export default function Sidebar({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+
+            if (item.children) {
+              // Collapsed sidebar: show the submenu icons directly (no room for a group header)
+              if (isCollapsed) {
+                return item.children.map(child => {
+                  const ChildIcon = child.icon;
+                  return (
+                    <div key={child.id} id={`nav-item-${child.id}`} onClick={() => handleNavClick(child.id)}
+                      className={`theme-nav-item ${activeTab === child.id ? 'active' : ''}`} title={`${item.label}: ${child.label}${child.soon ? ' (soon)' : ''}`}>
+                      <ChildIcon size={17} strokeWidth={1.6} style={{ flexShrink: 0 }} />
+                    </div>
+                  );
+                });
+              }
+              return (
+                <div key={item.id} className="theme-nav-group">
+                  <div
+                    id={`nav-group-${item.id}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={miningOpen}
+                    onClick={() => setMiningOpen(!miningOpen)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMiningOpen(!miningOpen); } }}
+                    className={`theme-nav-item ${miningActive && !miningOpen ? 'active' : ''}`}
+                  >
+                    <Icon size={17} strokeWidth={1.6} style={{ flexShrink: 0 }} />
+                    <span className="theme-nav-label">{item.label}</span>
+                    {miningOpen ? <ChevronDown size={14} className="theme-nav-chevron" /> : <ChevronRight size={14} className="theme-nav-chevron" />}
+                  </div>
+                  {miningOpen && (
+                    <div className="theme-nav-sub" role="group" aria-label={item.label}>
+                      {item.children.map(child => {
+                        const ChildIcon = child.icon;
+                        return (
+                          <div key={child.id} id={`nav-item-${child.id}`} onClick={() => handleNavClick(child.id)}
+                            className={`theme-nav-item theme-nav-subitem ${activeTab === child.id ? 'active' : ''}`}>
+                            <ChildIcon size={15} strokeWidth={1.6} style={{ flexShrink: 0 }} />
+                            <span className="theme-nav-label">{child.label}</span>
+                            {child.soon && <span className="theme-nav-badge soon">Soon</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <div

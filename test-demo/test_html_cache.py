@@ -85,5 +85,61 @@ class HtmlCache(unittest.TestCase):
         self.assertFalse(os.path.exists(self.path))
 
 
+class HtmlCacheIndex(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir_patch = mock.patch.object(hcm, "CACHE_DIR", self.tmp.name)
+        self.dir_patch.start()
+
+    def tearDown(self):
+        self.dir_patch.stop()
+        self.tmp.cleanup()
+
+    def _fetch(self, url):
+        with mock.patch.object(hcm.requests, "get", return_value=_resp(200, REAL_PAGE)):
+            return hcm.fetch_or_get_cached_html(url)
+
+    def test_saved_pages_are_indexed_by_url_and_domain(self):
+        self._fetch("https://www.acme.in/contact")
+        self._fetch("https://beta.com/about")
+        self.assertEqual({p["url"] for p in hcm.list_cached_pages()},
+                         {"https://www.acme.in/contact", "https://beta.com/about"})
+        acme = hcm.list_cached_pages("acme.in")
+        self.assertEqual(len(acme), 1)
+        self.assertEqual(acme[0]["domain"], "acme.in")
+        self.assertTrue(os.path.isfile(acme[0]["path"]))
+        self.assertEqual(hcm.read_cached_html("https://www.acme.in/contact"), REAL_PAGE)
+        self.assertEqual(hcm.read_cached_html("https://never-saved.com"), "")
+
+    def test_block_pages_are_not_indexed(self):
+        with mock.patch.object(hcm.requests, "get", return_value=_resp(200, CAPTCHA_PAGE)):
+            hcm.fetch_or_get_cached_html("https://blocked.com")
+        self.assertEqual(hcm.list_cached_pages(), [])
+
+    def test_size_cap_removes_oldest_pages_and_index_rows(self):
+        urls = [f"https://site{i}.com" for i in range(3)]
+        for i, u in enumerate(urls):
+            self._fetch(u)
+            old = time.time() - (10 - i) * 86400  # site0 is the oldest
+            path = os.path.join(self.tmp.name, hcm.get_url_hash(u))
+            os.utime(path, (old, old))
+        one_page_mb = os.path.getsize(os.path.join(self.tmp.name, hcm.get_url_hash(urls[0]))) / 1048576
+        self.assertEqual(hcm.prune_cache(max_age_days=365, max_mb=one_page_mb * 2.5), 1)
+        self.assertEqual({p["url"] for p in hcm.list_cached_pages()}, set(urls[1:]))
+
+    def test_prune_never_deletes_database_files(self):
+        self._fetch("https://acme.in")
+        db = os.path.join(self.tmp.name, hcm.INDEX_NAME)
+        old = time.time() - 1000 * 86400
+        os.utime(db, (old, old))
+        hcm.prune_cache(max_age_days=1)
+        self.assertTrue(os.path.isfile(db))
+
+    def test_stats(self):
+        self._fetch("https://acme.in")
+        st = hcm.cache_stats()
+        self.assertEqual((st["pages"], st["indexed"]), (1, 1))
+
+
 if __name__ == "__main__":
     unittest.main()

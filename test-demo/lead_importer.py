@@ -18,14 +18,6 @@ from urllib.parse import urlparse, urljoin
 import requests
 from bs4 import BeautifulSoup
 
-try:
-    from ddgs import DDGS
-except ImportError:
-    try:
-        from duckduckgo_search import DDGS
-    except ImportError:
-        DDGS = None
-
 from lead_normalizer import (
     MasterLeadRegistry,
     normalize_email,
@@ -313,102 +305,7 @@ def parse_raw_text(raw_text: str, crawl_urls: bool = True) -> List[Dict[str, Any
     return leads
 
 
-def search_leads_live(keyword: str, location: str = "", target_type: str = "all", max_results: int = 10) -> List[Dict[str, Any]]:
-    """
-    Live Search Scraper engine:
-    Takes user keyword + location, builds targeted search dorks, executes via DDGS,
-    and returns rich structured preview leads.
-    """
-    leads = []
-    if not DDGS:
-        return leads
-
-    loc_str = location.strip()
-    kw_str = keyword.strip()
-
-    # Formulate queries based on target_type
-    queries = []
-    if target_type == "linkedin":
-        queries = [
-            f'site:linkedin.com/company "{kw_str}" {loc_str}'.strip(),
-            f'site:linkedin.com/jobs "{kw_str}" {loc_str}'.strip()
-        ]
-    elif target_type == "clients":
-        queries = [
-            f'site:reddit.com/r/forhire "hiring" "{kw_str}"',
-            f'site:upwork.com/jobs "{kw_str}" {loc_str}'.strip(),
-            f'"looking for" "{kw_str}" {loc_str}'.strip()
-        ]
-    elif target_type == "b2b":
-        queries = [
-            f'site:indiamart.com "{kw_str}" {loc_str}'.strip(),
-            f'site:tradeindia.com "{kw_str}" {loc_str}'.strip(),
-            f'"{kw_str}" company {loc_str}'.strip()
-        ]
-    else:
-        # All / General
-        queries = [
-            f'"{kw_str}" {loc_str} "email"'.strip(),
-            f'site:reddit.com/r/forhire "hiring" "{kw_str}"',
-            f'"{kw_str}" company {loc_str}'.strip()
-        ]
-
-    seen_urls = set()
-    idx = 1
-
-    try:
-        with DDGS() as ddgs:
-            for q in queries:
-                if len(leads) >= max_results:
-                    break
-                try:
-                    results = list(ddgs.text(q, max_results=max_results))
-                    for r in results:
-                        u = r.get("href") or r.get("url") or ""
-                        if not u or u in seen_urls:
-                            continue
-                        
-                        dom = canonicalize_domain(u)
-                        if dom in INVALID_DOMAINS:
-                            continue
-
-                        seen_urls.add(u)
-                        title = r.get("title", "")
-                        body = r.get("body", "")
-                        full_txt = f"{title} {body}"
-                        contacts = extract_contacts_from_text(full_txt)
-
-                        # Clean company name from title
-                        clean_comp = re.sub(r' - LinkedIn| \| LinkedIn| - IndiaMART| - Tradeindia', '', title).strip()
-                        if " | " in clean_comp:
-                            clean_comp = clean_comp.split(" | ")[0]
-                        if " - " in clean_comp:
-                            clean_comp = clean_comp.split(" - ")[0]
-
-                        leads.append({
-                            "lead_id": f"IMPORT-SEARCH-{int(time.time())}-{idx:02d}",
-                            "company_name": clean_comp[:80] or (dom.title() if dom else f"Lead #{idx}"),
-                            "title": title[:90],
-                            "email": contacts["email"],
-                            "mobile_number": contacts["phone"],
-                            "website": u,
-                            "source": f"Live Search ({kw_str} in {loc_str or 'Global'})",
-                            "source_url": u,
-                            "description": body[:350].strip(),
-                            "location": loc_str or "Remote",
-                            "lead_type": "Search Discovered Lead",
-                            "intent_score": "8" if "hiring" in full_txt.lower() else "6"
-                        })
-                        idx += 1
-                        if len(leads) >= max_results:
-                            break
-                    time.sleep(1.0)
-                except Exception as e:
-                    print(f"  [search_leads_live query error on {q}] {e}")
-    except Exception as e:
-        print(f"  [search_leads_live error] {e}")
-
-    return leads
+# Live Search moved to search_engine.py (Scraping / Mining -> Search Engines).
 
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -496,8 +393,8 @@ def commit_imported_leads(leads_to_commit: List[Dict[str, Any]], send_outreach_e
     supabase_synced = False
     if sync_to_supabase:
         try:
-            sync_to_supabase.sync(csv_filepath=master_csv)
-            supabase_synced = True
+            # sync() returns False when keys are missing or nothing was uploaded
+            supabase_synced = sync_to_supabase.sync(csv_filepath=master_csv) is not False
         except Exception as e:
             print(f"[WARN] Supabase sync notice: {e}")
 

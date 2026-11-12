@@ -138,6 +138,11 @@ export async function saveSettings(settings) {
   });
 }
 
+// 9b. Which API keys are set in .env (status only, never the values)
+export async function fetchApiKeysStatus() {
+  return await apiFetch('/api/settings/api-keys');
+}
+
 // 10. Send Verification SMTP Test Email
 export async function testSmtpEmail() {
   return await apiFetch('/api/settings/test-email', { method: 'POST' });
@@ -148,13 +153,7 @@ export async function triggerSupabaseSync() {
   return await apiFetch('/api/sync-supabase', { method: 'POST' });
 }
 
-// 12. Live Search Import via Python lead_importer
-export async function searchImportLeads({ keyword, location, target_type, max_results }) {
-  return await apiFetch('/api/import/search', {
-    method: 'POST',
-    body: JSON.stringify({ keyword, location, target_type, max_results })
-  });
-}
+// 12. (Live Search moved to Scraping / Mining -> Search Engines, see 36-39 below)
 
 // 13. Commit Extracted Leads to Master CSV & Supabase
 export async function commitImportedLeads(leads, sendOutreachEmail = false) {
@@ -178,10 +177,10 @@ export async function fetchJobPortals() {
 }
 
 // 17. Job Portal Scraper: search the selected portals (can take 10-60 seconds)
-export async function searchJobPortals({ titles, state, portals }) {
+export async function searchJobPortals({ titles, state, portals, refresh = false }) {
   return await apiFetch('/api/job-portals/search', {
     method: 'POST',
-    body: JSON.stringify({ titles, state, portals })
+    body: JSON.stringify({ titles, state, portals, refresh })
   });
 }
 
@@ -279,15 +278,50 @@ export async function fetchCrmSources() {
 }
 
 // 34. CRM Sources: search selected sources (can take up to a minute)
-export async function searchCrmSources({ keywords, titles, state, city, sources }) {
+export async function searchCrmSources({ keywords, titles, state, city, sources, refresh = false }) {
   return await apiFetch('/api/crm-sources/search', {
-    method: 'POST', body: JSON.stringify({ keywords, titles, state, city, sources })
+    method: 'POST', body: JSON.stringify({ keywords, titles, state, city, sources, refresh })
   });
 }
 
 // 35. CRM Sources: save selected businesses/contacts as leads
 export async function saveCrmResultsToLeads(results) {
   return await apiFetch('/api/crm-sources/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
+// 36. Scraping / Mining -> Search Engines: engines, search types, states
+export async function fetchSearchEngineOptions() {
+  return await apiFetch('/api/search-engine');
+}
+
+// 37. Search Engines: run the search (queries run one by one; can take up to a minute)
+export async function runSearchEngine(params) {
+  return await apiFetch('/api/search-engine/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// 38. Deep Search: open result websites for email / phone / socials (max 10 per call)
+export async function runDeepSearch({ items, engine = 'auto', use_hunter = false, place = '' }) {
+  return await apiFetch('/api/search-engine/deep', { method: 'POST', body: JSON.stringify({ items, engine, use_hunter, place }) });
+}
+
+// 39. Search Engines: save selected results as leads (optional intro email)
+export async function saveSearchEngineResults({ results, send_outreach_email = false }) {
+  return await apiFetch('/api/search-engine/save', { method: 'POST', body: JSON.stringify({ results, send_outreach_email }) });
+}
+
+// 40. Scraping / Mining -> Global Directories: source catalog + countries
+export async function fetchGlobalDirectories() {
+  return await apiFetch('/api/global-directories');
+}
+
+// 41. Global Directories: search ({ keywords, audience, country, region, city, sources, refresh })
+export async function searchGlobalDirectories(params) {
+  return await apiFetch('/api/global-directories/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// 42. Global Directories: save selected results as leads
+export async function saveGlobalDirectoryResults(results) {
+  return await apiFetch('/api/global-directories/save', { method: 'POST', body: JSON.stringify({ results }) });
 }
 
 // 15. Download master CSV (authenticated fetch, then save as a file)

@@ -3,11 +3,12 @@
 // CRM Sources: find businesses (directories) and decision makers (B2B contact databases), then save
 // them as leads. Backend: crm_sources.py via /api/crm-sources/*.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Building2, Search, Loader2, X, ChevronDown, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Building2, Search, Loader2, X, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { fetchCrmSources, searchCrmSources, saveCrmResultsToLeads } from '../lib/api';
+import CacheNote from './CacheNote';
+import MiningForm from './MiningForm';
 
-const MAX_LEN = 80;
 const GROUPS = [
   { kind: 'directory', status: 'available', label: 'Business directories' },
   { kind: 'database', status: 'available', label: 'Contact databases' },
@@ -30,45 +31,6 @@ function downloadCsv(rows) {
   URL.revokeObjectURL(url);
 }
 
-function ChipInput({ id, label, hint, values, setValues, max, placeholder, error, onChangeClear }) {
-  const [text, setText] = useState('');
-  const [localError, setLocalError] = useState('');
-  const add = (raw) => {
-    const parts = String(raw).split(',').map(t => t.trim()).filter(Boolean);
-    const next = [...values];
-    let err = '';
-    for (const t of parts) {
-      if (t.length > MAX_LEN) { err = `"${t.slice(0, 20)}…" is longer than ${MAX_LEN} characters`; continue; }
-      if (next.some(x => x.toLowerCase() === t.toLowerCase())) continue;
-      if (next.length >= max) { err = `You can add at most ${max}`; break; }
-      next.push(t);
-    }
-    setValues(next);
-    setText('');
-    setLocalError(err);
-  };
-  return (
-    <div className="form-group">
-      <label className="form-label" htmlFor={id}>{label} <span className="jp-hint">{hint}</span></label>
-      <div className={`jp-chip-input ${error || localError ? 'has-error' : ''}`}>
-        {values.map(v => (
-          <span key={v} className="jp-chip">{v}
-            <button type="button" aria-label={`Remove ${v}`} onClick={() => setValues(values.filter(x => x !== v))}><X size={12} /></button>
-          </span>
-        ))}
-        <input id={id} type="text" value={text} placeholder={values.length ? 'Add another…' : placeholder}
-          onChange={(e) => { setText(e.target.value); if (e.target.value.trim() && onChangeClear) onChangeClear(); }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(text); }
-            else if (e.key === 'Backspace' && !text && values.length) setValues(values.slice(0, -1));
-          }}
-          onBlur={() => text.trim() && add(text)} />
-      </div>
-      {(error || localError) && <div className="jp-field-error">{error || localError}</div>}
-    </div>
-  );
-}
-
 export default function CrmSources({ onLeadsSaved }) {
   const [sources, setSources] = useState([]);
   const [states, setStates] = useState([]);
@@ -80,9 +42,7 @@ export default function CrmSources({ onLeadsSaved }) {
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [selected, setSelected] = useState(new Set());
-  const [menuOpen, setMenuOpen] = useState(false);
   const [errors, setErrors] = useState({});
-  const menuRef = useRef(null);
 
   const [searching, setSearching] = useState(false);
   const [result, setResult] = useState(null);
@@ -96,29 +56,14 @@ export default function CrmSources({ onLeadsSaved }) {
       .then(res => { setSources(res.sources || []); setStates(res.states || []); setLimits({ maxKeywords: res.maxKeywords, maxTitles: res.maxTitles }); })
       .catch(err => setCatalogError(err.message || 'Could not load sources. Is the Python backend running?'));
   }, []);
-  useEffect(() => {
-    const close = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, []);
-
-  const available = useMemo(() => sources.filter(s => s.status === 'available'), [sources]);
-  const allSelected = available.length > 0 && available.every(s => selected.has(s.id));
   const clear = (f) => setErrors(prev => (prev[f] ? { ...prev, [f]: '' } : prev));
-  const toggle = (id) => {
-    const next = new Set(selected);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setSelected(next);
-    if (next.size) clear('sources');
-  };
-  const sourceLabel = !selected.size ? 'Select sources'
-    : allSelected ? `All available sources (${selected.size})`
-      : sources.filter(s => selected.has(s.id)).map(s => s.name).join(', ');
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submit = async (e, final = null, refresh = false) => {
+    e?.preventDefault();
+    const kws = final?.keywords || keywords;
+    const tts = final?.titles || titles;
     const errs = {};
-    if (!keywords.length) errs.keywords = 'Enter at least one business category or keyword';
+    if (!kws.length) errs.keywords = 'Enter at least one business category or keyword';
     if (!state) errs.state = 'Select a state';
     if (city && !/^[A-Za-z .'-]{1,60}$/.test(city.trim())) errs.city = 'City must be letters only (max 60 characters)';
     if (!selected.size) errs.sources = 'Select at least one source';
@@ -130,9 +75,9 @@ export default function CrmSources({ onLeadsSaved }) {
     setFilter('');
     setNotice(null);
     try {
-      const res = await searchCrmSources({ keywords, titles, state, city: city.trim(), sources: [...selected] });
+      const res = await searchCrmSources({ keywords: kws, titles: tts, state, city: city.trim(), sources: [...selected], refresh });
       setResult(res);
-      setNotice({ type: 'success', text: `Found ${res.total} businesses/contacts across ${Object.keys(res.sources || {}).length} sources` });
+      setNotice({ type: 'success', text: `Found ${res.total} businesses/contacts across ${Object.keys(res.sources || {}).length} sources${res.cache?.hit ? ' (saved results)' : ''}` });
     } catch (err) {
       setNotice({ type: 'error', text: err.message || 'Search failed' });
     } finally {
@@ -185,75 +130,20 @@ export default function CrmSources({ onLeadsSaved }) {
         </div>
         {catalogError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {catalogError}</div>}
 
-        <form onSubmit={submit} noValidate>
-          <div className="jp-form-grid">
-            <div className="jp-span-2">
-              <ChipInput id="crm-keywords" label="Business category / keywords" hint={`(Enter or comma, up to ${limits.maxKeywords})`}
-                values={keywords} setValues={(v) => { setKeywords(v); if (v.length) clear('keywords'); }} max={limits.maxKeywords}
-                placeholder="e.g. software, hospital, real estate, manufacturer" error={errors.keywords} onChangeClear={() => clear('keywords')} />
-            </div>
-            <div className="jp-span-2">
-              <ChipInput id="crm-titles" label="Decision-maker titles" hint="(optional — used by contact databases)"
-                values={titles} setValues={setTitles} max={limits.maxTitles} placeholder="e.g. CEO, Founder, CTO, Owner" />
-            </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="crm-state">State</label>
-              <select id="crm-state" className="theme-form-input" value={state}
-                onChange={(e) => { setState(e.target.value); if (e.target.value) clear('state'); }} aria-invalid={!!errors.state}>
-                <option value="">Select state…</option>
-                {states.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              {errors.state && <div className="jp-field-error">{errors.state}</div>}
-            </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="crm-city">City <span className="jp-hint">(optional — some directories need it; else the state’s main city is used)</span></label>
-              <input id="crm-city" className="theme-form-input" value={city} maxLength={60} placeholder="e.g. Ahmedabad"
-                onChange={(e) => { setCity(e.target.value); clear('city'); }} aria-invalid={!!errors.city} />
-              {errors.city && <div className="jp-field-error">{errors.city}</div>}
-            </div>
-            <div className="form-group jp-span-2" ref={menuRef} style={{ position: 'relative' }}>
-              <label className="form-label" id="crm-src-label">Sources</label>
-              <button type="button" className={`theme-form-input jp-multiselect ${errors.sources ? 'has-error' : ''}`}
-                onClick={() => setMenuOpen(!menuOpen)} aria-haspopup="listbox" aria-expanded={menuOpen} aria-labelledby="crm-src-label">
-                <span className="jp-multiselect-text">{sourceLabel}</span><ChevronDown size={14} />
-              </button>
-              {errors.sources && <div className="jp-field-error">{errors.sources}</div>}
-              {menuOpen && (
-                <div className="jp-menu" role="listbox" aria-multiselectable="true">
-                  <label className="jp-menu-item jp-menu-all">
-                    <input type="checkbox" checked={allSelected}
-                      onChange={() => { const n = allSelected ? new Set() : new Set(available.map(s => s.id)); setSelected(n); if (n.size) clear('sources'); }} />
-                    <span>Select all available ({available.length})</span>
-                  </label>
-                  {GROUPS.map(g => {
-                    const items = sources.filter(s => s.status === g.status && (!g.kind || s.kind === g.kind));
-                    if (!items.length) return null;
-                    return (
-                      <div key={g.label}>
-                        <div className="jp-menu-group">{g.label}</div>
-                        {items.map(s => {
-                          const disabled = s.status !== 'available';
-                          return (
-                            <label key={s.id} className={`jp-menu-item ${disabled ? 'disabled' : ''}`} title={disabled ? s.reason : s.note}>
-                              <input type="checkbox" disabled={disabled} checked={selected.has(s.id)} onChange={() => toggle(s.id)} />
-                              <span className="jp-menu-text"><span>{s.name}</span><span className="jp-menu-sub">{disabled ? s.reason : s.note}</span></span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button type="submit" className="theme-pill-btn primary" disabled={searching || !!catalogError}>
-              {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />} {searching ? 'Searching…' : 'Search'}
-            </button>
-            {searching && <span className="jp-hint">Searching {selected.size} source(s) — can take up to a minute.</span>}
-          </div>
-        </form>
+        <MiningForm
+          idPrefix="crm" onSubmit={submit} busy={searching} disabled={!!catalogError}
+          busyHint={`Searching ${selected.size} source(s) — can take up to a minute.`}
+          keywords={{ label: 'Business category / keywords', hint: `(Enter or comma, up to ${limits.maxKeywords})`,
+            values: keywords, setValues: setKeywords, max: limits.maxKeywords, error: errors.keywords,
+            onClear: () => clear('keywords'), placeholder: 'e.g. software, hospital, real estate, manufacturer' }}
+          titles={{ values: titles, setValues: setTitles, max: limits.maxTitles,
+            hint: '(optional — used by contact databases)', placeholder: 'e.g. CEO, Founder, CTO, Owner' }}
+          location={{ mode: 'india', state, setState, states, stateRequired: true, stateError: errors.state,
+            city, setCity, cityError: errors.city, onClear: clear,
+            cityHint: '(optional — some directories need it; else the state’s main city is used)' }}
+          sources={{ label: 'Sources', items: sources, selected, setSelected, error: errors.sources,
+            onClear: () => clear('sources'), placeholder: 'Select sources', allLabel: 'All available sources', groups: GROUPS }}
+        />
       </div>
 
       {notice && (
@@ -262,6 +152,7 @@ export default function CrmSources({ onLeadsSaved }) {
           <button type="button" className="jp-alert-close" aria-label="Dismiss message" onClick={() => setNotice(null)}><X size={14} /></button>
         </div>
       )}
+      {result && <CacheNote cache={result.cache} busy={searching} onRefresh={() => submit(null, null, true)} />}
 
       {result && (
         <div className="jp-status-row" aria-label="Source results">

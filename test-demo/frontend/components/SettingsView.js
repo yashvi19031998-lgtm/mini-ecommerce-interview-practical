@@ -6,6 +6,7 @@ import {
   Send, Save, Eye, EyeOff, CheckCircle2, Loader2, Sparkles, Database
 } from 'lucide-react';
 import { fetchSettings, saveSettings, testSmtpEmail } from '../lib/api';
+import ApiKeysPanel from './ApiKeysPanel';
 
 export default function SettingsView({ showToast, onNavigateToLeads = null }) {
   const [settings, setSettings] = useState({
@@ -322,6 +323,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
           </button>
         </div>
       </form>
+      <ApiKeysPanel />
     </div>
   );
 }

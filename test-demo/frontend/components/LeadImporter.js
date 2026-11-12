@@ -5,16 +5,12 @@ import {
   Search, MessageSquare, FileText, Upload, Plus, CheckCircle2, 
   AlertTriangle, ArrowRight, Loader2, Database, Send, Sparkles
 } from 'lucide-react';
-import { searchImportLeads, importRawTextData, commitImportedLeads } from '../lib/api';
+import { importRawTextData, commitImportedLeads } from '../lib/api';
 
-export default function LeadImporter({ onImportSuccess, showToast, onNavigateToLeads = null }) {
-  const [activeMode, setActiveMode] = useState('search'); // 'search' | 'chat' | 'raw'
-  
-  // Live Search Harvester
-  const [keyword, setKeyword] = useState('Shopify Web Development');
-  const [location, setLocation] = useState('Mumbai, Maharashtra');
-  const [targetType, setTargetType] = useState('all');
-  const [maxResults, setMaxResults] = useState(10);
+export default function LeadImporter({ onImportSuccess, onLeadsImported, showToast, onNavigateToLeads = null, onOpenSearchEngine = null }) {
+  // Live Query Search moved to Scraping / Mining -> Search Engines (SearchEngine.js)
+  const [activeMode, setActiveMode] = useState('chat'); // 'chat' | 'raw'
+  const afterImport = onImportSuccess || onLeadsImported;
   
   // Raw Text
   const [rawText, setRawText] = useState('');
@@ -27,33 +23,6 @@ export default function LeadImporter({ onImportSuccess, showToast, onNavigateToL
   const [parsedLeads, setParsedLeads] = useState([]);
   const [sendOutreachUponImport, setSendOutreachUponImport] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
-
-  // 1. Handle Live Search
-  const handleRunSearch = async (e) => {
-    e.preventDefault();
-    if (!keyword.trim()) {
-      showToast('Please enter a target keyword', 'error');
-      return;
-    }
-    setIsLoading(true);
-    setParsedLeads([]);
-    try {
-      const res = await searchImportLeads({
-        keyword,
-        location,
-        target_type: targetType,
-        max_results: maxResults
-      });
-      if (res.leads) {
-        setParsedLeads(res.leads);
-        showToast(`Discovered ${res.leads.length} candidates!`, 'success');
-      }
-    } catch (err) {
-      showToast(err.message || 'Harvester query failed', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // 2. Handle Raw Text / URLs
   const handleParseRaw = async () => {
@@ -103,7 +72,7 @@ export default function LeadImporter({ onImportSuccess, showToast, onNavigateToL
       const res = await commitImportedLeads(parsedLeads, sendOutreachUponImport);
       showToast(`Successfully merged ${parsedLeads.length} leads into Master Database!`, 'success');
       setParsedLeads([]);
-      if (onImportSuccess) onImportSuccess();
+      if (afterImport) afterImport();
     } catch (err) {
       showToast(err.message || 'Failed saving leads', 'error');
     } finally {
@@ -121,18 +90,21 @@ export default function LeadImporter({ onImportSuccess, showToast, onNavigateToL
               Lead Importer & Extraction Engine
             </h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-              Import custom datasets, parse WhatsApp groups, or execute focused live discovery scans.
+              Import custom datasets and parse WhatsApp chat logs or raw text / URLs. Live search is now in Scraping / Mining → Search Engines.
             </p>
           </div>
 
           <div className="importer-tab-bar">
-            <button
-              onClick={() => setActiveMode('search')}
-              className={`importer-tab-btn ${activeMode === 'search' ? 'active' : ''}`}
-            >
-              <Search size={15} />
-              Live Query Search
-            </button>
+            {onOpenSearchEngine && (
+              <button
+                onClick={onOpenSearchEngine}
+                className="importer-tab-btn"
+                title="Live Query Search moved to Scraping / Mining - Search Engines"
+              >
+                <Search size={15} />
+                Live Search → Search Engines
+              </button>
+            )}
             <button
               onClick={() => setActiveMode('chat')}
               className={`importer-tab-btn ${activeMode === 'chat' ? 'active' : ''}`}
@@ -162,83 +134,6 @@ export default function LeadImporter({ onImportSuccess, showToast, onNavigateToL
           )}
         </div>
       </div>
-
-      {/* Mode 1: Live Query Search */}
-      {activeMode === 'search' && (
-        <div className="glass-panel">
-          <form onSubmit={handleRunSearch}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
-              <div className="form-group">
-                <label className="form-label">Search Keyword / Industry</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Node.js backend developer, Next.js agency"
-                  value={keyword || ''}
-                  onChange={(e) => setKeyword(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Location / Target City</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Pune, Bengaluru, Remote"
-                  value={location || ''}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Candidate Type</label>
-                <select
-                  className="form-input"
-                  style={{ height: '38px' }}
-                  value={targetType}
-                  onChange={(e) => setTargetType(e.target.value)}
-                >
-                  <option value="all">All (Clients & Service Providers)</option>
-                  <option value="clients_only">Hiring Clients & Direct Employers</option>
-                  <option value="agencies_only">Agencies & Consultancies</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Max Leads to Retrieve</label>
-                <select
-                  className="form-input"
-                  style={{ height: '38px' }}
-                  value={maxResults}
-                  onChange={(e) => setMaxResults(Number(e.target.value))}
-                >
-                  <option value={10}>10 Leads (Instant)</option>
-                  <option value={25}>25 Leads (Standard)</option>
-                  <option value={50}>50 Leads (Deep Scan)</option>
-                </select>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn btn-primary btn-sm"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Running Discovery Search...
-                </>
-              ) : (
-                <>
-                  <Search size={14} />
-                  Execute Harvester Query
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-      )}
 
       {/* Mode 2: WhatsApp Chat Log */}
       {activeMode === 'chat' && (

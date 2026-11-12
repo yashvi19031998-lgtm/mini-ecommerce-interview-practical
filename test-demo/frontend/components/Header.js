@@ -23,7 +23,15 @@ export default function Header({
 }) {
   const tabTitles = {
     dashboard: { root: 'LeadsGen AI', leaf: 'Dashboard' },
-    jobportal: { root: 'LeadsGen AI', leaf: 'Job Portal Scraper' },
+    jobportal: { root: 'Scraping / Mining', leaf: 'Job Portals' },
+    searchengines: { root: 'Scraping / Mining', leaf: 'Search Engines' },
+    'mining-maps': { root: 'Scraping / Mining', leaf: 'Google Maps' },
+    'mining-social': { root: 'Scraping / Mining', leaf: 'Social Media' },
+    'mining-adlibrary': { root: 'Scraping / Mining', leaf: 'Ad Library' },
+    'mining-ecommerce': { root: 'Scraping / Mining', leaf: 'Ecommerce Platforms' },
+    'mining-directories': { root: 'Scraping / Mining', leaf: 'Global Directories' },
+    'mining-whatsapp': { root: 'Scraping / Mining', leaf: 'WhatsApp Groups' },
+    'mining-realestate': { root: 'Scraping / Mining', leaf: 'Real Estate' },
     followups: { root: 'LeadsGen AI', leaf: 'FollowUp History' },
     crmsources: { root: 'LeadsGen AI', leaf: 'CRM Sources' },
     leads: { root: 'LeadsGen AI', leaf: 'B2B Intelligence Database' },

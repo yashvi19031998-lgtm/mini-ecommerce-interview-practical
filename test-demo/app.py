@@ -388,7 +388,8 @@ def stop_scraper():
 @app.route("/api/sync-supabase", methods=["POST"])
 def trigger_supabase_sync():
     try:
-        sync_to_supabase.sync()
+        if sync_to_supabase.sync() is False:
+            return jsonify({"success": False, "error": "Supabase sync did not run: add SUPABASE_URL and a Supabase key in .env."}), 400
         return jsonify({"success": True, "message": "Leads synced to Supabase successfully!"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -403,6 +404,12 @@ def handle_settings():
         settings = load_settings()
         sig = format_signature(settings)
         return jsonify({"success": True, "settings": settings, "formattedSignature": sig})
+
+@app.route("/api/settings/api-keys", methods=["GET"])
+def api_keys_status():
+    """Which API keys are set in .env (never returns the values)."""
+    from api_keys_catalog import integration_status
+    return jsonify({"success": True, **integration_status()})
 
 @app.route("/api/settings/test-email", methods=["POST"])
 def test_company_email():
@@ -430,28 +437,7 @@ def export_csv():
 # ==============================================================================
 import lead_importer
 
-@app.route("/api/import/search", methods=["POST"])
-def import_search():
-    try:
-        data = request.json or {}
-        keyword = data.get("keyword", "").strip()
-        location = data.get("location", "").strip()
-        target_type = data.get("target_type", "all")
-        max_results = int(data.get("max_results", 10))
-
-        if not keyword:
-            return jsonify({"success": False, "error": "Search keyword is required."}), 400
-
-        leads = lead_importer.search_leads_live(
-            keyword=keyword,
-            location=location,
-            target_type=target_type,
-            max_results=max_results
-        )
-        enriched = lead_importer.check_duplicates_against_master(leads, master_csv=LEADS_CSV)
-        return jsonify({"success": True, "leads": enriched, "count": len(enriched)})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+# Live Search moved to Scraping / Mining -> Search Engines (/api/search-engine/*).
 
 @app.route("/api/import/chat", methods=["POST"])
 def import_chat():
@@ -565,7 +551,10 @@ def get_job_portals():
 def search_job_portals():
     data = request.get_json(silent=True) or {}
     try:
-        result = job_portals.search_jobs(data.get("titles"), data.get("state"), data.get("portals"))
+        params = {"titles": data.get("titles"), "state": data.get("state"), "portals": data.get("portals")}
+        result = search_cache.cached_search(
+            "jobportals", params, lambda: job_portals.search_jobs(params["titles"], params["state"], params["portals"]),
+            status_key="portals", refresh=bool(data.get("refresh")))
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
     return jsonify({"success": True, **result})
@@ -848,6 +837,7 @@ def followups_report():
 # CRM SOURCES (crm_sources.py): business directories + B2B contact databases
 # ==============================================================================
 import crm_sources
+import search_cache
 
 
 @app.route("/api/crm-sources", methods=["GET"])
@@ -864,8 +854,11 @@ def get_crm_sources():
 def search_crm_sources():
     data = request.get_json(silent=True) or {}
     try:
-        result = crm_sources.search(data.get("keywords"), data.get("titles"), data.get("state"),
-                                    data.get("city", ""), data.get("sources"))
+        params = {k: data.get(k) for k in ("keywords", "titles", "state", "city", "sources")}
+        result = search_cache.cached_search(
+            "crmsources", params, lambda: crm_sources.search(params["keywords"], params["titles"], params["state"],
+                                                             params["city"] or "", params["sources"]),
+            status_key="sources", refresh=bool(data.get("refresh")))
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
     return jsonify({"success": True, **result})
@@ -895,6 +888,134 @@ def save_crm_source_results():
     _cached_leads_data.clear()
     return jsonify({"success": True, **counts})
 
+
+
+# ==============================================================================
+# Scraping / Mining -> Search Engines (+ Deep Search)
+# ==============================================================================
+import search_engine
+import deep_search
+
+
+@app.route("/api/search-engine", methods=["GET"])
+def get_search_engine_options():
+    return jsonify({
+        "success": True,
+        "engines": search_engine.list_engines(),
+        "modes": search_engine.list_modes(),
+        "states": [job_portals.ALL_INDIA] + sorted(job_portals.INDIAN_STATES.keys()),
+        "maxKeywords": search_engine.MAX_KEYWORDS,
+        "maxAudience": search_engine.MAX_AUDIENCE,
+        "maxResultsChoices": list(search_engine.MAX_RESULTS_CHOICES),
+        "timeFilters": list(search_engine.TIME_FILTERS.keys()),
+        "deepBatch": deep_search.MAX_ITEMS_PER_CALL,
+        "hunterAvailable": bool(os.getenv("HUNTER_API_KEY", "").strip()),
+    })
+
+
+@app.route("/api/search-engine/search", methods=["POST"])
+def run_search_engine():
+    data = request.get_json(silent=True) or {}
+    keys = ("keywords", "audience", "mode", "custom_query", "state", "city", "engine", "time", "max_results", "exclude_sites")
+    params = {k: data.get(k) for k in keys}
+    # the engine actually used is part of the cache key (adding a key changes "auto")
+    params["engine_used"] = search_engine.resolve_engine(str(data.get("engine") or "auto"))
+    try:
+        result = search_cache.cached_search(
+            "searchengine", params, lambda: search_engine.search(params),
+            status_key="engines", refresh=bool(data.get("refresh")))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    # "already in leads" must reflect the database now, also for saved results
+    for r in result.get("results", []):
+        r["in_leads"], r["match"] = False, ""
+    search_engine.mark_existing(result.get("results", []), MASTER_PATH)
+    return jsonify({"success": True, **result})
+
+
+@app.route("/api/search-engine/deep", methods=["POST"])
+def run_deep_search():
+    data = request.get_json(silent=True) or {}
+    try:
+        result = deep_search.deep_search(data.get("items"), str(data.get("engine") or "auto"),
+                                         bool(data.get("use_hunter")), str(data.get("place") or ""))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, **result})
+
+
+@app.route("/api/search-engine/save", methods=["POST"])
+def save_search_engine_results():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    rows = data.get("results")
+    if not isinstance(rows, list) or not rows:
+        return jsonify({"success": False, "error": "Select at least one result to save."}), 400
+    if len(rows) > MAX_JOBS_PER_SAVE:
+        return jsonify({"success": False, "error": f"Save at most {MAX_JOBS_PER_SAVE} results at a time."}), 400
+    valid = [r for r in rows if isinstance(r, dict) and r.get("company")
+             and (r.get("url") or r.get("website") or r.get("email") or r.get("phone"))]
+    if not valid:
+        return jsonify({"success": False, "error": "The selected results have no name or link."}), 400
+    leads = [search_engine.result_to_raw_lead(r) for r in valid]
+    with job_save_lock:
+        res = lead_importer.commit_imported_leads(leads, send_outreach_email=bool(data.get("send_outreach_email")),
+                                                  master_csv=MASTER_PATH)
+    if not res.get("success"):
+        return jsonify({"success": False, "error": "Could not write the leads file."}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, "added": res["added"], "updated": res["updated"],
+                    "duplicate": res["duplicates"], "skipped_invalid": len(rows) - len(valid),
+                    "emails_sent": res["emails_sent"], "supabase_synced": res["supabase_synced"]})
+
+
+# ==============================================================================
+# Scraping / Mining -> Global Directories (module: global_directories.py)
+# ==============================================================================
+import global_directories
+
+
+@app.route("/api/global-directories", methods=["GET"])
+def get_global_directories():
+    return jsonify({"success": True, "sources": global_directories.list_sources(),
+                    "countries": global_directories.COUNTRIES, "maxKeywords": global_directories.MAX_KEYWORDS})
+
+
+@app.route("/api/global-directories/search", methods=["POST"])
+def search_global_directories():
+    data = request.get_json(silent=True) or {}
+    params = {k: data.get(k) for k in ("keywords", "audience", "country", "region", "city", "sources")}
+    try:
+        result = search_cache.cached_search("globaldirectories", params, lambda: global_directories.search(params),
+                                            status_key="sources", refresh=bool(data.get("refresh")))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, **result})
+
+
+@app.route("/api/global-directories/save", methods=["POST"])
+def save_global_directory_results():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    rows = data.get("results")
+    if not isinstance(rows, list) or not rows:
+        return jsonify({"success": False, "error": "Select at least one result to save."}), 400
+    if len(rows) > MAX_JOBS_PER_SAVE:
+        return jsonify({"success": False, "error": f"Save at most {MAX_JOBS_PER_SAVE} results at a time."}), 400
+    valid = [r for r in rows if isinstance(r, dict) and r.get("company")
+             and (r.get("url") or r.get("website") or r.get("email") or r.get("phone"))]
+    if not valid:
+        return jsonify({"success": False, "error": "The selected results have no name or contact details."}), 400
+    counts = {"added": 0, "updated": 0, "duplicate": 0, "skipped_invalid": len(rows) - len(valid)}
+    with job_save_lock:
+        registry = MasterLeadRegistry(MASTER_PATH)
+        for r in valid:
+            outcome, _ = registry.add_lead(global_directories.result_to_raw_lead(r), default_source="Global Directory")
+            counts[outcome] = counts.get(outcome, 0) + 1
+        if not registry.save_master_safely():
+            return jsonify({"success": False, "error": "Could not write the leads file."}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **counts})
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))

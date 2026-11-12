@@ -6,6 +6,9 @@ import AuthScreen from '../components/AuthScreen';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import StatsCards from '../components/StatsCards';
+import SearchEngine from '../components/SearchEngine';
+import MiningComingSoon from '../components/MiningComingSoon';
+import GlobalDirectories from '../components/GlobalDirectories';
 import LeadsTable from '../components/LeadsTable';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
@@ -35,7 +38,7 @@ import {
 function DashboardContent() {
   const { user, signOut, loading: authLoading } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'jobportal' | 'followups' | 'leads' | 'scraper' | 'import' | 'settings'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'searchengines' | 'mining-*' | 'jobportal' | 'followups' | 'crmsources' | 'leads' | 'scraper' | 'import' | 'settings'
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [leads, setLeads] = useState([]);
@@ -269,7 +272,7 @@ function DashboardContent() {
         <div className="theme-scrollable-content">
           <div className="theme-content-padding">
             {/* Real-time KPI Metric Summary (hidden on the Job Portal Scraper to give the form room) */}
-            {!['jobportal', 'followups', 'crmsources'].includes(activeTab) && (
+            {!['jobportal', 'followups', 'crmsources', 'searchengines'].includes(activeTab) && !activeTab.startsWith('mining-') && (
             <StatsCards 
               leads={leads} 
               activeFilter={tableFilter}
@@ -287,6 +290,19 @@ function DashboardContent() {
                 onOpenJobPortal={() => setActiveTab('jobportal')}
                 onOpenLeads={() => setActiveTab('leads')}
               />
+            )}
+
+            {/* Scraping / Mining -> Search Engines */}
+            {activeTab === 'searchengines' && (
+              <SearchEngine onLeadsSaved={() => loadLeads(true)} />
+            )}
+
+            {/* Scraping / Mining -> planned modules */}
+            {activeTab === 'mining-directories' && (
+              <GlobalDirectories onLeadsSaved={() => loadLeads(true)} onOpenSearchEngine={() => setActiveTab('searchengines')} />
+            )}
+            {activeTab.startsWith('mining-') && activeTab !== 'mining-directories' && (
+              <MiningComingSoon id={activeTab} onOpenSearchEngine={() => setActiveTab('searchengines')} />
             )}
 
             {/* CRM Sources */}
@@ -350,6 +366,7 @@ function DashboardContent() {
             {activeTab === 'import' && (
               <LeadImporter
                 onLeadsImported={() => loadLeads(true)}
+                onOpenSearchEngine={() => setActiveTab('searchengines')}
                 showToast={showToast}
               />
             )}
