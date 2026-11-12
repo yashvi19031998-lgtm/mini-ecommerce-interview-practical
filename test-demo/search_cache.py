@@ -35,6 +35,7 @@ TTL_HOURS = {
     "ecommerce": float(os.getenv("ECOMMERCE_CACHE_HOURS", "48")),
     "realestate": float(os.getenv("REALESTATE_CACHE_HOURS", "72")),
     "indiandirectories": float(os.getenv("INDIAN_DIRECTORIES_CACHE_HOURS", "72")),
+    "corporateregistries": float(os.getenv("CORPORATE_REGISTRIES_CACHE_HOURS", "72")),
     "whatsapp": float(os.getenv("WHATSAPP_CACHE_HOURS", "24")),
     "adlibrary": float(os.getenv("ADLIBRARY_CACHE_HOURS", "24")),
     "social": float(os.getenv("SOCIAL_CACHE_HOURS", "48")),

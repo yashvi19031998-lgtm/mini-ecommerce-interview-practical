@@ -5,7 +5,8 @@ import {
   Database, Terminal, DownloadCloud, Settings, 
   Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
   LayoutDashboard, Briefcase, History, Building2, Pickaxe, SearchCode, MapPin, Share2, Megaphone,
-  ShoppingCart, Globe, MessageCircle, House, FileSearch, Network, Factory, Phone, Wrench, Ship, Store
+  ShoppingCart, Globe, MessageCircle, House, FileSearch, Network, Factory, Phone, Wrench, Ship, Store,
+  Landmark, BadgeCheck, Receipt
 } from 'lucide-react';
 
 // Scraping / Mining submenu (order as requested). soon = planned module (MiningComingSoon.js)
@@ -29,7 +30,11 @@ export const EXTRACTION_ITEMS = [
   { id: 'dx-justdial', label: 'Justdial Scraper', icon: Phone, section: 'Indian Directories' },
   { id: 'dx-sulekha', label: 'Sulekha Scraper', icon: Wrench, section: 'Indian Directories' },
   { id: 'dx-tradeindia', label: 'TradeIndia Scraper', icon: Store, section: 'Indian Directories' },
-  { id: 'dx-exportersindia', label: 'ExportersIndia Scraper', icon: Ship, section: 'Indian Directories' }
+  { id: 'dx-exportersindia', label: 'ExportersIndia Scraper', icon: Ship, section: 'Indian Directories' },
+  // Corporate Registries: CorporateRegistry.js with mode 'company' | 'pvtltd' | 'gst' (tab id 'cr-<mode>')
+  { id: 'cr-company', label: 'Company Scraper', icon: Landmark, section: 'Corporate Registries' },
+  { id: 'cr-pvtltd', label: 'PVT LTD Scraper', icon: BadgeCheck, section: 'Corporate Registries' },
+  { id: 'cr-gst', label: 'GST No Scraper', icon: Receipt, section: 'Corporate Registries' }
 ];
 
 export default function Sidebar({

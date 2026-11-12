@@ -138,8 +138,8 @@ def make_result(source_id: str, **f: Any) -> Dict[str, Any]:
 class Fetcher:
     """One per source run: pauses between live requests to the same portal (cache hits need no pause)."""
 
-    def __init__(self, sid: str, sleep=time.sleep):
-        self.gap = SOURCES[sid].get("gap", 2.0)
+    def __init__(self, sid: str, sleep=time.sleep, gap: Optional[float] = None):
+        self.gap = gap if gap is not None else SOURCES.get(sid, {}).get("gap", 2.0)
         self.sleep = sleep
         self.last = 0.0
         self.requests = 0

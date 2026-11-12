@@ -1402,6 +1402,73 @@ def save_indian_directories_results():
     _cached_leads_data.clear()
     return jsonify({"success": True, **counts})
 
+
+# ==============================================================================
+# Data Extraction -> Corporate Registries (module: corporate_registries.py)
+# ==============================================================================
+import corporate_registries
+
+
+@app.route("/api/corporate-registries", methods=["GET"])
+def get_corporate_registries_catalog():
+    return jsonify({"success": True, **corporate_registries.catalog(),
+                    "states": [job_portals.ALL_INDIA] + sorted(job_portals.INDIAN_STATES.keys()),
+                    "deepBatch": deep_search.MAX_ITEMS_PER_CALL})
+
+
+@app.route("/api/corporate-registries/search", methods=["POST"])
+def search_corporate_registries():
+    data = request.get_json(silent=True) or {}
+    keys = ("mode", "keywords", "audience", "state", "city", "company_type", "status", "age", "industry", "pages",
+            "max_sellers", "gstins")
+    params = {k: data.get(k) for k in keys if k in data}
+    try:
+        corporate_registries.validate_request(params)          # fail fast with a clear message (400)
+        if params.get("mode") == "gst_check":                  # offline - nothing to cache
+            result = {**corporate_registries.search(params), "cache": {"hit": False}}
+        else:
+            result = search_cache.cached_search("corporateregistries", params, lambda: corporate_registries.search(params),
+                                                status_key="sources", refresh=bool(data.get("refresh")))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    for r in result.get("results", []):
+        r["in_leads"], r["match"] = False, ""
+    search_engine.mark_existing([r for r in result.get("results", []) if r.get("url")], MASTER_PATH)
+    return jsonify({"success": True, **result})
+
+
+@app.route("/api/corporate-registries/details", methods=["POST"])
+def corporate_registries_details():
+    data = request.get_json(silent=True) or {}
+    try:
+        return jsonify({"success": True, **corporate_registries.details(data.get("items"))})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/corporate-registries/save", methods=["POST"])
+def save_corporate_registries_results():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    rows = data.get("results")
+    if not isinstance(rows, list) or not rows:
+        return jsonify({"success": False, "error": "Select at least one result to save."}), 400
+    if len(rows) > MAX_JOBS_PER_SAVE:
+        return jsonify({"success": False, "error": f"Save at most {MAX_JOBS_PER_SAVE} results at a time."}), 400
+    valid = [r for r in rows if isinstance(r, dict) and r.get("company") and r.get("url")]
+    if not valid:
+        return jsonify({"success": False, "error": "The selected results have no company name or link."}), 400
+    counts = {"added": 0, "updated": 0, "duplicate": 0, "skipped_invalid": len(rows) - len(valid)}
+    with job_save_lock:
+        registry = MasterLeadRegistry(MASTER_PATH)
+        for r in valid:
+            outcome, _ = registry.add_lead(corporate_registries.result_to_raw_lead(r), default_source="Corporate Registries")
+            counts[outcome] = counts.get(outcome, 0) + 1
+        if not registry.save_master_safely():
+            return jsonify({"success": False, "error": "Could not write the leads file."}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **counts})
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

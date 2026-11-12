@@ -429,6 +429,26 @@ export async function saveIndianDirectoryResults(results) {
   return await apiFetch('/api/indian-directories/save', { method: 'POST', body: JSON.stringify({ results }) });
 }
 
+// Data Extraction -> Corporate Registries: catalog (company types, statuses, ages, industries)
+export async function fetchCorporateRegistryOptions() {
+  return await apiFetch('/api/corporate-registries');
+}
+
+// Corporate Registries: search (mode: company | pvtltd | gst_find | gst_check)
+export async function searchCorporateRegistries(params) {
+  return await apiFetch('/api/corporate-registries/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// Corporate Registries: company page details for up to 10 companies
+export async function fetchCompanyDetails(items) {
+  return await apiFetch('/api/corporate-registries/details', { method: 'POST', body: JSON.stringify({ items }) });
+}
+
+// Corporate Registries: save selected results as leads
+export async function saveCorporateRegistryResults(results) {
+  return await apiFetch('/api/corporate-registries/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });
