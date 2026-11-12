@@ -1,0 +1,17 @@
+# SearXNG - free, open-source metasearch for Scraping / Mining (no API key).
+# Setup: docs/searxng-setup.md
+#   1. Create searxng/.env with:  SEARXNG_SECRET=<random string>   (git-ignored)
+#   2. docker compose up -d        (run inside this folder)
+#   3. In the app's .env:          SEARXNG_URL=http://localhost:8888
+services:
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    container_name: leadsgen-searxng
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8888:8080"          # only this computer can reach it - never exposed to the network
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+      - SEARXNG_SECRET=${SEARXNG_SECRET:?Create searxng/.env with SEARXNG_SECRET=<random string>}
+    volumes:
+      - ./settings.yml:/etc/searxng/settings.yml:ro

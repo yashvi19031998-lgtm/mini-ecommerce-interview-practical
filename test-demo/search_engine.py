@@ -4,16 +4,21 @@ Builds ready-made search queries ("dorks") from a keyword + place, runs them on 
 returns company / listing results that can be deep-searched (deep_search.py) and saved as leads.
 
 Engines:
-  brave       Brave Search API      BRAVE_SEARCH_API_KEY  (free plan, ~1 request/second)
+  brave       Brave Search API      BRAVE_SEARCH_API_KEY  ($5 free credit/month ~ 1,000 searches; card required)
   serper      Serper.dev (Google)   SERPER_API_KEY        (free starter credits)
+  searxng     your own SearXNG      SEARXNG_URL           (no key: open-source metasearch you run yourself, e.g. Docker)
   duckduckgo  DuckDuckGo            no key - best effort: often returns nothing for site: / quoted queries
-  auto        first engine with a key, else DuckDuckGo
+  auto        Brave, Serper, SearXNG - the first one that is set up - else DuckDuckGo
 
-Rate limits: queries run one after another with a gap; on HTTP 429 / rate limit the search stops and
+Fallback: a query that fails on one engine (rate limit, no credits, bad key, not running) is retried on the next
+engine that is set up, in the order Brave -> Serper -> SearXNG -> DuckDuckGo (see run_with_fallback).
+Rate limits: queries run one after another with a gap; when every engine is rate limited the search stops and
 returns what it already found, with a message. We never rotate identities or bypass bot checks.
 """
 import os
+import functools
 import re
+import threading
 import time
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -39,16 +44,19 @@ MAX_RESULTS_CHOICES = (10, 25, 50, 100)
 MAX_EXCLUDES = 10
 MAX_CUSTOM_LEN = 300
 TIMEOUT = 20
-GAP_SECONDS = {"brave": 1.1, "serper": 0.3, "duckduckgo": 2.0}
+GAP_SECONDS = {"brave": 1.1, "serper": 0.3, "searxng": 1.5, "duckduckgo": 2.0}
 TIME_FILTERS = {"any": None, "day": "d", "week": "w", "month": "m", "year": "y"}
 CITY_RE = re.compile(r"^[A-Za-z .'-]{1,60}$")
 SITE_RE = re.compile(r"^[a-z0-9.-]+\.[a-z]{2,}(/[\w./-]*)?$")
 
 ENGINES = {
     "brave": {"name": "Brave Search", "short": "Brave Search", "key": "BRAVE_SEARCH_API_KEY", "url": "https://api-dashboard.search.brave.com/app/keys",
-              "note": "Free plan with a monthly limit; supports site: and quotes"},
+              "note": "$5 free credit every month (about 1,000 searches); a payment card is required; supports site: and quotes"},
     "serper": {"name": "Serper.dev (Google results)", "short": "Serper - Google", "key": "SERPER_API_KEY", "url": "https://serper.dev/api-key",
                "note": "Google results; free starter credits, then paid"},
+    "searxng": {"name": "SearXNG (self-hosted, no key)", "short": "SearXNG", "key": "SEARXNG_URL",
+                "url": "https://docs.searxng.org/admin/installation-docker.html",
+                "note": "Free, no key: your own SearXNG server (Docker); set SEARXNG_URL, e.g. http://localhost:8888"},
     "duckduckgo": {"name": "DuckDuckGo (no key)", "short": "DuckDuckGo", "key": None, "url": "https://duckduckgo.com",
                    "note": "Free, best effort - site: and quoted queries often return nothing"},
 }
@@ -144,7 +152,7 @@ def engine_available(engine_id: str) -> bool:
 
 def resolve_engine(engine_id: str) -> str:
     if engine_id == "auto":
-        for eid in ("brave", "serper"):
+        for eid in ("brave", "serper", "searxng"):
             if engine_available(eid):
                 return eid
         return "duckduckgo"
@@ -153,7 +161,8 @@ def resolve_engine(engine_id: str) -> str:
 
 def list_engines() -> List[Dict[str, Any]]:
     out = [{"id": "auto", "name": "Auto (best available)", "status": "available",
-            "note": f"Uses {ENGINES[resolve_engine('auto')]['name']} right now"}]
+            "note": f"Uses {ENGINES[resolve_engine('auto')]['name']} right now; if it runs out or fails, the next "
+                    f"set-up engine (Brave, Serper, SearXNG, then DuckDuckGo) answers"}]
     for eid, e in ENGINES.items():
         status = "available" if engine_available(eid) else ("needs_key" if e["key"] else "unavailable")
         out.append({"id": eid, "name": e["name"], "status": status, "note": e["note"], "url": e["url"],
@@ -395,7 +404,103 @@ def search_duckduckgo(query: str, count: int, time_filter: str, session=None) ->
     return [{"title": i.get("title", ""), "url": i.get("href", ""), "snippet": i.get("body", "")} for i in items]
 
 
-ENGINE_FUNCS: Dict[str, Callable] = {"brave": search_brave, "serper": search_serper, "duckduckgo": search_duckduckgo}
+def searxng_base() -> str:
+    """SEARXNG_URL without a trailing slash; only http(s) URLs are accepted."""
+    url = _key("SEARXNG_URL").rstrip("/")
+    if url and urlparse(url).scheme not in ("http", "https"):
+        raise EngineError("SEARXNG_URL must start with http:// or https://")
+    return url
+
+
+def search_searxng(query: str, count: int, time_filter: str, session: requests.Session) -> List[Dict[str, str]]:
+    """Your own SearXNG instance (JSON output must be enabled in its settings.yml: search.formats: [html, json])."""
+    base = searxng_base()
+    if not base:
+        raise EngineError("SearXNG needs SEARXNG_URL in .env")
+    out, seen, page = [], set(), 1
+    time_range = {"d": "day", "w": "week", "m": "month", "y": "year"}.get(TIME_FILTERS[time_filter] or "")
+    while len(out) < count and page <= 5:
+        params = {"q": query, "format": "json", "pageno": page, "language": "en-IN", "safesearch": 0}
+        if time_range:
+            params["time_range"] = time_range
+        try:
+            r = session.get(f"{base}/search", params=params, timeout=TIMEOUT, headers={"Accept": "application/json"})
+        except requests.ConnectionError:
+            raise EngineError(f"SearXNG is not running at {base} - start it (see docs/searxng-setup.md)")
+        if r.status_code == 403:
+            raise EngineError("SearXNG refused JSON output - add 'json' to search.formats in its settings.yml")
+        _http_error(r, "SearXNG")
+        try:
+            items = (r.json() or {}).get("results") or []
+        except ValueError:
+            raise EngineError("SearXNG did not return JSON - check SEARXNG_URL")
+        new = [i for i in items if i.get("url") and i["url"] not in seen]
+        for i in new:
+            seen.add(i["url"])
+            out.append({"title": i.get("title", ""), "url": i["url"], "snippet": i.get("content", "") or ""})
+        if not new:
+            break
+        page += 1
+        time.sleep(GAP_SECONDS["searxng"])
+    return out[:count]
+
+
+RAW_ENGINE_FUNCS: Dict[str, Callable] = {"brave": search_brave, "serper": search_serper, "searxng": search_searxng,
+                                         "duckduckgo": search_duckduckgo}
+
+# Fallback: Brave -> Serper -> SearXNG -> DuckDuckGo. When an engine is rate limited, out of credits, rejects its key
+# or is not running, the same query goes to the next engine that is set up, and the failed engine is skipped for
+# COOLDOWN_SECONDS so later queries do not waste a request on it. This lets a Brave key and SearXNG work together.
+FALLBACK_ORDER = ("brave", "serper", "searxng", "duckduckgo")
+COOLDOWN_SECONDS = 600
+_cooldown: Dict[str, float] = {}
+_cooldown_lock = threading.Lock()
+
+
+def cooling(engine_id: str) -> bool:
+    with _cooldown_lock:
+        return _cooldown.get(engine_id, 0) > time.time()
+
+
+def _cool(engine_id: str) -> None:
+    with _cooldown_lock:
+        _cooldown[engine_id] = time.time() + COOLDOWN_SECONDS
+
+
+def reset_cooldown() -> None:
+    with _cooldown_lock:
+        _cooldown.clear()
+
+
+def fallback_chain(engine_id: str) -> List[str]:
+    """The engine itself, then the engines after it in FALLBACK_ORDER that are set up; cooling ones go last."""
+    later = list(FALLBACK_ORDER[FALLBACK_ORDER.index(engine_id) + 1:]) if engine_id in FALLBACK_ORDER else []
+    chain = [engine_id] + [e for e in later if engine_available(e)]
+    return [e for e in chain if not cooling(e)] + [e for e in chain if cooling(e)]
+
+
+def run_with_fallback(engine_id: str, query: str, count: int, time_filter: str, session=None) -> List[Dict[str, str]]:
+    errors: List[Exception] = []
+    for eid in fallback_chain(engine_id):
+        try:
+            hits = RAW_ENGINE_FUNCS[eid](query, count, time_filter, session or requests.Session())
+        except EngineError as e:               # RateLimited is an EngineError too
+            _cool(eid)
+            errors.append(e)
+            continue
+        except requests.RequestException as e:  # timeout / network: try the next engine, no cooldown
+            errors.append(EngineError(f"{ENGINES[eid]['short']}: {e.__class__.__name__}"))
+            continue
+        if eid != engine_id:
+            print(f"[search] {ENGINES[engine_id]['short']} unavailable - used {ENGINES[eid]['short']} instead")
+        return hits
+    limited = [e for e in errors if isinstance(e, RateLimited)]
+    if limited:
+        raise RateLimited("; ".join(str(e) for e in limited))
+    raise EngineError("; ".join(str(e) for e in errors) or "No search engine available")
+
+
+ENGINE_FUNCS: Dict[str, Callable] = {eid: functools.partial(run_with_fallback, eid) for eid in RAW_ENGINE_FUNCS}
 
 
 # ---------------------------------------------------------------------------
@@ -501,7 +606,7 @@ def search(data: Dict[str, Any], master_path: str = "", sleep: Callable[[float],
     hint = ""
     if not results and engine == "duckduckgo":
         hint = ("DuckDuckGo returned nothing useful for these queries (it often ignores site: and quoted searches "
-                "from apps). Add a free BRAVE_SEARCH_API_KEY or SERPER_API_KEY for reliable results.")
+                "from apps). Add a free BRAVE_SEARCH_API_KEY / SERPER_API_KEY, or run your own SearXNG (SEARXNG_URL, no key), for reliable results.")
     return {
         "query": {k: req[k] for k in ("keywords", "audience", "mode", "state", "city", "engine", "time", "max_results", "exclude_sites")},
         "queries": [q["query"] for q in queries],

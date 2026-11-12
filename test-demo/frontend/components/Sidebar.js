@@ -12,12 +12,12 @@ import {
 export const MINING_ITEMS = [
   { id: 'searchengines', label: 'Search Engines', icon: SearchCode },
   { id: 'mining-maps', label: 'Google Maps', icon: MapPin },
-  { id: 'mining-social', label: 'Social Media', icon: Share2, soon: true },
-  { id: 'mining-adlibrary', label: 'Ad Library', icon: Megaphone, soon: true },
+  { id: 'mining-social', label: 'Social Media', icon: Share2 },
+  { id: 'mining-adlibrary', label: 'Ad Library', icon: Megaphone },
   { id: 'mining-ecommerce', label: 'Ecommerce Platforms', icon: ShoppingCart },
   { id: 'jobportal', label: 'Job Portals', icon: Briefcase },
   { id: 'mining-directories', label: 'Global Directories', icon: Globe },
-  { id: 'mining-whatsapp', label: 'WhatsApp Groups', icon: MessageCircle, soon: true },
+  { id: 'mining-whatsapp', label: 'WhatsApp Groups', icon: MessageCircle },
   { id: 'mining-realestate', label: 'Real Estate', icon: House }
 ];
 const MINING_IDS = MINING_ITEMS.map(i => i.id);

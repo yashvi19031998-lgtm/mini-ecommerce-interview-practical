@@ -12,6 +12,8 @@ import GlobalDirectories from '../components/GlobalDirectories';
 import GoogleMaps from '../components/GoogleMaps';
 import Ecommerce from '../components/Ecommerce';
 import RealEstate from '../components/RealEstate';
+import WhatsAppGroups from '../components/WhatsAppGroups';
+import AdLibrary from '../components/AdLibrary';
 import SocialMedia from '../components/SocialMedia';
 import LeadsTable from '../components/LeadsTable';
 import SingleEmailModal from '../components/SingleEmailModal';
@@ -317,7 +319,13 @@ function DashboardContent() {
             {activeTab === 'mining-social' && (
               <SocialMedia onLeadsSaved={() => loadLeads(true)} onOpenSearchEngine={() => setActiveTab('searchengines')} />
             )}
-            {activeTab.startsWith('mining-') && !['mining-directories', 'mining-maps', 'mining-ecommerce', 'mining-realestate', 'mining-social'].includes(activeTab) && (
+            {activeTab === 'mining-adlibrary' && (
+              <AdLibrary onLeadsSaved={() => loadLeads(true)} onOpenSearchEngine={() => setActiveTab('searchengines')} />
+            )}
+            {activeTab === 'mining-whatsapp' && (
+              <WhatsAppGroups onLeadsSaved={() => loadLeads(true)} onOpenSearchEngine={() => setActiveTab('searchengines')} />
+            )}
+            {activeTab.startsWith('mining-') && !['mining-directories', 'mining-maps', 'mining-ecommerce', 'mining-realestate', 'mining-social', 'mining-adlibrary', 'mining-whatsapp'].includes(activeTab) && (
               <MiningComingSoon id={activeTab} onOpenSearchEngine={() => setActiveTab('searchengines')} />
             )}
 

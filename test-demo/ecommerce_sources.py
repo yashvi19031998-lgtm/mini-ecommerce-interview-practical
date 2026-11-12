@@ -481,7 +481,7 @@ def search(data: Dict[str, Any]) -> Dict[str, Any]:
     hint = ""
     if not results and engine_used == "duckduckgo":
         hint = ("DuckDuckGo returned nothing useful for these queries (it often ignores site: and quoted searches "
-                "from apps). Add a free BRAVE_SEARCH_API_KEY or SERPER_API_KEY for reliable results.")
+                "from apps). Add a free BRAVE_SEARCH_API_KEY / SERPER_API_KEY, or run your own SearXNG (SEARXNG_URL, no key), for reliable results.")
 
     return {
         "query": req,

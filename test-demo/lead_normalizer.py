@@ -117,6 +117,9 @@ AD_URL_MARKERS = ("bing.com/aclick", "googleadservices.com", "doubleclick.net", 
 
 # Blacklisted domain names (social media, search, aggregators, system)
 INVALID_DOMAINS = {
+    # Never a company's own website: group invite links and government registers (RERA, MCA...).
+    # Without this, a WhatsApp invite / RERA register link became the lead's "website" (2026-11-12).
+    "whatsapp.com", "wa.me", "gov.in", "nic.in",
     "google.com", "yahoo.com", "bing.com", "duckduckgo.com",
     "reddit.com", "twitter.com", "x.com", "facebook.com",
     "instagram.com", "youtube.com", "wikipedia.org", "w3schools.com",

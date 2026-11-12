@@ -59,9 +59,12 @@ class Validation(unittest.TestCase):
         self.bad("at most 10", exclude_sites=[f"s{i}.com" for i in range(11)])
 
     def test_keyed_engine_needs_key(self):
-        with mock.patch.dict(os.environ, {"BRAVE_SEARCH_API_KEY": "", "SERPER_API_KEY": ""}):
+        with mock.patch.dict(os.environ, {"BRAVE_SEARCH_API_KEY": "", "SERPER_API_KEY": "", "SEARXNG_URL": ""}):
             self.bad("BRAVE_SEARCH_API_KEY", engine="brave")
+            self.bad("SEARXNG_URL", engine="searxng")
             self.assertEqual(se.resolve_engine("auto"), "duckduckgo")
+        with mock.patch.dict(os.environ, {"BRAVE_SEARCH_API_KEY": "", "SERPER_API_KEY": "", "SEARXNG_URL": "http://localhost:8888"}):
+            self.assertEqual(se.resolve_engine("auto"), "searxng")
         with mock.patch.dict(os.environ, {"BRAVE_SEARCH_API_KEY": "", "SERPER_API_KEY": "k"}):
             self.assertEqual(se.resolve_engine("auto"), "serper")
         with mock.patch.dict(os.environ, {"BRAVE_SEARCH_API_KEY": "k", "SERPER_API_KEY": "k"}):
@@ -216,12 +219,99 @@ class EngineParsers(unittest.TestCase):
         self.assertEqual(out[0]["url"], "https://a.in")
         self.assertEqual(sess.post.call_args.kwargs["json"]["tbs"], "qdr:m")
 
+    def test_searxng_no_key(self):
+        sess = mock.Mock()
+        page1 = resp(200, {"results": [{"title": "A", "url": "https://a.in", "content": "s"},
+                                       {"title": "B", "url": "https://b.in", "content": None}]})
+        page2 = resp(200, {"results": [{"title": "A", "url": "https://a.in", "content": "s"}]})  # repeats -> stop
+        sess.get.side_effect = [page1, page2]
+        with mock.patch.dict(os.environ, {"SEARXNG_URL": "http://localhost:8888/"}), mock.patch.object(se.time, "sleep"):
+            out = se.search_searxng("q", 10, "year", sess)
+        self.assertEqual(out, [{"title": "A", "url": "https://a.in", "snippet": "s"},
+                               {"title": "B", "url": "https://b.in", "snippet": ""}])
+        self.assertEqual(sess.get.call_args_list[0].args[0], "http://localhost:8888/search")
+        params = sess.get.call_args_list[0].kwargs["params"]
+        self.assertEqual((params["format"], params["time_range"], params["pageno"]), ("json", "year", 1))
+        self.assertNotIn("X-API-KEY", sess.get.call_args.kwargs["headers"])     # no key is ever sent
+
+    def test_searxng_setup_errors(self):
+        sess = mock.Mock()
+        with mock.patch.dict(os.environ, {"SEARXNG_URL": "file:///etc/passwd"}), self.assertRaises(se.EngineError):
+            se.search_searxng("q", 10, "any", sess)
+        sess.get.assert_not_called()
+        with mock.patch.dict(os.environ, {"SEARXNG_URL": "http://localhost:8888"}):
+            sess.get.return_value = resp(403, {})
+            with self.assertRaisesRegex(se.EngineError, "json"):
+                se.search_searxng("q", 10, "any", sess)
+            sess.get.return_value = resp(429, {})
+            with self.assertRaises(se.RateLimited):
+                se.search_searxng("q", 10, "any", sess)
+            sess.get.side_effect = se.requests.ConnectionError()
+            with self.assertRaisesRegex(se.EngineError, "not running"):
+                se.search_searxng("q", 10, "any", sess)
+
     def test_http_errors(self):
         sess = mock.Mock()
         for code, exc in ((429, se.RateLimited), (401, se.EngineError), (402, se.EngineError)):
             sess.get.return_value = resp(code, {})
             with self.assertRaises(exc):
                 se.search_brave("q", 10, "any", sess)
+
+
+class Fallback(unittest.TestCase):
+    """Brave key + SearXNG together: a failing engine hands the query to the next one that is set up."""
+    ENV = {"BRAVE_SEARCH_API_KEY": "k", "SERPER_API_KEY": "", "SEARXNG_URL": "http://localhost:8888"}
+
+    def setUp(self):
+        se.reset_cooldown()
+        self.addCleanup(se.reset_cooldown)
+        self.calls = []
+
+    def fake(self, name, result):
+        def run(*a):
+            self.calls.append(name)
+            if isinstance(result, Exception):
+                raise result
+            return result
+        return run
+
+    def funcs(self, brave, searx, ddg=()):
+        return {"brave": self.fake("brave", brave), "serper": self.fake("serper", []),
+                "searxng": self.fake("searxng", searx), "duckduckgo": self.fake("duckduckgo", list(ddg))}
+
+    def test_chain_order_only_set_up_engines(self):
+        with mock.patch.dict(os.environ, self.ENV):
+            self.assertEqual(se.fallback_chain("brave"), ["brave", "searxng", "duckduckgo"])
+            self.assertEqual(se.fallback_chain("searxng"), ["searxng", "duckduckgo"])
+            self.assertEqual(se.fallback_chain("duckduckgo"), ["duckduckgo"])
+
+    def test_brave_limit_goes_to_searxng_and_cools_down(self):
+        hit = [{"title": "S", "url": "https://s.in", "snippet": ""}]
+        with mock.patch.dict(os.environ, self.ENV),                 mock.patch.dict(se.RAW_ENGINE_FUNCS, self.funcs(se.RateLimited("Brave 429"), hit)):
+            self.assertEqual(se.ENGINE_FUNCS["brave"]("q", 10, "any", None), hit)
+            self.assertEqual(self.calls, ["brave", "searxng"])
+            self.calls.clear()
+            se.ENGINE_FUNCS["brave"]("q2", 10, "any", None)          # Brave is cooling: not asked again
+            self.assertEqual(self.calls, ["searxng"])
+
+    def test_searxng_down_goes_to_duckduckgo(self):
+        hit = [{"title": "D", "url": "https://d.in", "snippet": ""}]
+        with mock.patch.dict(os.environ, self.ENV),                 mock.patch.dict(se.RAW_ENGINE_FUNCS, self.funcs(se.EngineError("Brave: no credits (HTTP 402)"),
+                                                                se.EngineError("SearXNG is not running"), hit)):
+            self.assertEqual(se.ENGINE_FUNCS["brave"]("q", 10, "any", None), hit)
+            self.assertEqual(self.calls, ["brave", "searxng", "duckduckgo"])
+
+    def test_all_rate_limited_raises_rate_limited(self):
+        with mock.patch.dict(os.environ, self.ENV),                 mock.patch.dict(se.RAW_ENGINE_FUNCS, self.funcs(se.RateLimited("b"), se.RateLimited("s"))):
+            se.RAW_ENGINE_FUNCS["duckduckgo"] = self.fake("duckduckgo", se.RateLimited("d"))
+            with self.assertRaises(se.RateLimited):
+                se.ENGINE_FUNCS["brave"]("q", 10, "any", None)
+
+    def test_success_does_not_fall_back(self):
+        hit = [{"title": "B", "url": "https://b.in", "snippet": ""}]
+        with mock.patch.dict(os.environ, self.ENV), mock.patch.dict(se.RAW_ENGINE_FUNCS, self.funcs(hit, [])):
+            self.assertEqual(se.ENGINE_FUNCS["brave"]("q", 10, "any", None), hit)
+            self.assertEqual(self.calls, ["brave"])
 
 
 class Guard(unittest.TestCase):
@@ -407,7 +497,7 @@ class Api(unittest.TestCase):
 
     def test_options(self):
         body = self.client.get("/api/search-engine", headers=self.h).get_json()
-        self.assertEqual([e["id"] for e in body["engines"]], ["auto", "brave", "serper", "duckduckgo"])
+        self.assertEqual([e["id"] for e in body["engines"]], ["auto", "brave", "serper", "searxng", "duckduckgo"])
         self.assertIn("custom", [m["id"] for m in body["modes"]])
         self.assertEqual(body["states"][0], "All India")
 

@@ -355,8 +355,8 @@ def search(data: Dict[str, Any]) -> Dict[str, Any]:
     hint = ""
     if "property_portals" in req["sources"] and req["engine_used"] == "duckduckgo" and \
             not any(r["source_id"] == "property_portals" for r in results):
-        hint = ("DuckDuckGo returned nothing for the property portals. Add a free BRAVE_SEARCH_API_KEY or "
-                "SERPER_API_KEY in Settings > API Keys for reliable results.")
+        hint = ("DuckDuckGo returned nothing for the property portals. Add a free BRAVE_SEARCH_API_KEY / "
+                "SERPER_API_KEY, or run your own SearXNG (SEARXNG_URL, no key), for reliable results.")
     return {"query": {k: req[k] for k in ("keywords", "audience", "state", "city", "looking_for", "engine")},
             "results": results, "total": len(results), "sources": statuses, "engine": req["engine_used"], "hint": hint}
 

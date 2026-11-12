@@ -384,6 +384,36 @@ export async function saveSocialResults(results) {
   return await apiFetch('/api/social/save', { method: 'POST', body: JSON.stringify({ results }) });
 }
 
+// Scraping / Mining -> AdLibrary: catalog
+export async function fetchAdLibrarySources() {
+  return await apiFetch('/api/adlibrary');
+}
+
+// AdLibrary: search
+export async function searchAdLibrary(params) {
+  return await apiFetch('/api/adlibrary/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// AdLibrary: save selected results as leads
+export async function saveAdLibraryResults(results) {
+  return await apiFetch('/api/adlibrary/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
+// Scraping / Mining -> WhatsAppGroups: catalog
+export async function fetchWhatsAppSources() {
+  return await apiFetch('/api/whatsapp');
+}
+
+// WhatsAppGroups: search
+export async function searchWhatsApp(params) {
+  return await apiFetch('/api/whatsapp/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// WhatsAppGroups: save selected results as leads
+export async function saveWhatsAppResults(results) {
+  return await apiFetch('/api/whatsapp/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

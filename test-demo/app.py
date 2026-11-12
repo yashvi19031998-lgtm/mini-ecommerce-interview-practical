@@ -1239,6 +1239,116 @@ def save_social_sources_results():
     _cached_leads_data.clear()
     return jsonify({"success": True, **counts})
 
+
+# ==============================================================================
+# Scraping / Mining -> AdLibrary (module: adlibrary_sources.py)
+# ==============================================================================
+import adlibrary_sources
+
+
+@app.route("/api/adlibrary", methods=["GET"])
+def get_adlibrary_sources_catalog():
+    return jsonify({"success": True, "sources": adlibrary_sources.list_sources(),
+                    "engines": search_engine.list_engines(),
+                    "states": [job_portals.ALL_INDIA] + sorted(job_portals.INDIAN_STATES.keys()),
+                    "maxKeywords": adlibrary_sources.MAX_KEYWORDS, "deepBatch": deep_search.MAX_ITEMS_PER_CALL})
+
+
+@app.route("/api/adlibrary/search", methods=["POST"])
+def search_adlibrary_sources():
+    data = request.get_json(silent=True) or {}
+    params = {k: data.get(k) for k in ('keywords', 'audience', 'state', 'city', 'sources', 'engine')}
+    params["engine_used"] = search_engine.resolve_engine(str(data.get("engine") or "auto"))
+    try:
+        result = search_cache.cached_search("adlibrary", params, lambda: adlibrary_sources.search(params),
+                                            status_key="sources", refresh=bool(data.get("refresh")))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    for r in result.get("results", []):
+        r["in_leads"], r["match"] = False, ""
+    search_engine.mark_existing(result.get("results", []), MASTER_PATH)
+    return jsonify({"success": True, **result})
+
+
+@app.route("/api/adlibrary/save", methods=["POST"])
+def save_adlibrary_sources_results():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    rows = data.get("results")
+    if not isinstance(rows, list) or not rows:
+        return jsonify({"success": False, "error": "Select at least one result to save."}), 400
+    if len(rows) > MAX_JOBS_PER_SAVE:
+        return jsonify({"success": False, "error": f"Save at most {MAX_JOBS_PER_SAVE} results at a time."}), 400
+    valid = [r for r in rows if isinstance(r, dict) and (r.get("company") or r.get("handle"))
+             and (r.get("url") or r.get("profile_url") or r.get("website") or r.get("email") or r.get("phone"))]
+    if not valid:
+        return jsonify({"success": False, "error": "The selected results have no name or link."}), 400
+    counts = {"added": 0, "updated": 0, "duplicate": 0, "skipped_invalid": len(rows) - len(valid)}
+    with job_save_lock:
+        registry = MasterLeadRegistry(MASTER_PATH)
+        for r in valid:
+            outcome, _ = registry.add_lead(adlibrary_sources.result_to_raw_lead(r), default_source="Ad Library")
+            counts[outcome] = counts.get(outcome, 0) + 1
+        if not registry.save_master_safely():
+            return jsonify({"success": False, "error": "Could not write the leads file."}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **counts})
+
+
+# ==============================================================================
+# Scraping / Mining -> WhatsAppGroups (module: whatsapp_sources.py)
+# ==============================================================================
+import whatsapp_sources
+
+
+@app.route("/api/whatsapp", methods=["GET"])
+def get_whatsapp_sources_catalog():
+    return jsonify({"success": True, "sources": whatsapp_sources.list_sources(),
+                    "engines": search_engine.list_engines(),
+                    "states": [job_portals.ALL_INDIA] + sorted(job_portals.INDIAN_STATES.keys()),
+                    "maxKeywords": whatsapp_sources.MAX_KEYWORDS, "deepBatch": deep_search.MAX_ITEMS_PER_CALL})
+
+
+@app.route("/api/whatsapp/search", methods=["POST"])
+def search_whatsapp_sources():
+    data = request.get_json(silent=True) or {}
+    params = {k: data.get(k) for k in ('keywords', 'audience', 'state', 'city', 'sources', 'engine')}
+    params["engine_used"] = search_engine.resolve_engine(str(data.get("engine") or "auto"))
+    try:
+        result = search_cache.cached_search("whatsapp", params, lambda: whatsapp_sources.search(params),
+                                            status_key="sources", refresh=bool(data.get("refresh")))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    for r in result.get("results", []):
+        r["in_leads"], r["match"] = False, ""
+    search_engine.mark_existing(result.get("results", []), MASTER_PATH)
+    return jsonify({"success": True, **result})
+
+
+@app.route("/api/whatsapp/save", methods=["POST"])
+def save_whatsapp_sources_results():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    rows = data.get("results")
+    if not isinstance(rows, list) or not rows:
+        return jsonify({"success": False, "error": "Select at least one result to save."}), 400
+    if len(rows) > MAX_JOBS_PER_SAVE:
+        return jsonify({"success": False, "error": f"Save at most {MAX_JOBS_PER_SAVE} results at a time."}), 400
+    valid = [r for r in rows if isinstance(r, dict) and (r.get("company") or r.get("handle"))
+             and (r.get("url") or r.get("profile_url") or r.get("website") or r.get("email") or r.get("phone"))]
+    if not valid:
+        return jsonify({"success": False, "error": "The selected results have no name or link."}), 400
+    counts = {"added": 0, "updated": 0, "duplicate": 0, "skipped_invalid": len(rows) - len(valid)}
+    with job_save_lock:
+        registry = MasterLeadRegistry(MASTER_PATH)
+        for r in valid:
+            outcome, _ = registry.add_lead(whatsapp_sources.result_to_raw_lead(r), default_source="WhatsApp Groups")
+            counts[outcome] = counts.get(outcome, 0) + 1
+        if not registry.save_master_safely():
+            return jsonify({"success": False, "error": "Could not write the leads file."}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **counts})
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

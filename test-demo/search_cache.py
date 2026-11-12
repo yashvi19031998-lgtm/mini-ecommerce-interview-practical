@@ -34,6 +34,8 @@ TTL_HOURS = {
     "maps": float(os.getenv("MAPS_CACHE_HOURS", "72")),
     "ecommerce": float(os.getenv("ECOMMERCE_CACHE_HOURS", "48")),
     "realestate": float(os.getenv("REALESTATE_CACHE_HOURS", "72")),
+    "whatsapp": float(os.getenv("WHATSAPP_CACHE_HOURS", "24")),
+    "adlibrary": float(os.getenv("ADLIBRARY_CACHE_HOURS", "24")),
     "social": float(os.getenv("SOCIAL_CACHE_HOURS", "48")),
 }
 KEEP_DAYS = float(os.getenv("SEARCH_CACHE_KEEP_DAYS", "30"))

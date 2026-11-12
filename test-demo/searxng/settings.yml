@@ -1,0 +1,20 @@
+# SearXNG settings for LeadsGen AI. Everything not listed uses SearXNG's defaults.
+use_default_settings: true
+
+general:
+  instance_name: "LeadsGen SearXNG"
+
+server:
+  # The secret comes from SEARXNG_SECRET (searxng/.env) - never write it here.
+  limiter: false          # private instance on 127.0.0.1 only; the app already waits between queries
+  image_proxy: false
+
+search:
+  safe_search: 0
+  default_lang: "en-IN"
+  formats:
+    - html
+    - json                # the app reads JSON results
+
+ui:
+  static_use_hash: true
