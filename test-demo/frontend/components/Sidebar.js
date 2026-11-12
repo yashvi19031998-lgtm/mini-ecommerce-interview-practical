@@ -6,7 +6,7 @@ import {
   Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
   LayoutDashboard, Briefcase, History, Building2, Pickaxe, SearchCode, MapPin, Share2, Megaphone,
   ShoppingCart, Globe, MessageCircle, House, FileSearch, Network, Factory, Phone, Wrench, Ship, Store,
-  Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Network as NetworkIcon, Link2, TextSearch, ListTree, FolderUp, Wrench as WrenchIcon, Gauge, Globe as GlobeIcon, CalendarClock, MailSearch, Sparkles, CheckSquare, HeartPulse, Eraser
+  Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Network as NetworkIcon, Link2, TextSearch, ListTree, FolderUp, Wrench as WrenchIcon, Gauge, Globe as GlobeIcon, CalendarClock, MailSearch, Sparkles, CheckSquare, HeartPulse, Eraser, Wand2
 } from 'lucide-react';
 
 // Scraping / Mining submenu (order as requested). soon = planned module (MiningComingSoon.js)
@@ -55,7 +55,8 @@ export const CRAWLER_ITEMS = [
 
 // Lead Care submenu: tools that work on the saved leads (tab id 'lc-<tool>')
 export const LEADCARE_ITEMS = [
-  { id: 'lc-cleanup', label: 'Data Cleanup', icon: Eraser }
+  { id: 'lc-cleanup', label: 'Data Cleanup', icon: Eraser },
+  { id: 'lc-enrich', label: 'Lead Enrichment', icon: Wand2 }
 ];
 
 // Domain Tools submenu: DomainTools.js with tool 'age' | 'dns' | 'new' | 'available' (tab id 'dt-<tool>')

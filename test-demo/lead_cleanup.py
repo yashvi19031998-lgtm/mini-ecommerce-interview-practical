@@ -170,10 +170,16 @@ def apply(master_path: str, fix_ids: Any) -> Dict[str, Any]:
     if not isinstance(fix_ids, list) or not fix_ids or any(f not in FIXES for f in fix_ids):
         raise ValueError("Choose at least one fix")
     plan = {f["id"]: f for f in scan(master_path, limit=None)["fixes"]}
+    changes = [{**c, "fix": f} for f in fix_ids for c in plan[f]["changes"]]
+    return apply_changes(master_path, changes, fix_ids)
+
+
+def apply_changes(master_path: str, changes: List[Dict[str, str]], labels: List[str]) -> Dict[str, Any]:
+    """Fill-only writer shared by Data Cleanup and Lead Enrichment: backup first, never overwrite a filled field,
+    log every change for undo. changes = [{lead_id, field, old: "", new, fix, ...}]."""
     wanted: Dict[str, List[Dict[str, str]]] = defaultdict(list)
-    for f in fix_ids:
-        for c in plan[f]["changes"]:
-            wanted[c["lead_id"]].append({**c, "fix": f})
+    for c in changes:
+        wanted[c["lead_id"]].append(c)
     if not wanted:
         return {"applied": 0, "log_id": "", "backup": ""}
     folder = backups_dir(master_path)
@@ -198,7 +204,7 @@ def apply(master_path: str, fix_ids: Any) -> Dict[str, Any]:
     if not reg.save_master_safely():
         raise IOError("Could not write the leads file - nothing was changed")
     log = {"id": stamp, "at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "backup": os.path.basename(backup),
-           "fixes": fix_ids, "changes": done, "undone": False}
+           "fixes": labels, "changes": done, "undone": False}
     with open(os.path.join(folder, f"cleanup_{stamp}.json"), "w", encoding="utf-8") as fh:
         json.dump(log, fh, ensure_ascii=False, indent=1)
     _prune_backups(folder)

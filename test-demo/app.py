@@ -1670,6 +1670,47 @@ def lead_care_cleanup_undo():
     _cached_leads_data.clear()
     return jsonify({"success": True, **res})
 
+
+# ==============================================================================
+# Lead Care -> Lead Enrichment (module: lead_enrichment.py). Proposals only until the owner saves; saving fills
+# EMPTY fields with backup + change log + undo (shared with Data Cleanup).
+# ==============================================================================
+import lead_enrichment
+
+
+@app.route("/api/lead-care/enrichment/candidates", methods=["POST"])
+def lead_care_enrichment_candidates():
+    data = request.get_json(silent=True) or {}
+    try:
+        return jsonify({"success": True, **lead_enrichment.candidates(MASTER_PATH, data)})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/lead-care/enrichment/run", methods=["POST"])
+def lead_care_enrichment_run():
+    data = request.get_json(silent=True) or {}
+    try:
+        return jsonify({"success": True, **lead_enrichment.enrich(MASTER_PATH, data.get("lead_ids"), data.get("steps"),
+                                                                  str(data.get("engine") or "auto"))})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/lead-care/enrichment/save", methods=["POST"])
+def lead_care_enrichment_save():
+    global _cached_leads_data
+    data = request.get_json(silent=True) or {}
+    try:
+        with job_save_lock:
+            res = lead_enrichment.save(MASTER_PATH, data.get("changes"))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except IOError as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    _cached_leads_data.clear()
+    return jsonify({"success": True, **res})
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

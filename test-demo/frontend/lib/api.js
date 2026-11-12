@@ -531,6 +531,19 @@ export async function undoLeadCleanup(logId) {
   return await apiFetch('/api/lead-care/cleanup/undo', { method: 'POST', body: JSON.stringify({ log_id: logId }) });
 }
 
+// Lead Care: Lead Enrichment (candidates -> run Deep Search on up to 5 -> save chosen proposals, fill-only)
+export async function findEnrichmentCandidates(params) {
+  return await apiFetch('/api/lead-care/enrichment/candidates', { method: 'POST', body: JSON.stringify(params) });
+}
+
+export async function runLeadEnrichment(leadIds, steps) {
+  return await apiFetch('/api/lead-care/enrichment/run', { method: 'POST', body: JSON.stringify({ lead_ids: leadIds, steps }) });
+}
+
+export async function saveLeadEnrichment(changes) {
+  return await apiFetch('/api/lead-care/enrichment/save', { method: 'POST', body: JSON.stringify({ changes }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

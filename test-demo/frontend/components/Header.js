@@ -56,6 +56,7 @@ export default function Header({
     'dt-new': { root: 'Domain Tools', leaf: 'New Domains Finder' },
     'dt-available': { root: 'Domain Tools', leaf: 'Domain Availability' },
     'lc-cleanup': { root: 'Lead Care', leaf: 'Data Cleanup' },
+    'lc-enrich': { root: 'Lead Care', leaf: 'Lead Enrichment' },
     followups: { root: 'LeadsGen AI', leaf: 'FollowUp History' },
     crmsources: { root: 'LeadsGen AI', leaf: 'CRM Sources' },
     leads: { root: 'LeadsGen AI', leaf: 'B2B Intelligence Database' },

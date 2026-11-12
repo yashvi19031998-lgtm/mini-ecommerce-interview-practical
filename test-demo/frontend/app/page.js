@@ -23,6 +23,7 @@ import FileUploads from '../components/FileUploads';
 import WebsiteAnalyzer from '../components/WebsiteAnalyzer';
 import DomainTools from '../components/DomainTools';
 import LeadCleanup from '../components/LeadCleanup';
+import LeadEnrichment from '../components/LeadEnrichment';
 import LeadsTable from '../components/LeadsTable';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
@@ -362,6 +363,9 @@ function DashboardContent() {
             )}
             {activeTab === 'lc-cleanup' && (
               <LeadCleanup onLeadsChanged={() => loadLeads(true)} />
+            )}
+            {activeTab === 'lc-enrich' && (
+              <LeadEnrichment onLeadsChanged={() => loadLeads(true)} onOpenCleanup={() => setActiveTab('lc-cleanup')} />
             )}
             {activeTab === 'crmsources' && (
               <CrmSources onLeadsSaved={() => loadLeads(true)} />
