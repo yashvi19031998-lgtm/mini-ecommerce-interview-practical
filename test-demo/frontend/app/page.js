@@ -15,6 +15,7 @@ import RealEstate from '../components/RealEstate';
 import WhatsAppGroups from '../components/WhatsAppGroups';
 import AdLibrary from '../components/AdLibrary';
 import SocialMedia from '../components/SocialMedia';
+import IndianDirectory from '../components/IndianDirectory';
 import LeadsTable from '../components/LeadsTable';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
@@ -330,6 +331,10 @@ function DashboardContent() {
             )}
 
             {/* CRM Sources */}
+            {activeTab.startsWith('dx-') && (
+              <IndianDirectory key={activeTab} sourceId={activeTab.slice(3)} onLeadsSaved={() => loadLeads(true)}
+                onOpenSource={(id) => setActiveTab(`dx-${id}`)} />
+            )}
             {activeTab === 'crmsources' && (
               <CrmSources onLeadsSaved={() => loadLeads(true)} />
             )}

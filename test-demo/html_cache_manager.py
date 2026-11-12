@@ -223,6 +223,30 @@ def _guarded_get(url: str, headers: dict, timeout: int, guard, max_bytes: int):
     raise requests.TooManyRedirects(f"too many redirects for {url}")
 
 
+def fetch_page(url: str, headers: dict, guard, timeout: int = 20, max_age_days: float = None,
+               max_bytes: int = 3 * 1048576) -> tuple:
+    """Like fetch_or_get_cached_html, but also tells the caller what happened:
+    returns (status, text, final_url, from_cache). Only a 200 page that was not redirected elsewhere and is not a
+    block page is cached, so "category not found" pages (404, or a redirect to a generic page) are reported as such.
+    Raises BlockedUrl / requests exceptions to the caller."""
+    max_age = CACHE_MAX_AGE_DAYS if max_age_days is None else max_age_days
+    cache_path = os.path.join(CACHE_DIR, get_url_hash(url))
+    if os.path.exists(cache_path):
+        try:
+            if _age_days(cache_path) <= max_age:
+                print(f"⚡ [CACHE HIT] {url}")
+                return 200, _read(cache_path), url, True
+        except OSError:
+            pass
+    print(f"🌐 [LIVE FETCH] {url}")
+    status, text, final_url = _guarded_get(url, headers, timeout, guard, max_bytes)
+    same_page = urlparse(final_url)._replace(query="", fragment="") == urlparse(url)._replace(query="", fragment="")
+    if status == 200 and same_page and not looks_like_block_page(text):
+        _write_atomic(cache_path, text)
+        _index_add(url, os.path.basename(cache_path), len(text.encode("utf-8", "ignore")))
+    return status, text, final_url, False
+
+
 def fetch_or_get_cached_html(url: str, headers: dict = None, timeout: int = 10,
                              max_age_days: float = None, guard=None,
                              max_bytes: int = 3 * 1048576) -> tuple[str, int]:

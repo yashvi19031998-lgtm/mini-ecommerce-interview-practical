@@ -123,7 +123,8 @@ export default function MiningForm({
         <div className="jp-span-2">
           <ChipInput id={kwId} label={keywords.label} hint={keywords.hint} values={keywords.values}
             setValues={(v) => { keywords.setValues(v); if (v.length && keywords.onClear) keywords.onClear(); }}
-            max={keywords.max} placeholder={keywords.placeholder} error={keywords.error} onChangeClear={keywords.onClear} />
+            max={keywords.max} placeholder={keywords.placeholder} error={keywords.error} onChangeClear={keywords.onClear}
+            suggestions={keywords.suggestions} />
         </div>
 
         {audience && (

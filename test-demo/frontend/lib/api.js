@@ -414,6 +414,21 @@ export async function saveWhatsAppResults(results) {
   return await apiFetch('/api/whatsapp/save', { method: 'POST', body: JSON.stringify({ results }) });
 }
 
+// Data Extraction -> Indian Directories: catalog
+export async function fetchIndianDirectorySources() {
+  return await apiFetch('/api/indian-directories');
+}
+
+// IndianDirectory: search
+export async function searchIndianDirectories(params) {
+  return await apiFetch('/api/indian-directories/search', { method: 'POST', body: JSON.stringify(params) });
+}
+
+// IndianDirectory: save selected results as leads
+export async function saveIndianDirectoryResults(results) {
+  return await apiFetch('/api/indian-directories/save', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

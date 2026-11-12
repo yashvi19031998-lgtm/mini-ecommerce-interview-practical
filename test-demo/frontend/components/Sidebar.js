@@ -5,7 +5,7 @@ import {
   Database, Terminal, DownloadCloud, Settings, 
   Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
   LayoutDashboard, Briefcase, History, Building2, Pickaxe, SearchCode, MapPin, Share2, Megaphone,
-  ShoppingCart, Globe, MessageCircle, House
+  ShoppingCart, Globe, MessageCircle, House, FileSearch, Network, Factory, Phone, Wrench, Ship, Store
 } from 'lucide-react';
 
 // Scraping / Mining submenu (order as requested). soon = planned module (MiningComingSoon.js)
@@ -20,7 +20,17 @@ export const MINING_ITEMS = [
   { id: 'mining-whatsapp', label: 'WhatsApp Groups', icon: MessageCircle },
   { id: 'mining-realestate', label: 'Real Estate', icon: House }
 ];
-const MINING_IDS = MINING_ITEMS.map(i => i.id);
+
+// Data Extraction submenu. section = sub-heading inside the group (more sections can be added later).
+// Each Indian Directories item opens IndianDirectory.js with its own source (tab id 'dx-<source id>').
+export const EXTRACTION_ITEMS = [
+  { id: 'dx-mlmdiary', label: 'MLMDiary Scraper', icon: Network, section: 'Indian Directories' },
+  { id: 'dx-indiamart', label: 'IndiaMART Scraper', icon: Factory, section: 'Indian Directories' },
+  { id: 'dx-justdial', label: 'Justdial Scraper', icon: Phone, section: 'Indian Directories' },
+  { id: 'dx-sulekha', label: 'Sulekha Scraper', icon: Wrench, section: 'Indian Directories' },
+  { id: 'dx-tradeindia', label: 'TradeIndia Scraper', icon: Store, section: 'Indian Directories' },
+  { id: 'dx-exportersindia', label: 'ExportersIndia Scraper', icon: Ship, section: 'Indian Directories' }
+];
 
 export default function Sidebar({
   activeTab,
@@ -49,6 +59,12 @@ export default function Sidebar({
       label: 'Scraping / Mining',
       icon: Pickaxe,
       children: MINING_ITEMS
+    },
+    {
+      id: 'extraction',
+      label: 'Data Extraction',
+      icon: FileSearch,
+      children: EXTRACTION_ITEMS
     },
     {
       id: 'followups',
@@ -84,9 +100,11 @@ export default function Sidebar({
     }
   ];
 
-  const miningActive = MINING_IDS.includes(activeTab);
-  const [miningOpen, setMiningOpen] = useState(true); // main work area: open by default
-  useEffect(() => { if (miningActive) setMiningOpen(true); }, [miningActive]);
+  // Groups with a submenu: open by default (main work areas); the group of the active page always opens
+  const [openGroups, setOpenGroups] = useState({ mining: true, extraction: true });
+  const activeGroup = navItems.find(i => i.children && i.children.some(c => c.id === activeTab))?.id;
+  useEffect(() => { if (activeGroup) setOpenGroups(prev => (prev[activeGroup] ? prev : { ...prev, [activeGroup]: true })); }, [activeGroup]);
+  const toggleGroup = (id) => setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));
 
   const handleNavClick = (id) => {
     setActiveTab(id);
@@ -183,32 +201,38 @@ export default function Sidebar({
                   );
                 });
               }
+              const groupOpen = !!openGroups[item.id];
+              const groupActive = activeGroup === item.id;
               return (
                 <div key={item.id} className="theme-nav-group">
                   <div
                     id={`nav-group-${item.id}`}
                     role="button"
                     tabIndex={0}
-                    aria-expanded={miningOpen}
-                    onClick={() => setMiningOpen(!miningOpen)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMiningOpen(!miningOpen); } }}
-                    className={`theme-nav-item ${miningActive && !miningOpen ? 'active' : ''}`}
+                    aria-expanded={groupOpen}
+                    onClick={() => toggleGroup(item.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(item.id); } }}
+                    className={`theme-nav-item ${groupActive && !groupOpen ? 'active' : ''}`}
                   >
                     <Icon size={17} strokeWidth={1.6} style={{ flexShrink: 0 }} />
                     <span className="theme-nav-label">{item.label}</span>
-                    {miningOpen ? <ChevronDown size={14} className="theme-nav-chevron" /> : <ChevronRight size={14} className="theme-nav-chevron" />}
+                    {groupOpen ? <ChevronDown size={14} className="theme-nav-chevron" /> : <ChevronRight size={14} className="theme-nav-chevron" />}
                   </div>
-                  {miningOpen && (
+                  {groupOpen && (
                     <div className="theme-nav-sub" role="group" aria-label={item.label}>
-                      {item.children.map(child => {
+                      {item.children.map((child, idx) => {
                         const ChildIcon = child.icon;
+                        const newSection = child.section && child.section !== item.children[idx - 1]?.section;
                         return (
+                          <React.Fragment key={child.id}>
+                          {newSection && <div className="theme-nav-section" role="presentation">{child.section}</div>}
                           <div key={child.id} id={`nav-item-${child.id}`} onClick={() => handleNavClick(child.id)}
                             className={`theme-nav-item theme-nav-subitem ${activeTab === child.id ? 'active' : ''}`}>
                             <ChildIcon size={15} strokeWidth={1.6} style={{ flexShrink: 0 }} />
                             <span className="theme-nav-label">{child.label}</span>
                             {child.soon && <span className="theme-nav-badge soon">Soon</span>}
                           </div>
+                          </React.Fragment>
                         );
                       })}
                     </div>

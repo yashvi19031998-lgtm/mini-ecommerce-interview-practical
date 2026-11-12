@@ -217,6 +217,10 @@ def normalize_phone(phone_str: Optional[str]) -> str:
             valid_phones.append(f"+91 {digits[:5]} {digits[5:]}")
         elif len(digits) == 12 and digits.startswith("91") and digits[2] in "6789":
             valid_phones.append(f"+91 {digits[2:7]} {digits[7:]}")
+        # Indian numbers written with the trunk 0 (09533376923 mobile, 08047763186 / 02225551234 landline)
+        elif len(digits) == 11 and digits.startswith("0") and digits[1] != "0":
+            national = digits[1:]
+            valid_phones.append(f"+91 {national[:5]} {national[5:]}" if national[0] in "6789" else f"+91 {national}")
         elif 10 <= len(digits) <= 13 and (cand.startswith("+") or cand.startswith("00") or "-" in cand or "(" in cand):
             valid_phones.append(cand)
 

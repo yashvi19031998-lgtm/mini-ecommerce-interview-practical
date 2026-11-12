@@ -95,6 +95,7 @@ PLATFORM_DOMAINS = {
     "fiverr.com", "freelancer.com", "clutch.co", "goodfirms.co", "ambitionbox.com", "glassdoor.com",
     "glassdoor.co.in", "naukri.com", "indeed.com", "zaubacorp.com", "tofler.in", "crunchbase.com",
     "yellowpages.in", "quora.com", "medium.com", "github.com", "eprocure.gov.in", "gem.gov.in",
+    "mlmdiary.com",
 }
 # Never useful as a lead.
 JUNK_DOMAINS = {
