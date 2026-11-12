@@ -309,7 +309,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 placeholder="Ahmedabad, Mumbai, Bengaluru, Pune, Delhi NCR, Remote / Worldwide, United States, UK..."
                 value={settings.target_cities || ''}
                 onChange={(e) => handleChange('target_cities', e.target.value)}
-              />
+              ></textarea>
               <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '3px' }}>
                 All scrapers will rotate and discover prospects across these regions automatically.
               </span>
@@ -323,7 +323,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 placeholder="software development company, web development agency, hire dedicated software developers..."
                 value={settings.default_keywords || ''}
                 onChange={(e) => handleChange('default_keywords', e.target.value)}
-              />
+              ></textarea>
               <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '3px' }}>
                 Used by search engines, dork harvesters, and B2B directories to extract leads.
               </span>
