@@ -266,6 +266,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                   For Gmail, generate a 16-character App Password at myaccount.google.com/apppasswords
                 </span>
+              </div>
+
               <div className="form-group" style={{ marginTop: '0.5rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
                   <input
