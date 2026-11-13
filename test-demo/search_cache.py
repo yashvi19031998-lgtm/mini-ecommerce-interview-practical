@@ -62,9 +62,15 @@ def _normalize(value: Any) -> Any:
     if isinstance(value, str):
         return " ".join(value.lower().split())
     if isinstance(value, (list, tuple, set)):
-        return sorted({_normalize(v) for v in value if _normalize(v) not in ("", None)}, key=str)
+        # Items may be unhashable (a dict sent where text was expected): dedupe on their JSON form.
+        items = {}
+        for v in value:
+            n = _normalize(v)
+            if n not in ("", None):
+                items.setdefault(json.dumps(n, sort_keys=True, ensure_ascii=False, default=str), n)
+        return [items[k] for k in sorted(items)]
     if isinstance(value, dict):
-        return {k: _normalize(v) for k, v in sorted(value.items())}
+        return {str(k): _normalize(v) for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))}
     return value
 
 

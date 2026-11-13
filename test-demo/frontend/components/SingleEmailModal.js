@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { outreachNames } from '../lib/leadNames';
 import { X, Send, Mail, Building, MapPin, Sparkles } from 'lucide-react';
 
 export default function SingleEmailModal({
@@ -16,12 +17,14 @@ export default function SingleEmailModal({
 
   useEffect(() => {
     if (lead) {
-      const comp = lead['Company Name'] || 'your team';
-      const loc = lead.Address || 'your area';
-      setSubject(`Partnership & Dedicated Tech Team for ${comp}`);
+      // A job-post title is never written into the e-mail as a company name (lib/leadNames.js)
+      const names = outreachNames(lead['Company Name']);
+      const loc = String(lead.Address || '').trim();
+      const where = names.isCompany ? `your impressive work at ${names.company}${loc ? ` in ${loc}` : ''}` : 'your recent post';
+      setSubject(names.isCompany ? `Partnership & Dedicated Tech Team for ${names.company}` : 'Dedicated Tech Team for your project');
       setMessage(
-        `Hi ${comp} Team,\n\n` +
-        `I noticed your impressive work at ${comp} in ${loc}. At Sangeeta Infotech, we specialize in high-impact software development, scalable web architectures, and full-stack engineering.\n\n` +
+        `Hi ${names.greeting},\n\n` +
+        `I noticed ${where}. At Sangeeta Infotech, we specialize in high-impact software development, scalable web architectures, and full-stack engineering.\n\n` +
         `We would love to discuss whether our developers can help streamline your upcoming technical roadmaps on a flexible model.\n\n` +
         `Would you have 10 minutes for a brief discovery call this week?`
       );
@@ -60,6 +63,9 @@ export default function SingleEmailModal({
         message: signature ? `${message}\n\n---\n${signature.trim()}` : message
       });
       onClose();
+    } catch {
+      // The page already showed why the send failed (bad login, do-not-contact rule...).
+      // Keep the pop-up open so the text is not lost; without this catch the error was left unhandled.
     } finally {
       setIsSending(false);
     }

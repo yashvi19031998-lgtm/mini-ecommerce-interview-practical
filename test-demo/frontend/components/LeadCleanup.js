@@ -183,6 +183,7 @@ export default function LeadCleanup({ onLeadsChanged }) {
       {scan?.history?.length > 0 && (
         <div className="theme-card-panel" style={{ marginBottom: 0 }}>
           <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}><History size={16} /> Cleanup history</div>
+          <div className="theme-table-scroll">
           <table className="jp-table">
             <thead><tr><th>When</th><th>Fields filled</th><th>Fixes</th><th>Backup</th><th /></tr></thead>
             <tbody>{scan.history.map(h => (
@@ -194,6 +195,7 @@ export default function LeadCleanup({ onLeadsChanged }) {
               </tr>
             ))}</tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

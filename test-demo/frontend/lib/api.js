@@ -544,6 +544,15 @@ export async function saveLeadEnrichment(changes) {
   return await apiFetch('/api/lead-care/enrichment/save', { method: 'POST', body: JSON.stringify({ changes }) });
 }
 
+// 49. 1-Hour Auto Scraper & Scheduler API
+export async function fetchSchedulerStatus() {
+  return await apiFetch('/api/scheduler/status');
+}
+
+export async function triggerSchedulerJob() {
+  return await apiFetch('/api/scheduler/trigger', { method: 'POST' });
+}
+
 // 15. Download master CSV (authenticated fetch, then save as a file)
 export async function downloadLeadsCsv() {
   const res = await fetch(`${BASE_URL}/api/export-csv`, { headers: await authHeaders() });

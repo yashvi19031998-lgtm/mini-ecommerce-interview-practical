@@ -62,17 +62,36 @@ def load_env():
 
 load_env()
 
-def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_duplicate_check: bool = False) -> dict:
+def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_duplicate_check: bool = False, company_name: str = "") -> dict:
     """
     Sends an email using Gmail SMTP credentials.
     CRITICAL SAFETY: Checks get_already_sent_emails(). If to_email was EVER sent
     an email previously, the send is BLOCKED immediately to prevent spamming!
+    Also enforces Do-Not-Contact blacklist rules (e.g. excluded companies like 8dots).
     """
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
     smtp_user = os.getenv("SMTP_USER", "")
     smtp_pass = os.getenv("SMTP_PASS", "")
-    from_email = os.getenv("SMTP_FROM_EMAIL", smtp_user or "sangeetainfotech19@gmail.com")
+    from_email = os.getenv("SMTP_FROM_EMAIL", smtp_user or "info@sangeetainfotech.co.in")
+
+    clean_email = str(to_email or "").strip().lower()
+
+    # DO-NOT-CONTACT / EXCLUDED COMPANIES SHIELD: checked first, before the mail login is even looked at,
+    # so a blocked address is always reported as blocked. If the rule itself cannot be evaluated the
+    # send is refused (fail closed) - a do-not-contact list must never be skipped by an error.
+    try:
+        from settings_manager import is_company_excluded
+        is_ex, ex_reason = is_company_excluded(company_name=company_name, email=clean_email)
+    except Exception as shield_err:
+        return {"success": False, "error": f"Do-not-contact check failed, e-mail not sent: {shield_err}"}
+    if is_ex:
+        print(f"       [EXCLUDED-COMPANY BLOCKED] {clean_email} ({company_name}): {ex_reason}")
+        return {
+            "success": False,
+            "error": f"Do-not-contact blacklist rule: {ex_reason}",
+            "excluded": True
+        }
 
     if not smtp_user or not smtp_pass:
         return {"success": False, "error": "SMTP credentials (SMTP_USER/SMTP_PASS) not configured in .env"}
@@ -80,7 +99,6 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
     if not to_email or "@" not in to_email:
         return {"success": False, "error": f"Invalid recipient email: {to_email}"}
 
-    clean_email = to_email.strip().lower()
 
     # STRICT DUPLICATE SHIELD: Under no circumstances allow sending to the same email twice!
     if not bypass_duplicate_check:

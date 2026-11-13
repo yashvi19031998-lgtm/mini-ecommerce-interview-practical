@@ -1109,14 +1109,19 @@ def main():
                 sub_tpl = settings.get("defaultSubject", "Web & Software Engineering Collaboration - {company}")
                 msg_tpl = settings.get("defaultMessage", "Hi {name},\n\nI came across {company}...")
                 
-                custom_sub = sub_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
-                custom_msg = msg_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+                try:
+                    from followup_sequence import outreach_names
+                except ImportError:  # keep sending with the plain name if the module is missing
+                    outreach_names = lambda name: (name, name)
+                msg_name, msg_company = outreach_names(comp_name)
+                custom_sub = sub_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
+                custom_msg = msg_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
                 
                 if sig and sig.strip()[:20] not in custom_msg:
                     custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
                 
                 print(f'  [AUTO-MAIL] Dispatching outreach to {raw_email}...')
-                mail_res = send_smtp_email(raw_email, custom_sub, custom_msg)
+                mail_res = send_smtp_email(raw_email, custom_sub, custom_msg, company_name=str(comp_name or ""))
                 if mail_res.get("success"):
                     lead["Email Status"] = "SENT"
                     lead["Status"] = "EMAIL_SENT"

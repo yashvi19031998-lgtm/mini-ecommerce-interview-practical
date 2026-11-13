@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { outreachNames } from '../lib/leadNames';
 import { X, MessageSquare, ExternalLink } from 'lucide-react';
 import { buildWhatsAppLink, logFollowupActivity } from '../lib/api';
 
@@ -38,7 +39,10 @@ export default function WhatsAppModal({
   const phone = lead['Mobile Number'] || '';
   const comp = lead['Company Name'] || 'there';
   const loc = lead.Address || 'India';
-  const filledMsg = template.replace('{company}', comp).replace('{name}', comp).replace('{location}', loc);
+  // A job-post title is never written into the message as a company name (lib/leadNames.js)
+  const names = outreachNames(lead['Company Name']);
+  const filledMsg = (names.isCompany ? template : template.replace('Hi {company} Team', 'Hi there'))
+    .replace('{company}', names.company).replace('{name}', names.isCompany ? names.company : 'there').replace('{location}', loc);
   const waUrl = buildWhatsAppLink(phone, comp, filledMsg);
 
   const handleOpenWhatsApp = () => {

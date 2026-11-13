@@ -38,9 +38,19 @@ except ImportError:
     lead_quality = None
     is_outreach_ready = lambda lead: False  # without the quality module, never auto-email
 
-AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "false").lower() in ("true", "1", "yes")
+_initial_settings = load_settings() if load_settings else {}
+# AUTO_SEND_EMAIL=false (env / workflow variable) is a hard off switch; otherwise the Settings toggle decides.
+try:
+    from settings_manager import auto_send_state
+    AUTO_SEND_EMAIL = auto_send_state(_initial_settings)[0]
+except ImportError:
+    AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "false").lower() in ("true", "1", "yes")
 AUTO_SYNC_SUPABASE = os.getenv("AUTO_SYNC_SUPABASE", "true").lower() in ("true", "1", "yes")
-MAX_PENDING_EMAILS_PER_RUN = int(os.getenv("MAX_PENDING_EMAILS_PER_RUN", "5"))  # Safe batch of 5 new leads per run
+try:
+    MAX_PENDING_EMAILS_PER_RUN = max(0, min(50, int(
+        os.getenv("MAX_PENDING_EMAILS_PER_RUN") or _initial_settings.get("maxPendingEmailsPerRun", 5))))
+except (TypeError, ValueError):
+    MAX_PENDING_EMAILS_PER_RUN = 5
 
 MASTER_CSV = "all_leads_master.csv"
 RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")
@@ -332,14 +342,30 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
         comp_name = lead_obj.get("company_name") or lead_obj.get("full_name") or "your company"
         loc_name = lead_obj.get("location") or "your region"
 
-        custom_sub = sub_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
-        custom_msg = msg_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+        # DO-NOT-CONTACT / EXCLUDED COMPANIES SHIELD (e.g. 8dots)
+        try:
+            from settings_manager import is_company_excluded
+            is_ex, ex_reason = is_company_excluded(company_name=comp_name, email=raw_email, website=lead_obj.get("website", ""), settings=settings)
+            if is_ex:
+                print(f"       -> [AUTO-MAIL-PENDING] [EXCLUDED-COMPANY BLOCKED] Skipping {raw_email} ({comp_name}): {ex_reason}")
+                lead_obj["email_status"] = "EXCLUDED_COMPANY"
+                continue
+        except Exception:
+            pass
+
+        try:
+            from followup_sequence import outreach_names
+        except ImportError:  # keep sending with the plain name if the module is missing
+            outreach_names = lambda name: (name, name)
+        msg_name, msg_company = outreach_names(comp_name)
+        custom_sub = sub_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
+        custom_msg = msg_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
 
         if sig and sig.strip()[:20] not in custom_msg:
             custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
 
         print(f"       -> [AUTO-MAIL-PENDING] Dispatching outreach to {raw_email} ({comp_name})...")
-        mail_res = send_smtp_email(raw_email, custom_sub, custom_msg)
+        mail_res = send_smtp_email(raw_email, custom_sub, custom_msg, company_name=comp_name)
         if mail_res.get("success"):
             lead_obj["email_status"] = "SENT"
             lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -406,8 +432,10 @@ def run_followup_step(registry: MasterLeadRegistry) -> None:
         print(f"[*] Follow-up sequence: {len(due)} due (auto-send OFF - send them from the dashboard).")
     elif due and send_smtp_email:
         sig = format_signature(load_settings()) if (format_signature and load_settings) else ""
+        company_by_email = {str(i.get("email", "")).strip().lower(): i.get("lead_name", "") for i in due}
         res = followup_sequence.send(
-            due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True),
+            due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True,
+                                                       company_name=company_by_email.get(str(to).strip().lower(), "")),
             signature=sig, limit=cfg["max_per_run"])
         print(f"[*] Follow-up sequence: sent {res['sent']}, failed {res['failed']} (limit {cfg['max_per_run']}).")
 

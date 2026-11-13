@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth-context';
 import { 
   Lock, Mail, User, Eye, EyeOff, ArrowRight, 
@@ -9,6 +9,10 @@ import {
 
 export default function AuthScreen() {
   const { signIn, signUp, bypassDemoLogin } = useAuth();
+  const [isLocalWorkspace, setIsLocalWorkspace] = useState(false);
+  useEffect(() => {
+    setIsLocalWorkspace(['localhost', '127.0.0.1', '[::1]', '::1'].includes(window.location.hostname));
+  }, []);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   
   const [fullName, setFullName] = useState('');
@@ -183,8 +187,12 @@ export default function AuthScreen() {
         </form>
 
         {/* Quick Local Access */}
+        {/* One-click local login: the server only honours it on this computer (localhost), so the
+            button is shown only there. On a deployed site it would appear and always fail. */}
+        {isLocalWorkspace && (
+        <>
         <div style={{ margin: '1.25rem 0 0.5rem', textAlign: 'center', position: 'relative' }}>
-          <span style={{ fontSize: '0.72rem', color: '#64748b', letterSpacing: '0.05em', background: '#0f172a', padding: '0 8px' }}>
+          <span style={{ fontSize: '0.72rem', color: '#64748b', letterSpacing: '0.05em', background: '#fff', padding: '0 8px' }}>
             OR LOCAL WORKSPACE ACCESS
           </span>
         </div>
@@ -217,6 +225,8 @@ export default function AuthScreen() {
           <Sparkles size={14} />
           One-Click Admin Login (Offline / Local Dev)
         </button>
+        </>
+        )}
 
         {/* Security Footer */}
         <div className="auth-footer-note">

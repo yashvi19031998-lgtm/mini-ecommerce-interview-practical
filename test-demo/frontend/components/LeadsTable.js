@@ -33,6 +33,26 @@ const isHotLead = (item) => {
   return score !== null && score >= HOT_SCORE;
 };
 
+const hasRealValue = (v) => !!v && String(v).trim() !== '' && String(v).trim() !== 'N/A';
+const hasEmailOf = (item) => { const em = item.Email || item.email; return hasRealValue(em) && String(em).includes('@'); };
+const hasWhatsAppOf = (item) => item.whatsapp_status === 'READY' || hasRealValue(item['Mobile Number']);
+const emailSentOf = (item) => ['SENT', 'EMAIL_SENT'].includes(String(item['Email Status'] || item.Status || '').toUpperCase());
+
+// One rule per quick filter - used both to filter the table and to count the pills, so the number on a
+// pill is always the number of rows it shows.
+const FILTER_RULES = {
+  all: () => true,
+  hot: isHotLead,
+  senior: (item) => /senior|lead/i.test(String(item.seniority_fit || '')),
+  wa_ready: hasWhatsAppOf,
+  with_email: hasEmailOf,
+  ready: (item) => hasEmailOf(item) || hasWhatsAppOf(item),
+  deal_budget: (item) => hasRealValue(item.deal_size_estimate) || hasRealValue(item.ai_budget),
+  sent: emailSentOf,
+  pending: (item) => !emailSentOf(item)
+};
+const matchesFilter = (item, id) => (FILTER_RULES[id] || FILTER_RULES.all)(item);
+
 const postedAgo = (item) => {
   const stamp = item.posted_at || item.first_seen_at;
   if (!stamp) return '';
@@ -54,7 +74,8 @@ export default function LeadsTable({
   onNavigateToScraper,
   onNavigateToImport,
   globalSearch = '',
-  externalFilter = null
+  externalFilter = null,
+  onFilterChange = null
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -74,8 +95,13 @@ export default function LeadsTable({
   // Sort
   const [sortByScore, setSortByScore] = useState(true);
 
-  // Sync external filter from KPI cards if provided
-  const activeFilter = externalFilter || filterStatus;
+  // The page owns the filter when it listens for changes (KPI cards and these pills then stay in step);
+  // otherwise the table keeps its own.
+  const activeFilter = onFilterChange ? (externalFilter || 'all') : filterStatus;
+  const applyFilter = (id) => {
+    setFilterStatus(id);
+    if (onFilterChange) onFilterChange(id);
+  };
 
   // Search effective
   const effectiveSearch = searchQuery || globalSearch;
@@ -101,33 +127,7 @@ export default function LeadsTable({
         }
       }
 
-      // Filter modes
-      if (activeFilter === 'hot') {
-        if (!isHotLead(item)) return false;
-      } else if (activeFilter === 'senior') {
-        const fit = String(item.seniority_fit || '').toLowerCase();
-        if (!fit.includes('senior') && !fit.includes('lead')) return false;
-      } else if (activeFilter === 'wa_ready') {
-        const hasWa = item.whatsapp_status === 'READY' || (item['Mobile Number'] && item['Mobile Number'] !== 'N/A');
-        if (!hasWa) return false;
-      } else if (activeFilter === 'with_email') {
-        const em = item.Email || item.email;
-        if (!em || !em.includes('@') || em === 'N/A') return false;
-      } else if (activeFilter === 'ready') {
-        const hasEmail = item.Email && item.Email.includes('@') && item.Email !== 'N/A';
-        const hasWa = item.whatsapp_status === 'READY' || (item['Mobile Number'] && item['Mobile Number'] !== 'N/A');
-        if (!hasEmail && !hasWa) return false;
-      } else if (activeFilter === 'deal_budget') {
-        if (!item.deal_size_estimate && !item.ai_budget) return false;
-      } else if (activeFilter === 'sent') {
-        const emailStatus = String(item['Email Status'] || item.Status || '').toUpperCase();
-        if (emailStatus !== 'SENT' && emailStatus !== 'EMAIL_SENT') return false;
-      } else if (activeFilter === 'pending') {
-        const emailStatus = String(item['Email Status'] || item.Status || '').toUpperCase();
-        if (emailStatus === 'SENT' || emailStatus === 'EMAIL_SENT') return false;
-      }
-
-      return true;
+      return matchesFilter(item, activeFilter);
     });
 
     if (sortByScore) {
@@ -175,11 +175,11 @@ export default function LeadsTable({
   // Quick Filter Pill definitions
   const filterPills = [
     { id: 'all', label: 'All Leads', icon: null, count: leads.length },
-    { id: 'hot', label: '🔥 Hot AI Leads', icon: Flame, count: leads.filter(l => isHotLead(l)).length },
-    { id: 'senior', label: '💼 Senior Matches', icon: Award, count: leads.filter(l => (l.seniority_fit || '').includes('Senior')).length },
-    { id: 'wa_ready', label: '📱 WhatsApp Ready', icon: MessageSquare, count: leads.filter(l => l.whatsapp_status === 'READY' || (l['Mobile Number'] && l['Mobile Number'] !== 'N/A')).length },
-    { id: 'with_email', label: '✉️ Verified Emails', icon: Mail, count: leads.filter(l => l.Email && l.Email.includes('@') && l.Email !== 'N/A').length },
-    { id: 'deal_budget', label: '💵 High Deal Fit', icon: DollarSign, count: leads.filter(l => l.deal_size_estimate).length },
+    { id: 'hot', label: '🔥 Hot AI Leads', icon: Flame, count: leads.filter(l => matchesFilter(l, 'hot')).length },
+    { id: 'senior', label: '💼 Senior Matches', icon: Award, count: leads.filter(l => matchesFilter(l, 'senior')).length },
+    { id: 'wa_ready', label: '📱 WhatsApp Ready', icon: MessageSquare, count: leads.filter(l => matchesFilter(l, 'wa_ready')).length },
+    { id: 'with_email', label: '✉️ Has Email', icon: Mail, count: leads.filter(l => matchesFilter(l, 'with_email')).length },
+    { id: 'deal_budget', label: '💵 High Deal Fit', icon: DollarSign, count: leads.filter(l => matchesFilter(l, 'deal_budget')).length },
   ];
 
   return (
@@ -193,7 +193,7 @@ export default function LeadsTable({
               <button
                 key={pill.id}
                 onClick={() => {
-                  setFilterStatus(pill.id);
+                  applyFilter(pill.id);
                   setCurrentPage(1);
                 }}
                 className={`leadsgen-filter-pill ${isActive ? 'active' : ''}`}
@@ -308,6 +308,8 @@ export default function LeadsTable({
           </button>
           <button
             onClick={() => {
+              const n = selectedIds.size;
+              if (!window.confirm(`Mark ${n} selected lead${n === 1 ? '' : 's'} as DISQUALIFIED?\n\nYou can change the stage back for each lead in the Pipeline Stage column.`)) return;
               selectedIds.forEach(id => onStatusChange && onStatusChange(id, 'DISQUALIFIED'));
               setSelectedIds(new Set());
             }}

@@ -33,6 +33,7 @@ import LeadImporter from '../components/LeadImporter';
 import SettingsView from '../components/SettingsView';
 import Dashboard from '../components/Dashboard';
 import JobPortalScraper from '../components/JobPortalScraper';
+import AutoScheduler from '../components/AutoScheduler';
 import FollowUpHistory from '../components/FollowUpHistory';
 import CrmSources from '../components/CrmSources';
 import Toast from '../components/Toast';
@@ -198,13 +199,25 @@ function DashboardContent() {
   const handleSendBulkEmail = async ({ lead_ids, subject, message, delay_ms }) => {
     try {
       const res = await sendBulkEmail({ lead_ids, subject, message, delay_ms });
-      setLeads(prev => prev.map(l => lead_ids.includes(l.id) ? {
+      // Only leads the server really e-mailed are marked as sent. Before, every selected lead was shown
+      // as EMAIL_SENT and the message counted all of them, even when some (or all) were refused.
+      const sentIds = new Set((res.results || []).filter(r => r.success).map(r => String(r.id)));
+      const sentCount = Number.isFinite(Number(res.sent)) ? Number(res.sent) : sentIds.size;
+      const failedCount = Number(res.failed) || 0;
+      setLeads(prev => prev.map(l => sentIds.has(String(l.id)) ? {
         ...l,
         Status: 'EMAIL_SENT',
         'Email Status': 'SENT',
         'Email Sent At': new Date().toISOString().replace('T', ' ').substring(0, 19)
       } : l));
-      showToast(`Campaign finished! ${res.sent || lead_ids.length} emails dispatched.`, 'success');
+      const firstError = (res.results || []).find(r => !r.success)?.error;
+      if (sentCount === 0) {
+        showToast(`No e-mails were sent. ${firstError || 'All selected leads were skipped.'}`, 'error');
+      } else if (failedCount > 0) {
+        showToast(`${sentCount} e-mail${sentCount === 1 ? '' : 's'} sent, ${failedCount} not sent. ${firstError || ''}`, 'info');
+      } else {
+        showToast(`Campaign finished! ${sentCount} e-mail${sentCount === 1 ? '' : 's'} dispatched.`, 'success');
+      }
       return res;
     } catch (err) {
       showToast(err.message || 'Bulk outreach error', 'error');
@@ -213,6 +226,11 @@ function DashboardContent() {
   };
 
   const handleStartScraperMode = async (mode) => {
+    // Started from small icons in several places (top bar, sidebar, leads page): always ask first.
+    const what = mode === 'all'
+      ? 'Start the master run (all sources) now?\n\nIt runs in the background for several minutes and, when auto e-mail is on, also sends intro e-mails to new qualified leads.'
+      : 'Start the quick scraper now?\n\nIt runs in the background for a few minutes and adds new leads to the list.';
+    if (!window.confirm(what)) return;
     try {
       const res = await startScraper(mode);
       setIsScraperRunning(true);
@@ -281,13 +299,19 @@ function DashboardContent() {
             else setIsSidebarCollapsed(prev => !prev);
           }}
           searchQuery={globalSearch}
-          onSearchChange={setGlobalSearch}
+          onSearchChange={(value) => {
+            // The top search bar searches the leads list: typing on any other page opens that list,
+            // otherwise nothing visible would happen.
+            setGlobalSearch(value);
+            if (value.trim() && activeTab !== 'leads') setActiveTab('leads');
+          }}
         />
 
         <div className="theme-scrollable-content">
           <div className="theme-content-padding">
-            {/* Real-time KPI Metric Summary (hidden on the Job Portal Scraper to give the form room) */}
-            {!['jobportal', 'followups', 'crmsources', 'searchengines'].includes(activeTab) && !activeTab.startsWith('mining-') && (
+            {/* Lead KPI cards: only on the two pages about the leads list. On tool pages (scrapers, settings,
+                bulk tools...) they pushed the tool itself below the fold. */}
+            {['dashboard', 'leads'].includes(activeTab) && (
             <StatsCards 
               leads={leads} 
               activeFilter={tableFilter}
@@ -389,6 +413,7 @@ function DashboardContent() {
               <LeadsTable
                 leads={leads}
                 externalFilter={tableFilter}
+                onFilterChange={setTableFilter}
                 onSelectLeadForEmail={(lead) => setSelectedLeadForEmail(lead)}
                 onSelectLeadForWhatsApp={(lead) => setSelectedLeadForWhatsApp(lead)}
                 onBulkEmailOpen={(ids) => {
@@ -420,6 +445,14 @@ function DashboardContent() {
                 onStopScraper={handleStopScraper}
                 onClearLogs={() => setScraperLogs([])}
                 backendOnline={backendOnline}
+              />
+            )}
+
+            {/* TAB: Auto Scraper (1-Hour) & Scheduler */}
+            {activeTab === 'autoscheduler' && (
+              <AutoScheduler
+                onNavigateToSettings={() => setActiveTab('settings')}
+                onNavigateToLeads={() => setActiveTab('leads')}
               />
             )}
 

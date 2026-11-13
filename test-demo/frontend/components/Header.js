@@ -60,7 +60,8 @@ export default function Header({
     followups: { root: 'LeadsGen AI', leaf: 'FollowUp History' },
     crmsources: { root: 'LeadsGen AI', leaf: 'CRM Sources' },
     leads: { root: 'LeadsGen AI', leaf: 'B2B Intelligence Database' },
-    scraper: { root: 'LeadsGen AI', leaf: '12 Autonomous Scrapers' },
+    scraper: { root: 'LeadsGen AI', leaf: 'Live Scrapers' },
+    autoscheduler: { root: 'LeadsGen AI', leaf: 'Auto Scraper (1-Hour)' },
     import: { root: 'LeadsGen AI', leaf: 'Import & Enrichment' },
     settings: { root: 'LeadsGen AI', leaf: 'Intelligence & SMTP Settings' }
   };
@@ -82,13 +83,6 @@ export default function Header({
           </svg>
         </button>
 
-        <div className="theme-header-star" title="Workspace Bookmarks">
-          <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#8a8f98" strokeWidth="1.5">
-            <path d="M10 3.5l2.1 4.3 4.7.6-3.4 3.3.8 4.7L10 14.2l-4.2 2.2.8-4.7L3.2 8.4l4.7-.6z" />
-          </svg>
-        </div>
-
-        <span className="theme-crumb-sep">/</span>
         <span className="theme-crumb-root">{crumb.root}</span>
         <span className="theme-crumb-sep">/</span>
         <span className="theme-crumb-leaf">{crumb.leaf}</span>
@@ -138,13 +132,6 @@ export default function Header({
           <Play size={17} fill={isScraperRunning ? '#1f9254' : 'none'} color={isScraperRunning ? '#1f9254' : 'currentColor'} />
         </button>
 
-        <div className="theme-header-notification-wrap" title="System alerts">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <rect x="3" y="4" width="14" height="12" rx="2.4" />
-            <path d="M12.6 4v12" />
-          </svg>
-          {isScraperRunning && <span className="theme-notif-badge"></span>}
-        </div>
       </div>
     </header>
   );

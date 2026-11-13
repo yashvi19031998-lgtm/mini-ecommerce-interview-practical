@@ -364,12 +364,29 @@ def commit_imported_leads(leads_to_commit: List[Dict[str, Any]], send_outreach_e
                 if raw_email and "@" in raw_email and raw_email.upper() != "N/A":
                     comp_name = lead_obj.get("company_name") or "your company"
                     loc_name = lead_obj.get("location") or "your region"
-                    custom_sub = sub_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
-                    custom_msg = msg_tpl.replace("{company}", comp_name).replace("{name}", comp_name).replace("{location}", loc_name)
+
+                    # DO-NOT-CONTACT / EXCLUDED COMPANIES SHIELD (e.g. 8dots)
+                    try:
+                        from settings_manager import is_company_excluded
+                        is_ex, ex_reason = is_company_excluded(company_name=comp_name, email=raw_email, website=lead_obj.get("website", ""), settings=settings)
+                        if is_ex:
+                            print(f"       -> [IMPORT-OUTREACH] [EXCLUDED-COMPANY BLOCKED] Skipping {raw_email} ({comp_name}): {ex_reason}")
+                            lead_obj["email_status"] = "EXCLUDED_COMPANY"
+                            continue
+                    except Exception:
+                        pass
+
+                    try:
+                        from followup_sequence import outreach_names
+                    except ImportError:  # keep sending with the plain name if the module is missing
+                        outreach_names = lambda name: (name, name)
+                    msg_name, msg_company = outreach_names(comp_name)
+                    custom_sub = sub_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
+                    custom_msg = msg_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
                     if sig and sig.strip()[:20] not in custom_msg:
                         custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
 
-                    res = send_smtp_email(raw_email, custom_sub, custom_msg)
+                    res = send_smtp_email(raw_email, custom_sub, custom_msg, company_name=comp_name)
                     if res.get("success"):
                         lead_obj["email_status"] = "SENT"
                         lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

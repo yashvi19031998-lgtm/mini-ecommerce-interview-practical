@@ -47,7 +47,7 @@ export default function StatsCards({ leads = [], onFilterClick = null, activeFil
         <div className="theme-kpi-label">Total B2B Leads</div>
         <div className="theme-kpi-val-row">
           <span className="theme-kpi-value">{total.toLocaleString()}</span>
-          <span className="theme-kpi-subtext">12 Scraper Engines</span>
+          <span className="theme-kpi-subtext">All lead sources</span>
         </div>
       </div>
 

@@ -249,6 +249,18 @@ def company_for_email(name: str) -> str:
     return n
 
 
+def outreach_names(name: str):
+    """(greeting name, company) for a first outreach e-mail.
+
+    A real company name is used for both ('Hi Acme Foods' / 'I came across Acme Foods'). A scraped
+    post title ('[Hiring] Senior React dev - Remote (USA only)') is never put in the e-mail: the
+    greeting becomes 'there' and the company 'your team'."""
+    if str(name or "").strip().lower() in ("your company", "your project", "your team", "n/a"):
+        name = ""  # placeholders used by callers when a lead has no company name
+    company = company_for_email(name)
+    return ("there", company) if company == "your team" else (company, company)
+
+
 def _template_for(item: Dict[str, Any], templates: List[Dict[str, str]]) -> Dict[str, str]:
     """The last scheduled step always gets the closing template; otherwise the wording follows how many
     follow-ups were actually sent (late steps may have been skipped)."""

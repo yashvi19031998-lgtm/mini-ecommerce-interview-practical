@@ -97,10 +97,10 @@ export default function ScraperConsole({
               onClick={() => onStartScraper('all')}
               disabled={isRunning}
               className="btn btn-primary btn-sm"
-              title="Executes unified master runner across all 12 channels (run_all_scrapers.py)"
+              title="Executes unified master runner across all channels (run_all_scrapers.py)"
             >
               <Play size={14} />
-              Master Run (All 12 Sources)
+              Master Run (All Sources)
             </button>
 
             {onNavigateToLeads && (
@@ -211,7 +211,7 @@ export default function ScraperConsole({
         <div className="console-body">
           {logs.length === 0 ? (
             <span style={{ color: '#8A8294' }}>
-              [SYSTEM] Standby. Click "Master Run (All 12 Sources)" or "Quick Search Run" to initiate lead discovery stream.
+              [SYSTEM] Standby. Click "Master Run (All Sources)" or "Quick Search Run" to initiate lead discovery stream.
             </span>
           ) : (
             logs.map((line, idx) => {

@@ -102,6 +102,32 @@ export default function MiningForm({
   const audId = `${idPrefix}-audience`;
   const titleId = titles?.id || `${idPrefix}-titles`;
 
+  useEffect(() => {
+    let active = true;
+    if ((!keywords.values || keywords.values.length === 0) && typeof window !== 'undefined') {
+      import('../lib/api').then(({ fetchSettings }) => {
+        fetchSettings().then(res => {
+          if (!active) return;
+          if (res?.success && res.settings) {
+            const s = res.settings;
+            if (keywords.values.length === 0 && Array.isArray(s.defaultKeywords) && s.defaultKeywords.length > 0) {
+              keywords.setValues(s.defaultKeywords.slice(0, keywords.max || 5));
+            }
+            if (location) {
+              if (location.city !== undefined && !location.city && s.defaultCity && location.setCity) {
+                location.setCity(s.defaultCity);
+              }
+              if (location.state !== undefined && !location.state && s.defaultState && location.setState) {
+                location.setState(s.defaultState);
+              }
+            }
+          }
+        }).catch(() => {});
+      }).catch(() => {});
+    }
+    return () => { active = false; };
+  }, []);
+
   const submit = (e) => {
     e.preventDefault();
     const final = { keywords: mergePending(keywords.values, kwId, keywords.max) };

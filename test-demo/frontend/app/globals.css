@@ -2482,3 +2482,232 @@ input, button, select, textarea {
 .mcs-list svg { color: var(--success-green); flex-shrink: 0; margin-top: 2px; }
 .mcs-not { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; color: var(--text-secondary); margin: 0; }
 .mcs-not svg { color: var(--warning-amber); flex-shrink: 0; margin-top: 2px; }
+
+/* ==============================================================================
+   RESTORED SHARED STYLES
+   The classes below are used by Settings, Live Scrapers, Import & Parse, the API
+   Keys panel and the e-mail / WhatsApp pop-ups, but their rules were lost in an
+   earlier restyle, so those screens showed as raw unstyled HTML (and the pop-ups
+   rendered inside the page instead of on top of it). Written to match the theme.
+   ============================================================================== */
+:root {
+  --font-code: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --bg-lavender-light: var(--kpi-lavender-bg);
+  --bg-lavender-subtle: #f6f6fd;
+  --bg-pink-soft: #fdeef3;
+  --accent-pink: #c2376b;
+  --accent: var(--primary-blue);
+  --warning: var(--warning-amber);
+  /* Used all over the components but only ever defined inside the toast styles, so icons and
+     headings coloured with them were invisible or fell back to black elsewhere. */
+  --primary-lavender: var(--primary-blue);
+  --success: var(--success-green);
+  --error: var(--danger-red);
+}
+
+/* ---- Text helpers ---- */
+.text-dim { color: var(--text-dim); }
+.text-muted { color: var(--text-muted); }
+.text-xs { font-size: 11.5px; }
+.text-sm { font-size: 12.5px; }
+.text-amber-400 { color: #f0a020; }
+.signals-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
+.score-badge-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.theme-kpi-badge.badge-pos { color: var(--text-secondary); }
+.jp-linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--primary-blue); cursor: pointer; text-decoration: underline; }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 18px; border-radius: 999px; border: 1px solid var(--border-med);
+  background: #fff; color: var(--text-primary); font: inherit; font-size: 13.5px; font-weight: 600;
+  line-height: 1.2; cursor: pointer; white-space: nowrap; text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.btn:hover { background: var(--bg-subtle); border-color: #d6d8db; }
+.btn:focus-visible, .btn-chip:focus-visible, .importer-tab-btn:focus-visible, .modal-close-btn:focus-visible {
+  outline: 2px solid var(--primary-blue); outline-offset: 2px;
+}
+.btn:disabled, .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.btn-sm { padding: 8px 14px; font-size: 13px; }
+.btn-primary { background: var(--primary-blue); border-color: var(--primary-blue); color: #fff; }
+.btn-primary:hover { background: var(--primary-blue-hover); border-color: var(--primary-blue-hover); }
+.btn-secondary { background: var(--bg-subtle-2); border-color: transparent; color: var(--text-primary); }
+.btn-secondary:hover { background: #e9e9ec; border-color: transparent; }
+.btn-danger { background: var(--danger-bg); border-color: transparent; color: var(--danger-red); }
+.btn-danger:hover { background: #fbdcd9; border-color: transparent; }
+.btn-whatsapp { background: #1fa855; border-color: #1fa855; color: #fff; }
+.btn-whatsapp:hover { background: #178a45; border-color: #178a45; }
+.btn-chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--border-med); background: #fff; color: var(--text-secondary);
+  font: inherit; font-size: 12px; cursor: pointer;
+}
+.btn-chip:hover { background: var(--bg-subtle); color: var(--text-primary); }
+.badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+/* ---- Form fields ---- */
+.form-input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border-med); border-radius: 10px;
+  background: #fff; color: var(--text-primary); font: inherit; font-size: 13.5px; line-height: 1.45;
+  outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-input::placeholder { color: var(--text-dim); }
+.form-input:hover { border-color: #cfd1d6; }
+.form-input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(26, 109, 255, 0.14); }
+.form-input:disabled { background: var(--bg-subtle); color: var(--text-muted); cursor: not-allowed; }
+textarea.form-input { resize: vertical; min-height: 84px; }
+.settings-note {
+  display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px;
+  background: var(--bg-subtle); border: 1px solid var(--border-light);
+  font-size: 12.5px; line-height: 1.55; color: var(--text-secondary);
+}
+.settings-note code { font-family: var(--font-code); font-size: 12px; background: #fff; border: 1px solid var(--border-light); border-radius: 5px; padding: 0 4px; }
+
+/* ---- Cards ---- */
+.glass-panel {
+  background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-card);
+  padding: 20px 22px; box-shadow: 0 1px 2px rgba(17, 18, 20, 0.03);
+}
+.signature-preview-box {
+  background: var(--bg-subtle); border: 1px dashed var(--border-med); border-radius: 12px;
+  padding: 12px 14px; font-size: 12.5px; line-height: 1.6; color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Pop-ups (single e-mail, bulk e-mail, WhatsApp) ---- */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 250; background: rgba(10, 12, 16, 0.55);
+  display: flex; align-items: center; justify-content: center; padding: 22px;
+}
+.modal-content {
+  width: 100%; max-width: 620px; max-height: calc(100vh - 44px); background: #fff; border-radius: 20px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--border-light);
+}
+.modal-header h2, .modal-header h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.modal-close-btn {
+  width: 30px; height: 30px; flex-shrink: 0; border: 0; border-radius: 50%; background: var(--bg-subtle);
+  color: var(--text-secondary); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.modal-close-btn:hover { background: var(--bg-subtle-2); color: var(--text-primary); }
+.modal-body { padding: 18px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
+  padding: 14px 22px 18px; border-top: 1px solid var(--border-light); background: #fff;
+}
+.modal-meta-strip {
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 10px 12px; border-radius: 12px;
+  background: var(--bg-subtle); font-size: 12.5px; color: var(--text-secondary);
+}
+.modal-meta-strip > * { display: inline-flex; align-items: center; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
+.wa-preview-box {
+  background: #e9f7ee; border: 1px solid #cdebd8; border-radius: 12px; padding: 12px 14px;
+  font-size: 13px; line-height: 1.55; color: var(--text-primary); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.campaign-progress-card { background: var(--bg-subtle); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: var(--text-secondary); }
+.progress-bar-track { height: 8px; border-radius: 999px; background: var(--bg-subtle-2); overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 999px; background: var(--primary-blue); transition: width 0.3s ease; }
+
+/* ---- Live Scrapers ---- */
+.scraper-alert-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 14px;
+  border-radius: 12px; background: var(--success-bg); color: var(--success-green); font-size: 13px; font-weight: 600;
+}
+.live-dot-pulse, .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success-green); flex-shrink: 0; animation: live-pulse 1.4s ease-in-out infinite; }
+@keyframes live-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
+@media (prefers-reduced-motion: reduce) { .live-dot-pulse, .pulse-dot { animation: none; } }
+.harvester-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; margin-top: 16px; }
+.harvester-card {
+  position: relative; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px;
+  border: 1px solid var(--border-light); border-radius: 14px; background: var(--bg-subtle); min-width: 0;
+}
+.harvester-card > * { min-width: 0; overflow-wrap: anywhere; }
+.harvester-icon-box {
+  width: 34px; height: 34px; border-radius: 10px; background: #fff; border: 1px solid var(--border-light);
+  display: inline-flex; align-items: center; justify-content: center; color: var(--primary-blue); margin-bottom: 4px;
+}
+.harvester-ready-tag {
+  position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; color: var(--success-green); background: var(--success-bg);
+  border-radius: 999px; padding: 2px 8px;
+}
+.console-window { margin-top: 16px; border-radius: 14px; overflow: hidden; background: #111214; border: 1px solid #23252b; }
+.console-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; background: var(--bg-subtle-2); color: var(--text-secondary); font-size: 12.5px;
+}
+.console-header .btn { background: #fff; border-color: var(--border-med); }
+.console-dots { display: inline-flex; gap: 6px; align-items: center; }
+.console-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.console-body {
+  padding: 14px 16px; min-height: 180px; max-height: 420px; overflow-y: auto; color: #e7e8ec;
+  font-family: var(--font-code); font-size: 12.5px; line-height: 1.65; overflow-wrap: anywhere;
+}
+
+/* ---- Import & Parse ---- */
+.importer-tab-bar { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: var(--bg-subtle-2); margin-top: 12px; }
+.importer-tab-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 0; border-radius: 999px;
+  background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.importer-tab-btn:hover { color: var(--text-primary); }
+.importer-tab-btn.active { background: #fff; color: var(--text-primary); box-shadow: 0 1px 3px rgba(17, 18, 20, 0.1); }
+.crm-table-card { background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-card); padding: 16px 18px; }
+.crm-table-responsive { overflow-x: auto; margin-top: 12px; }
+.crm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.crm-table th {
+  text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-muted); padding: 9px 10px; border-bottom: 1px solid var(--border-med); white-space: nowrap;
+}
+.crm-table td { padding: 10px; border-bottom: 1px solid var(--border-light); vertical-align: top; color: var(--text-secondary); overflow-wrap: anywhere; }
+.crm-table tr:last-child td { border-bottom: 0; }
+.source-pill, .outreach-badge {
+  display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 2px 9px;
+  font-size: 11px; font-weight: 600; white-space: nowrap; background: var(--bg-subtle); color: var(--text-secondary);
+}
+.outreach-badge.badge-pending { background: var(--warning-bg); color: var(--warning-amber); }
+.outreach-badge.badge-sent { background: var(--success-bg); color: var(--success-green); }
+
+/* ---- Leads table footer ---- */
+.theme-page-info { font-size: 12.5px; color: var(--text-muted); }
+.theme-page-controls { display: flex; align-items: center; gap: 8px; }
+.theme-page-indicator { font-size: 12.5px; color: var(--text-secondary); font-weight: 600; }
+
+/* ---- Login footer note ---- */
+.auth-footer-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; font-size: 11.5px; color: var(--text-muted); text-align: center; }
+
+/* ---- Phones: the top bar used to run off the right edge (search squeezed to one letter, status pill
+        and action buttons cut off). Keep the page name, drop what does not fit. ---- */
+@media (max-width: 900px) {
+  .theme-header { padding: 0 14px; gap: 8px; }
+  .theme-header-left { gap: 8px; min-width: 0; flex: 1; }
+  .theme-header-star, .theme-crumb-root, .theme-header-left .theme-crumb-sep { display: none; }
+  .theme-crumb-leaf { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .theme-header-center { flex: 0 1 190px; min-width: 0; }
+  .theme-header-right { gap: 6px; flex-shrink: 0; }
+  .theme-header-notification-wrap { display: none; }
+}
+@media (max-width: 600px) {
+  .theme-header-center { display: none; }
+  .theme-header-pill span:last-child { display: none; }
+  .theme-header-pill { padding: 7px; }
+  .modal-backdrop { padding: 10px; align-items: flex-end; }
+  .modal-content { max-height: calc(100vh - 20px); border-radius: 18px; }
+  .modal-footer .btn { flex: 1; }
+  .harvester-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Round 3 polish ---- */
+/* Sidebar: a long label next to a badge was cut off ("Leads Intellige…"). The badge is now compact
+   and never shrinks the label below its text when there is room. */
+.theme-nav-item .theme-nav-badge { font-size: 10.5px; padding: 1px 7px; flex-shrink: 0; }
+.theme-nav-item .theme-nav-label { min-width: 0; }
+/* Checkboxes were 13px - hard to hit on a phone */
+main input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; flex-shrink: 0; accent-color: var(--primary-blue); }
+.form-input[readonly], .form-input:read-only { background: var(--bg-subtle); color: var(--text-muted); }
+/* A long submenu name ("Contact Import & Dedupe") wraps onto a second line instead of being cut off */
+.theme-nav-subitem .theme-nav-label { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25; }

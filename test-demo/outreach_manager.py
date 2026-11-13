@@ -94,6 +94,11 @@ def generate_whatsapp_campaign(leads: List[Dict[str, Any]]) -> List[Dict[str, An
 def build_email_pitch(lead: Dict[str, Any]) -> tuple[str, str]:
     """Crafts personalized cold email subject & body."""
     company = lead.get("company_name") or "your project"
+    try:  # a scraped post title is not a company name: say 'your team' instead
+        from followup_sequence import company_for_email
+        company = company_for_email(company) if company != "your project" else company
+    except ImportError:
+        pass
     tech = lead.get("ai_tech_stack") or "Software Engineering"
     name = lead.get("full_name") or "there"
 
@@ -144,9 +149,22 @@ def run_email_outreach(batch_limit: int = 5) -> Dict[str, Any]:
 
     for lead in hot_email_leads[:batch_limit]:
         to_email = lead.get("email", "").split(",")[0].strip()
+        comp_name = lead.get("company_name") or ""
+
+        # DO-NOT-CONTACT / EXCLUDED COMPANIES SHIELD (e.g. 8dots)
+        try:
+            from settings_manager import is_company_excluded
+            is_ex, ex_reason = is_company_excluded(company_name=comp_name, email=to_email, website=lead.get("website", ""))
+            if is_ex:
+                print(f"    [-] Excluded company blocked: {ex_reason}")
+                lead["email_status"] = "EXCLUDED_COMPANY"
+                continue
+        except Exception:
+            pass
+
         subject, body = build_email_pitch(lead)
 
-        res = email_service.send_smtp_email(to_email=to_email, subject=subject, message_body=body)
+        res = email_service.send_smtp_email(to_email=to_email, subject=subject, message_body=body, company_name=comp_name)
         if res.get("success"):
             sent_count += 1
             lead["email_status"] = "SENT"

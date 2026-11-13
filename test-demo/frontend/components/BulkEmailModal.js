@@ -58,7 +58,7 @@ export default function BulkEmailModal({
         delay_ms: delayMs
       });
       if (res) {
-        setProgress({ sent: res.sent || validEmailLeads.length, failed: res.failed || 0, total: validEmailLeads.length, done: true });
+        setProgress({ sent: Number(res.sent) || 0, failed: Number(res.failed) || 0, total: validEmailLeads.length, done: true });
       }
     } catch {
       setProgress(p => ({ ...p, done: true }));

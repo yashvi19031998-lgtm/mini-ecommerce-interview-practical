@@ -1,12 +1,14 @@
 import os
 import sys
+import csv
 import time
 import json
 import threading
 import subprocess
 import pandas as pd
 from flask import Flask, render_template, request, jsonify, send_file
-from settings_manager import load_settings, save_settings, format_signature
+from werkzeug.exceptions import HTTPException
+from settings_manager import load_settings, save_settings, format_signature, auto_send_state
 from email_service import send_smtp_email
 import sync_to_supabase
 
@@ -20,6 +22,56 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 # Set FLASK_HOST=0.0.0.0 only when deploying behind auth + HTTPS.
 BIND_HOST = os.getenv("FLASK_HOST", "127.0.0.1")
 init_auth(app, BIND_HOST)
+
+
+# ------------------------------------------------------------------------------
+# API input / error safety net: every /api/* answer is JSON, and bad input is a
+# clear 400 instead of a crash page. (Registered after init_auth, so it runs only
+# for signed-in requests.)
+# ------------------------------------------------------------------------------
+@app.before_request
+def _require_json_object():
+    """A JSON body sent to /api/* must be an object ({...}); lists, text and broken JSON are refused."""
+    if not request.path.startswith("/api/") or request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return None
+    if request.files or not request.get_data(cache=True):
+        return None  # file upload, or no body at all (routes that need no input)
+    if request.mimetype in ("multipart/form-data", "application/x-www-form-urlencoded"):
+        return None
+    data = request.get_json(silent=True, force=True)
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "error": "Send the request as a JSON object."}), 400
+    return None
+
+
+@app.errorhandler(HTTPException)
+def _http_error(err):
+    if request.path.startswith("/api/"):
+        return jsonify({"success": False, "error": err.description or err.name}), err.code
+    return err
+
+
+@app.errorhandler(Exception)
+def _unexpected_error(err):
+    if isinstance(err, HTTPException):
+        return _http_error(err)
+    app.logger.exception("Unhandled error on %s %s", request.method, request.path)
+    if request.path.startswith("/api/"):
+        # Wrong value types in the request (text where a list was expected, ...) surface as these
+        if isinstance(err, (TypeError, AttributeError, KeyError)) and request.method != "GET":
+            return jsonify({"success": False, "error": "The request has a value of the wrong type."}), 400
+        return jsonify({"success": False, "error": "Something went wrong on the server. Please try again."}), 500
+    return "Internal Server Error", 500
+
+
+def _json_body():
+    """The request's JSON object, or {} when there is none."""
+    data = request.get_json(silent=True, force=True)
+    return data if isinstance(data, dict) else {}
+
+
+LEAD_STATUSES = {"NEW", "CONTACTED", "EMAIL_SENT", "REPLIED", "MEETING", "WON", "LOST", "DISQUALIFIED"}
+
 
 @app.after_request
 def add_header(response):
@@ -36,6 +88,10 @@ LEADS_CSV = MASTER_PATH if os.path.exists(MASTER_PATH) else os.path.join(BASE_DI
 scraper_process = None
 scraper_logs = []
 scraper_lock = threading.Lock()
+# One lock for every writer of the leads file (status changes, saves, cleanup, enrichment): the file is
+# read, changed and rewritten whole, so two writers at once would silently drop one of the changes.
+leads_write_lock = threading.RLock()
+MAX_BULK_EMAILS = 200
 
 def ensure_csv_status_column():
     """Ensure workflow columns exist (canonical snake_case names for the master CSV)."""
@@ -133,6 +189,12 @@ def update_lead_record(lead_id, updates):
     global _cached_leads_data
     if not os.path.exists(LEADS_CSV):
         return False
+    with leads_write_lock:
+        return _update_lead_record_locked(lead_id, updates)
+
+
+def _update_lead_record_locked(lead_id, updates):
+    global _cached_leads_data
     try:
         df = pd.read_csv(LEADS_CSV, dtype=str, keep_default_na=False)
         is_master = "lead_id" in df.columns
@@ -188,22 +250,29 @@ def get_leads():
 
 @app.route("/api/leads/<lead_id>/status", methods=["PATCH"])
 def patch_lead_status(lead_id):
-    data = request.json or {}
-    new_status = data.get("status")
+    data = _json_body()
+    new_status = str(data.get("status") or "").strip().upper()
     if not new_status:
         return jsonify({"success": False, "error": "status is required"}), 400
+    if new_status not in LEAD_STATUSES:
+        return jsonify({"success": False, "error": f"Unknown status. Use one of: {', '.join(sorted(LEAD_STATUSES))}."}), 400
     lead = _lead_info(lead_id)
-    old_status = str((lead or {}).get("status") or "NEW").upper()
-    success = update_lead_record(lead_id, {"Status": new_status})
-    if success and str(new_status).upper() != old_status:
-        followup_store.safe_log(lead_id, "status_change", f"Status: {old_status} → {str(new_status).upper()}",
-                                source="dashboard", lead_name=(lead or {}).get("name", ""),
-                                lead_email=(lead or {}).get("email", ""))
-    return jsonify({"success": success})
+    if not lead:
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+    old_status = str(lead.get("status") or "NEW").upper()
+    with leads_write_lock:
+        success = update_lead_record(lead_id, {"Status": new_status})
+    if not success:
+        return jsonify({"success": False, "error": "Could not write the leads file."}), 500
+    if new_status != old_status:
+        followup_store.safe_log(lead_id, "status_change", f"Status: {old_status} → {new_status}",
+                                source="dashboard", lead_name=lead.get("name", ""),
+                                lead_email=lead.get("email", ""))
+    return jsonify({"success": True})
 
 @app.route("/api/leads/send-email", methods=["POST"])
 def send_single_lead_email():
-    data = request.json or {}
+    data = _json_body()
     lead_id = data.get("id")
     to_email = data.get("to")
     subject = data.get("subject")
@@ -211,9 +280,15 @@ def send_single_lead_email():
 
     if not to_email or not subject or not message:
         return jsonify({"success": False, "error": "to, subject, and message required"}), 400
+    if not all(isinstance(v, str) for v in (to_email, subject, message)):
+        return jsonify({"success": False, "error": "to, subject, and message must be text"}), 400
 
-    # User manually clicked Send in UI: allow manual test/send with bypass_duplicate_check=True
-    result = send_smtp_email(to_email, subject, message, bypass_duplicate_check=True)
+    # User manually clicked Send in UI: allow manual test/send with bypass_duplicate_check=True.
+    # The do-not-contact list is never bypassed: the lead's company name goes to the shield too.
+    result = send_smtp_email(to_email, subject, message, bypass_duplicate_check=True,
+                             company_name=(_lead_info(lead_id) or {}).get("name", ""))
+    if result.get("excluded"):
+        return jsonify({"success": False, "error": result.get("error"), "excluded": True}), 403
     if result.get("success"):
         now_str = time.strftime("%Y-%m-%d %H:%M:%S")
         update_lead_record(lead_id, {
@@ -230,14 +305,21 @@ def send_single_lead_email():
 
 @app.route("/api/leads/bulk-email", methods=["POST"])
 def send_bulk_leads_email():
-    data = request.json or {}
+    data = _json_body()
     lead_ids = data.get("lead_ids", [])
     subject_tpl = data.get("subject", "")
     message_tpl = data.get("message", "")
-    delay_ms = int(data.get("delay_ms", 1500))
+    try:
+        delay_ms = max(0, min(60000, int(data.get("delay_ms", 1500))))
+    except (TypeError, ValueError):
+        delay_ms = 1500
 
     if not lead_ids or not subject_tpl or not message_tpl:
         return jsonify({"success": False, "error": "lead_ids, subject, and message are required"}), 400
+    if not isinstance(lead_ids, list) or not isinstance(subject_tpl, str) or not isinstance(message_tpl, str):
+        return jsonify({"success": False, "error": "lead_ids must be a list; subject and message must be text"}), 400
+    if len(lead_ids) > MAX_BULK_EMAILS:
+        return jsonify({"success": False, "error": f"Send to at most {MAX_BULK_EMAILS} leads at a time."}), 400
 
     all_leads = {l["id"]: l for l in read_leads()}
     settings = load_settings()
@@ -260,24 +342,25 @@ def send_bulk_leads_email():
             failed_count += 1
             continue
 
-        comp = lead.get("Company Name", "your company")
-        name = comp
-        loc = lead.get("Address", "your region")
+        comp = str(lead.get("Company Name") or "")
+        # A job-post title is never used as a name in the e-mail text (see followup_sequence.outreach_names)
+        name, msg_company = followup_sequence.outreach_names(comp)
+        loc = str(lead.get("Address") or "").strip() or "your region"
 
         sub = (subject_tpl
-               .replace("{company}", comp)
+               .replace("{company}", msg_company)
                .replace("{name}", name)
                .replace("{location}", loc))
 
         body = (message_tpl
-                .replace("{company}", comp)
+                .replace("{company}", msg_company)
                 .replace("{name}", name)
                 .replace("{location}", loc))
 
         if sig and sig.strip()[:20] not in body:
             body = f"{body}\n\n---\n{sig.strip()}"
 
-        res = send_smtp_email(to_email, sub, body)
+        res = send_smtp_email(to_email, sub, body, company_name=str(comp or ""))
         if res.get("success"):
             sent_count += 1
             now_str = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -321,7 +404,7 @@ def start_scraper():
     if scraper_process is not None and scraper_process.poll() is None:
         return jsonify({"success": False, "error": "Scraper is already running!"}), 400
 
-    data = request.json or {}
+    data = _json_body()
     mode = data.get("mode", "quick")  # "quick" -> scraper.py, "all" -> run_all_scrapers.py
     script_to_run = "run_all_scrapers.py" if mode == "all" else "scraper.py"
 
@@ -397,9 +480,11 @@ def trigger_supabase_sync():
 @app.route("/api/settings", methods=["GET", "POST"])
 def handle_settings():
     if request.method == "POST":
-        data = request.json or {}
-        save_settings(data)
-        return jsonify({"success": True, "settings": data})
+        data = _json_body()
+        if not data:
+            return jsonify({"success": False, "error": "No settings were sent."}), 400
+        saved = save_settings(data)  # merges into the saved file; never stores passwords
+        return jsonify({"success": True, "settings": saved})
     else:
         settings = load_settings()
         sig = format_signature(settings)
@@ -433,6 +518,83 @@ def export_csv():
     return "No leads CSV found", 404
 
 # ==============================================================================
+# 1-HOUR AUTO SCRAPER & SCHEDULER STATUS
+# ==============================================================================
+@app.route("/api/scheduler/status", methods=["GET"])
+def get_scheduler_status():
+    settings = load_settings()
+    is_running = os.path.exists(os.path.join(BASE_DIR, ".scraper_runner.lock"))
+
+    # logs/scraper_runs.csv has one row per scraper; a "run" is every row sharing a run_id.
+    rows = []
+    runs_file = os.path.join(BASE_DIR, "logs", "scraper_runs.csv")
+    if os.path.exists(runs_file):
+        try:
+            with open(runs_file, mode="r", encoding="utf-8-sig", newline="") as f:
+                rows = [r for r in csv.reader(f) if len(r) >= 9 and r[0] != "run_id"]
+        except (OSError, csv.Error) as e:
+            print(f"[WARN] Error reading scraper runs log: {e}")
+
+    def _num(v):
+        try:
+            return int(v or 0)
+        except ValueError:
+            return 0
+
+    run_ids = {r[0] for r in rows}
+    recent = [{
+        "run_id": r[0], "start_time": r[1], "end_time": r[2], "scraper_name": r[3], "status": r[4],
+        "records": r[5], "added": r[6], "updated": r[7], "duplicates": r[8],
+        "error_summary": r[9] if len(r) > 9 else "",
+    } for r in reversed(rows[-50:])]
+    auto_send, auto_send_reason = auto_send_state(settings)
+
+    return jsonify({
+        "success": True,
+        "is_running": is_running,
+        "schedule": "Hourly (Automated 1-Hr Workflow)",
+        "cron": "23 * * * *",
+        "last_run": rows[-1][1] if rows else "",
+        "total_runs": len(run_ids),
+        "total_scraper_rows": len(rows),
+        "total_added": sum(_num(r[6]) for r in rows),
+        "auto_send_email": auto_send,
+        "auto_send_reason": auto_send_reason,
+        "smtp_configured": bool(os.getenv("SMTP_USER") and os.getenv("SMTP_PASS")),
+        "max_pending_emails": settings.get("maxPendingEmailsPerRun", 5),
+        "default_keywords": settings.get("defaultKeywords", []),
+        "default_city": settings.get("defaultCity", "Ahmedabad"),
+        "default_state": settings.get("defaultState", "Gujarat"),
+        "excluded_companies": settings.get("excludedCompanies", ["8dots"]),
+        "runs": recent
+    })
+
+
+_scheduler_thread = None
+
+
+@app.route("/api/scheduler/trigger", methods=["POST"])
+def trigger_scheduler_run():
+    global _scheduler_thread
+    lock_file = os.path.join(BASE_DIR, ".scraper_runner.lock")
+    # The lock file appears a moment after the script starts: also refuse while our own thread is
+    # alive, or two quick clicks would start two runs (and e-mail the same leads twice).
+    if os.path.exists(lock_file) or (_scheduler_thread is not None and _scheduler_thread.is_alive()):
+        return jsonify({"success": False, "error": "A 1-hour scraper job is already executing right now."}), 409
+
+    def _run_bg():
+        try:
+            py_bin = sys.executable or "python"
+            subprocess.run([py_bin, os.path.join(BASE_DIR, "run_all_scrapers.py")], cwd=BASE_DIR, check=False)
+            _cached_leads_data.clear()
+        except Exception as err:
+            print(f"[ERROR] Failed to run automated scraper in background: {err}")
+            
+    _scheduler_thread = threading.Thread(target=_run_bg, daemon=True)
+    _scheduler_thread.start()
+    return jsonify({"success": True, "message": "1-Hour Lead Scraper & Auto-Outreach triggered successfully."})
+
+# ==============================================================================
 # IMPORT LEADS & AUTOMATION ENGINE ROUTES
 # ==============================================================================
 import lead_importer
@@ -462,7 +624,7 @@ def import_chat():
             else:
                 chat_text = raw_bytes.decode("utf-8", errors="ignore")
         elif request.is_json:
-            chat_text = request.json.get("text", "")
+            chat_text = _json_body().get("text", "")
         elif request.form and "text" in request.form:
             chat_text = request.form.get("text", "")
 
@@ -478,7 +640,7 @@ def import_chat():
             except Exception:
                 pass
 
-        if not chat_text.strip():
+        if not isinstance(chat_text, str) or not chat_text.strip():
             return jsonify({"success": False, "error": "No chat content or file uploaded."}), 400
 
         leads = lead_importer.parse_whatsapp_chat(chat_text)
@@ -490,8 +652,9 @@ def import_chat():
 @app.route("/api/import/raw-text", methods=["POST"])
 def import_raw_text():
     try:
-        data = request.json or {}
-        raw_text = data.get("text", "").strip()
+        data = _json_body()
+        raw_text = data.get("text", "")
+        raw_text = raw_text.strip() if isinstance(raw_text, str) else ""
         crawl_urls = bool(data.get("crawl_urls", True))
 
         if not raw_text:
@@ -507,12 +670,15 @@ def import_raw_text():
 def import_commit():
     try:
         global _cached_leads_data
-        data = request.json or {}
+        data = _json_body()
         leads = data.get("leads", [])
         send_outreach_email = bool(data.get("send_outreach_email", False))
 
-        if not leads:
+        if not isinstance(leads, list) or not leads:
             return jsonify({"success": False, "error": "No leads selected to import."}), 400
+        leads = [l for l in leads if isinstance(l, dict)]
+        if not leads:
+            return jsonify({"success": False, "error": "The selected leads are not valid records."}), 400
 
         result = lead_importer.commit_imported_leads(
             leads_to_commit=leads,
@@ -534,7 +700,7 @@ import job_portals
 from lead_normalizer import MasterLeadRegistry
 
 MAX_JOBS_PER_SAVE = 500
-job_save_lock = threading.Lock()
+job_save_lock = leads_write_lock
 
 
 @app.route("/api/job-portals", methods=["GET"])
@@ -764,8 +930,10 @@ def followups_sequence_send():
         return jsonify({"success": False, "error": "None of the selected follow-ups are due any more."}), 400
     # Follow-ups go to an address we already emailed, so the one-email-per-address shield is bypassed
     # here on purpose - only for steps the sequence planner marked as due.
+    company_by_email = {str(i.get("email", "")).strip().lower(): i.get("lead_name", "") for i in due}
     result = followup_sequence.send(
-        due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True),
+        due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True,
+                                                   company_name=company_by_email.get(str(to).strip().lower(), "")),
         signature=format_signature(load_settings()))
     return jsonify({"success": True, **result, "not_due": len(wanted) - len(due)})
 

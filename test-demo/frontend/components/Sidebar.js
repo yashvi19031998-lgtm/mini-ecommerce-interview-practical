@@ -161,7 +161,12 @@ export default function Sidebar({
       id: 'scraper',
       label: 'Live Scrapers',
       icon: Terminal,
-      badge: isScraperRunning ? 'RUNNING' : '12 READY'
+      badge: isScraperRunning ? 'RUNNING' : 'READY'
+    },
+    {
+      id: 'autoscheduler',
+      label: 'Auto Scraper (1-Hr)',
+      icon: CalendarClock
     },
     {
       id: 'import',
