@@ -18,7 +18,7 @@
   "defaultCity": "Ahmedabad",
   "defaultState": "Gujarat",
   "autoSendEmail": true,
-  "maxPendingEmailsPerRun": 5,
+  "maxPendingEmailsPerRun": 0,
   "excludedCompanies": [
     "8dots"
   ],

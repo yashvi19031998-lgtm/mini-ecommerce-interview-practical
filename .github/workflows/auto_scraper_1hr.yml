@@ -19,6 +19,9 @@ jobs:
   scrape-and-commit:
     runs-on: ubuntu-latest
     timeout-minutes: 50 # a hung scraper must not burn 6 hours or overlap the next run
+    # Log timestamps in India time, so the 12 AM daily report (daily_report.yml) counts the right day
+    env:
+      TZ: Asia/Kolkata
 
     defaults:
       run:
@@ -82,7 +85,8 @@ jobs:
           # --- settings (Settings -> Secrets and variables -> Actions -> Variables) ---
           # Auto-email is ON by default in 1-hour auto scraper (can be overridden via repo vars)
           AUTO_SEND_EMAIL: ${{ vars.AUTO_SEND_EMAIL || 'true' }}
-          MAX_PENDING_EMAILS_PER_RUN: ${{ vars.MAX_PENDING_EMAILS_PER_RUN || '5' }}
+          MAX_PENDING_EMAILS_PER_RUN: ${{ vars.MAX_PENDING_EMAILS_PER_RUN || '0' }}
+          MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '300' }}
           MIN_AI_SCORE_FOR_AUTO_EMAIL: ${{ vars.MIN_AI_SCORE_FOR_AUTO_EMAIL || '7' }}
           MIN_AI_SCORE_FOR_SLACK: ${{ vars.MIN_AI_SCORE_FOR_SLACK || '7' }}
           AI_QUALIFY_LIMIT: ${{ vars.AI_QUALIFY_LIMIT || '40' }}

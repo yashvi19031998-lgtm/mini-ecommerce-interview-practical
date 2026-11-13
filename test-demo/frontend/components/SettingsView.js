@@ -54,7 +54,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
           default_city: s.default_city || s.defaultCity || prev.default_city || 'Ahmedabad',
           default_state: s.default_state || s.defaultState || prev.default_state || 'Gujarat',
           auto_send_email: s.auto_send_email !== undefined ? s.auto_send_email : (s.autoSendEmail !== undefined ? s.autoSendEmail : true),
-          max_pending_emails: s.max_pending_emails || s.maxPendingEmailsPerRun || prev.max_pending_emails || 5,
+          max_pending_emails: s.max_pending_emails ?? s.maxPendingEmailsPerRun ?? prev.max_pending_emails ?? 5,
           excluded_companies: Array.isArray(s.excludedCompanies || s.excluded_companies)
             ? (s.excludedCompanies || s.excluded_companies).join(', ')
             : (s.excludedCompanies || s.excluded_companies || prev.excluded_companies || '8dots'),
@@ -99,7 +99,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
         defaultCity: settings.default_city,
         defaultState: settings.default_state,
         autoSendEmail: Boolean(settings.auto_send_email),
-        maxPendingEmailsPerRun: Number(settings.max_pending_emails || 5),
+        // 0 = no per-run limit (every qualified lead found is e-mailed; a daily limit still applies)
+        maxPendingEmailsPerRun: Math.max(0, Math.floor(Number(settings.max_pending_emails) || 0)),
         excludedCompanies: excludedArray,
         senderName: settings.sender_name,
         defaultSubject: settings.default_subject,
@@ -364,17 +365,17 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Max Automated Emails Per 1-Hour Run (Safety Batch)</label>
+                <label className="form-label">Max Automated Emails Per 1-Hour Run (0 = no limit)</label>
                 <input
                   type="number"
-                  min={1}
-                  max={50}
+                  min={0}
                   className="form-input"
                   value={settings.max_pending_emails ?? 5}
-                  onChange={(e) => handleChange('max_pending_emails', Number(e.target.value))}
+                  onChange={(e) => handleChange('max_pending_emails', Math.max(0, Math.floor(Number(e.target.value) || 0)))}
                 />
                 <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Limits volume per cycle to maintain high domain reputation and avoid spam flags.
+                  0 = every qualified lead found is e-mailed in the same run. To protect the Gmail account the app
+                  never sends more than 300 e-mails in one day (Gmail blocks sending above about 500); the rest go the next day.
                 </span>
               </div>
 

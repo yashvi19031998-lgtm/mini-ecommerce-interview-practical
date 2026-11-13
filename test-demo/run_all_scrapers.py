@@ -46,11 +46,36 @@ try:
 except ImportError:
     AUTO_SEND_EMAIL = os.getenv("AUTO_SEND_EMAIL", "false").lower() in ("true", "1", "yes")
 AUTO_SYNC_SUPABASE = os.getenv("AUTO_SYNC_SUPABASE", "true").lower() in ("true", "1", "yes")
-try:
-    MAX_PENDING_EMAILS_PER_RUN = max(0, min(50, int(
-        os.getenv("MAX_PENDING_EMAILS_PER_RUN") or _initial_settings.get("maxPendingEmailsPerRun", 5))))
-except (TypeError, ValueError):
-    MAX_PENDING_EMAILS_PER_RUN = 5
+# Intro e-mails per run. 0 = no per-run limit: every qualified lead found is e-mailed (still subject to
+# the daily cap below). Settings decides; the MAX_PENDING_EMAILS_PER_RUN variable only applies when the
+# setting is missing (e.g. a fresh install).
+def _int_or(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+_per_run_setting = _initial_settings.get("maxPendingEmailsPerRun")
+MAX_PENDING_EMAILS_PER_RUN = max(0, _int_or(
+    _per_run_setting if _per_run_setting not in (None, "") else os.getenv("MAX_PENDING_EMAILS_PER_RUN"), 5))
+# Gmail suspends sending for ~24 h above about 500 recipients a day (free accounts). Stay well below it,
+# counting every mail the app sent today (manual, bulk, follow-ups and this run).
+MAX_EMAILS_PER_DAY = max(1, _int_or(os.getenv("MAX_EMAILS_PER_DAY"), 300))
+# Stop the run's e-mailing after this many failures in a row (wrong password, Gmail block...): retrying
+# every lead only hammers Gmail and marks good leads FAILED.
+MAX_CONSECUTIVE_SEND_FAILURES = 3
+
+
+def emails_sent_today(path=None):
+    """How many e-mails logs/sent_emails.csv records for today (local date)."""
+    path = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs", "sent_emails.csv")
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    try:
+        with open(path, encoding="utf-8", newline="") as fh:
+            return sum(1 for row in csv.DictReader(fh) if str(row.get("sent_at", "")).startswith(today))
+    except OSError:
+        return 0
 
 MASTER_CSV = "all_leads_master.csv"
 RUNS_LOG_CSV = os.path.join("logs", "scraper_runs.csv")
@@ -256,13 +281,20 @@ def release_run_lock():
             pass
 
 
-def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: int = 5, delay_sec: float = 2.0) -> int:
+def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: int = 5, delay_sec: float = 2.0,
+                                     daily_cap: int = None, sent_today: int = None) -> int:
     """
     Scans the master registry for leads that have not received outreach emails yet
     (email_status != 'SENT'), cross-references with permanent sent history and blacklist domains,
-    and dispatches personalized outreach emails in controlled batches.
+    and dispatches personalized outreach emails.
+
+    max_batch: most e-mails this run; 0 = no per-run limit (every qualified lead).
+    daily_cap: most e-mails per day across the whole app (Gmail limit protection).
+    The run also stops e-mailing after MAX_CONSECUTIVE_SEND_FAILURES failures in a row.
     """
-    if not AUTO_SEND_EMAIL or not send_smtp_email or max_batch <= 0:
+    daily_cap = MAX_EMAILS_PER_DAY if daily_cap is None else daily_cap
+    sent_today = emails_sent_today() if sent_today is None else sent_today
+    if not AUTO_SEND_EMAIL or not send_smtp_email or max_batch < 0:
         print("       [AUTO-MAIL-PENDING] Auto-email dispatch is disabled for safety. Use Dashboard UI to send outreach emails.")
         return 0
 
@@ -302,10 +334,24 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
                     sent_emails_seen.add(e_clean)
 
     dispatched = 0
+    failures_in_row = 0
     from lead_normalizer import EMAIL_BLACKLIST_DOMAINS
 
+    if sent_today >= daily_cap:
+        print(f"       [AUTO-MAIL-PENDING] Daily limit reached ({sent_today}/{daily_cap} e-mails today). "
+              f"The rest are sent on the next run after midnight.")
+        return 0
+
     for lead_obj in registry.leads:
-        if dispatched >= max_batch:
+        if max_batch and dispatched >= max_batch:
+            print(f"       [AUTO-MAIL-PENDING] Per-run limit of {max_batch} reached; the rest go in the next run.")
+            break
+        if sent_today + dispatched >= daily_cap:
+            print(f"       [AUTO-MAIL-PENDING] Daily limit of {daily_cap} e-mails reached; the rest go tomorrow.")
+            break
+        if failures_in_row >= MAX_CONSECUTIVE_SEND_FAILURES:
+            print(f"       [AUTO-MAIL-PENDING] Stopped after {failures_in_row} failed sends in a row - check the "
+                  f"Gmail login (Settings -> Send Test Verification Email). Unsent leads are tried next run.")
             break
 
         status = str(lead_obj.get("email_status", "")).strip().upper()
@@ -375,10 +421,14 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
                                     lead_email=raw_email)
             print(f"       -> [AUTO-MAIL-PENDING] [SUCCESS] Delivered via Gmail SMTP.")
             dispatched += 1
+            failures_in_row = 0
             if delay_sec > 0:
                 time.sleep(delay_sec)
+        elif mail_res.get("excluded"):
+            lead_obj["email_status"] = "EXCLUDED_COMPANY"
         else:
             lead_obj["email_status"] = "FAILED"
+            failures_in_row += 1
             print(f"       -> [AUTO-MAIL-PENDING] [FAILED] {mail_res.get('error')}")
 
     return dispatched
@@ -593,9 +643,10 @@ def run_all_scrapers():
             print(f"[WARN] Lead quality step notice: {e}")
 
     # Step 5: Outreach to qualified leads only (reload: steps 4a/4b rewrote the CSV)
-    if AUTO_SEND_EMAIL and send_smtp_email and MAX_PENDING_EMAILS_PER_RUN > 0:
+    if AUTO_SEND_EMAIL and send_smtp_email:
         registry.load_master()
-        print(f"\n[*] Step 5: Emailing AI-qualified leads (batch limit: {MAX_PENDING_EMAILS_PER_RUN})...")
+        per_run = MAX_PENDING_EMAILS_PER_RUN or "none - every qualified lead"
+        print(f"\n[*] Step 5: Emailing AI-qualified leads (per-run limit: {per_run}; daily limit: {MAX_EMAILS_PER_DAY})...")
         pending_sent = dispatch_pending_outreach_emails(registry, max_batch=MAX_PENDING_EMAILS_PER_RUN)
         print(f"[*] Outreach emails sent this run: {pending_sent}")
         if not registry.save_master_safely():

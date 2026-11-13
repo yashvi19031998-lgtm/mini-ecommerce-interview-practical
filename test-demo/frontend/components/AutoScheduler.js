@@ -47,7 +47,9 @@ export default function AutoScheduler({ onNavigateToSettings, onNavigateToLeads 
   const handleTriggerRun = async () => {
     // A full cycle runs every scraper and - when auto-send is on - e-mails real people. Never on one stray click.
     const emailNote = data?.auto_send_email
-      ? `It will also send up to ${data?.max_pending_emails || 5} intro e-mails to real leads.`
+      ? (Number(data?.max_pending_emails) === 0
+          ? 'It will also send intro e-mails to EVERY qualified lead it finds (no per-run limit; at most 300 a day).'
+          : `It will also send up to ${data?.max_pending_emails ?? 5} intro e-mails to real leads.`)
       : 'Auto e-mail is off, so no e-mails will be sent.';
     if (!window.confirm(`Run the full scraping cycle now? It can take several minutes.
 
@@ -152,7 +154,7 @@ ${emailNote}`)) return;
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               {data?.auto_send_email
-                ? `Max ${data?.max_pending_emails || 5} outreach emails per cycle${data?.smtp_configured === false ? ' · mail login missing in .env' : ''}`
+                ? `${Number(data?.max_pending_emails) === 0 ? 'Every qualified lead (no per-run limit)' : `Max ${data?.max_pending_emails ?? 5} outreach emails per cycle`} · max ${data?.max_emails_per_day ?? 300}/day${data?.smtp_configured === false ? ' · mail login missing in .env' : ''}`
                 : (data?.auto_send_reason || 'Auto e-mail is off')}
             </div>
           </div>

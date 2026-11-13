@@ -1,0 +1,62 @@
+name: Daily Lead Report (12 AM IST)
+
+on:
+  schedule:
+    # 18:30 UTC = 00:00 India time. GitHub may start scheduled jobs a few minutes late.
+    - cron: '30 18 * * *'
+  workflow_dispatch: # Run it by hand from the Actions tab (e.g. to test, or to resend a day)
+    inputs:
+      report_date:
+        description: 'Day to report (YYYY-MM-DD). Empty = the day that just ended.'
+        required: false
+        default: ''
+
+# Read-only: the report never changes the repository
+permissions:
+  contents: read
+
+# Wait for an hourly scrape that is still running (it may be sending mails and pushing the logs),
+# so the report counts everything of the day. Same group as auto_scraper_1hr.yml.
+concurrency:
+  group: lead-scraper
+  cancel-in-progress: false
+
+jobs:
+  daily-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Asia/Kolkata
+
+    defaults:
+      run:
+        working-directory: test-demo
+
+    steps:
+      - name: Check out repository (latest leads and logs)
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # The report only needs the Python standard library - nothing to install.
+      - name: Test the report
+        run: python -m unittest test_daily_report
+
+      - name: Build and e-mail the report
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM_EMAIL: ${{ secrets.SMTP_FROM_EMAIL }}
+          # Where the report goes (Settings -> Secrets and variables -> Actions -> Variables).
+          # Empty = the company e-mail saved in the app's Settings.
+          REPORT_EMAIL_TO: ${{ vars.REPORT_EMAIL_TO }}
+          MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '300' }}
+          REPORT_DATE: ${{ github.event.inputs.report_date }}
+        run: python daily_report.py
