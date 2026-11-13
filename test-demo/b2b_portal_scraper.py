@@ -8,29 +8,37 @@ except ImportError:
 import requests
 from bs4 import BeautifulSoup
 
-# Define fallback footprints per portal
+try:
+    from settings_manager import load_settings
+    _settings = load_settings()
+    _cities = _settings.get("target_cities", ["India"])
+    _target_city = _cities[0] if _cities else "India"
+except Exception:
+    _target_city = "India"
+
+# Define fallback footprints per portal with city support
 PORTAL_FOOTPRINTS = {
     "IndiaMART": [
-        'site:indiamart.com "software development"',
-        'site:indiamart.com "IT services"',
-        'site:indiamart.com "web development"',
+        f'site:indiamart.com "software development" {_target_city}',
+        f'site:indiamart.com "IT services" {_target_city}',
+        f'site:indiamart.com "web development" {_target_city}',
     ],
     "TradeIndia": [
-        'site:tradeindia.com "software development"',
-        'site:tradeindia.com "IT services"',
-        'site:tradeindia.com "software company"',
+        f'site:tradeindia.com "software development" {_target_city}',
+        f'site:tradeindia.com "IT services" {_target_city}',
+        f'site:tradeindia.com "software company" {_target_city}',
     ],
     "ExportersIndia": [
-        'site:exportersindia.com "software development"',
-        'site:exportersindia.com "IT services"',
-        'site:exportersindia.com "software company"',
+        f'site:exportersindia.com "software development" {_target_city}',
+        f'site:exportersindia.com "IT services" {_target_city}',
+        f'site:exportersindia.com "software company" {_target_city}',
     ],
 }
 
 # Generic fallbacks if site: queries fail
 GENERIC_FALLBACKS = [
-    '"software development company" India',
-    '"IT services provider" India',
+    f'"software development company" {_target_city}',
+    f'"IT services provider" {_target_city}',
 ]
 
 HEADERS = {

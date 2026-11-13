@@ -19,8 +19,12 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
-import dns.exception
-import dns.resolver
+try:
+    import dns.exception
+    import dns.resolver
+    DNS_AVAILABLE = True
+except ImportError:
+    DNS_AVAILABLE = False
 
 import deep_search
 import html_cache_manager as hcm
@@ -138,13 +142,18 @@ class _MxCache:
     def __init__(self, resolver=None, sleep=None):
         import time as _time
         self.sleep = sleep or _time.sleep
-        self.resolver = resolver or dns.resolver.Resolver()
-        self.resolver.lifetime = DNS_TIMEOUT
+        if DNS_AVAILABLE:
+            self.resolver = resolver or dns.resolver.Resolver()
+            self.resolver.lifetime = DNS_TIMEOUT
+        else:
+            self.resolver = None
         self.cache: Dict[str, Tuple[str, str]] = {}
         self.lock = threading.Lock()
 
     def check(self, domain: str) -> Tuple[str, str]:
         """-> (state, detail): state is mx | a_only | no_mail | missing | unknown."""
+        if not DNS_AVAILABLE:
+            return "unknown", "DNS library not available"
         with self.lock:
             if domain in self.cache:
                 return self.cache[domain]

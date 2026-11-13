@@ -6,10 +6,14 @@ SETTINGS_FILE = "company_settings.json"
 
 DEFAULT_SETTINGS = {
     "companyName": "Sangeeta Infotech",
+    "company_name": "Sangeeta Infotech",
     "tagline": "Engineering Intelligent Web & Mobile Solutions",
     "senderName": "Business Development Team",
+    "sender_name": "Business Development Team",
     "senderRole": "Client Solutions Specialist",
-    "email": "sangeetainfotech19@gmail.com",
+    "email": "sangeetainfotech6@gmail.com",
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 587,
     "phone": "+91 9106060400",
     "whatsapp": "+91 9426738067",
     "website": "https://sangeetainfotech.co.in",
@@ -27,6 +31,24 @@ DEFAULT_SETTINGS = {
         "AI & Process Automation",
         "Dedicated Software Developers & Cloud Systems"
     ],
+    "default_keywords": [
+        "software development company",
+        "web development company",
+        "mobile app development company",
+        "IT services and custom software",
+        "hire dedicated software developers",
+        "AI integrations and automation agency",
+        "looking for web development agency",
+        "need custom software developer"
+    ],
+    "target_cities": [
+        "Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gujarat",
+        "Mumbai", "Pune", "Bengaluru", "Hyderabad", "Delhi NCR",
+        "Chennai", "Kolkata", "Indore", "Jaipur", "Chandigarh",
+        "Remote / Worldwide", "United States", "United Kingdom", "Canada", "Australia", "UAE"
+    ],
+    "auto_send_email": True,
+    "min_lead_score": 4,
     "signatureTemplate": (
         "Warm regards,\n"
         "{senderName} | {senderRole}\n"
@@ -37,7 +59,19 @@ DEFAULT_SETTINGS = {
         "📍 Location: {address}"
     ),
     "defaultSubject": "Web & Software Engineering Collaboration - Sangeeta Infotech",
+    "default_subject": "Web & Software Engineering Collaboration - Sangeeta Infotech",
     "defaultMessage": (
+        "Hi {name},\n\n"
+        "I came across {company} and your business presence in {location}.\n\n"
+        "At Sangeeta Infotech, we specialize in high-performance web applications, mobile apps, and custom software systems. "
+        "We help ambitious companies scale engineering velocity and launch features faster with dependable tech talent.\n\n"
+        "Key expertise we offer:\n"
+        "• Full-Stack Web Development & Modern Portals\n"
+        "• Mobile Apps (iOS & Android)\n"
+        "• AI Integrations & Automation Workflows\n\n"
+        "Would you be open to a brief 10-minute call this week to explore how we can support your tech needs?"
+    ),
+    "default_template": (
         "Hi {name},\n\n"
         "I came across {company} and your business presence in {location}.\n\n"
         "At Sangeeta Infotech, we specialize in high-performance web applications, mobile apps, and custom software systems. "
