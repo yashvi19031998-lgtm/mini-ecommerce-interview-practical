@@ -57,6 +57,6 @@ jobs:
           # Where the report goes (Settings -> Secrets and variables -> Actions -> Variables).
           # Empty = the company e-mail saved in the app's Settings.
           REPORT_EMAIL_TO: ${{ vars.REPORT_EMAIL_TO }}
-          MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '300' }}
+          MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '50' }}
           REPORT_DATE: ${{ github.event.inputs.report_date }}
         run: python daily_report.py

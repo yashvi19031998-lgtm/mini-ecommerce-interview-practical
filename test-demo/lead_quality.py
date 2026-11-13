@@ -143,18 +143,88 @@ def derive_contact_channel(lead: dict) -> str:
     return "none"
 
 
-def is_outreach_ready(lead: dict) -> bool:
-    """True only for AI-qualified buyer leads with a high enough score and an email."""
+# ---------------------------------------------------------------------------
+# Who may get an AUTOMATIC cold e-mail (review of 2026-11-13: of 16 "ready" leads only 2 were real buyers;
+# the rest were non-IT jobs, job seekers, sales roles, US-only / no-agency posts and a government office).
+# The AI score alone is not enough, so the lead's own text is checked again here, every time.
+# ---------------------------------------------------------------------------
+# The role being hired for / the work wanted is software
+_DEV_ROLE = re.compile(r"\b(developers?|programmers?|engineers?|engineering|devops|sre|full[- ]?stack|front[- ]?end|"
+                       r"back[- ]?end|coders?|cto|software|web ?app|website|web site|web ?dev\w*|mobile app|ios app|"
+                       r"android app|app development|saas|mvp|api|wordpress|shopify|react|next\.?js|node\.?js|python|"
+                       r"django|laravel|php|flutter|react native|ai agents?|llm|machine learning|automation)\b", re.I)
+_DEV_PERSON = re.compile(r"\b(developers?|programmers?|engineers?|devops|sre|full[- ]?stack|front[- ]?end|back[- ]?end|"
+                         r"coders?|cto|architects?|web ?dev\w*)\b", re.I)
+# Roles / work that are not software
+_NON_IT_ROLE = re.compile(r"\b(native \w+ speakers?|speakers?|voice[- ]?(over|actors?)|record(ing)? (short )?(lines|audio)|"
+                          r"transcri\w+|translat\w+|tutors?|teachers?|content creators?|creators?|ugc|influencers?|"
+                          r"video editors?|copywriters?|writers?|sales|account executive|founding ae|\bae\b|gtm|"
+                          r"go-to-market|marketing|marketers?|media (buyer|manager)|social media|seo specialist|"
+                          r"recruiters?|onboarding lead|customer (support|success|service)|virtual assistants?|"
+                          r"data entry|bartenders?|drivers?|nurses?|accountants?|bookkeep\w*|photographers?|models?|"
+                          r"actors?|job fairs?|career fairs?|hiring events?)\b", re.I)
+# The author is offering their own services (not a buyer)
+_SELLER = re.compile(r"willing to relocate|r[eé]sum[eé]\s*/\s*cv|\bfor hire\b|\[for hire\]|hire me|available for (hire|work)|"
+                     r"seeking (work|employment|a (job|role))|looking for (work|a job|my next role)|open to work|"
+                     r"who wants to be hired", re.I)
+# Posts that rule out an agency in India
+_RESTRICTED = re.compile(
+    r"citizenship required|citizens? only|work authori[sz]ation|authori[sz]ed to work|no (visa )?sponsorship|"
+    r"security clearance|no (agencies|agency|recruiters|outsourc\w*|offshore)|agencies need not apply|"
+    r"\b(us|usa|u\.s\.|uk|eu|canada|europe|north america)[- ]only\b|"
+    r"remote\W{0,3}\(?\s*(us|usa|u\.s\.|uk|eu|europe|canada|north america|americas)\b(\s*(or|/|,|&|and)\s*"
+    r"(us|usa|uk|eu|europe|canada))*\)?", re.I)
+_ONSITE = re.compile(r"\b(on-?site|in[- ]office|in[- ]person|hybrid)\b", re.I)
+
+
+def _role_text(lead: dict) -> str:
+    """Title plus the head of the post, where the role is ('Company | Role | Location | ...')."""
+    desc = " ".join(str(lead.get("description") or "").split())
+    head = " | ".join(desc[:260].split("|")[:3]) if "|" in desc[:160] else desc[:160]
+    return f"{lead.get('company_name') or ''} | {head}"
+
+
+def outreach_block_reason(lead: dict) -> str:
+    """Why this lead must NOT get an automatic cold e-mail, or '' when it may (the mailbox is still
+    verified at send time)."""
     try:
         score = int(float(lead.get("ai_score") or 0))
     except ValueError:
         score = 0
-    return (
-        lead.get("ai_category") in BUYER_CATEGORIES
-        and score >= MIN_AI_SCORE_FOR_AUTO_EMAIL
-        and bool(lead.get("email"))
-        and not is_stale(lead)
-    )
+    email = str(lead.get("email") or "").split(",")[0].strip()
+    if lead.get("ai_category") not in BUYER_CATEGORIES:
+        return f"not a buyer ({lead.get('ai_category') or 'not qualified yet'})"
+    if score < MIN_AI_SCORE_FOR_AUTO_EMAIL:
+        return f"score {score} below {MIN_AI_SCORE_FOR_AUTO_EMAIL}"
+    if not email:
+        return "no e-mail address"
+    if is_stale(lead):
+        return f"older than {STALE_AFTER_DAYS} days"
+    try:
+        from email_checks import address_problem
+        problem = address_problem(email, policy=True)
+    except ImportError:
+        problem = ""
+    if problem:
+        return problem
+    role = _role_text(lead)
+    full = f"{role} {lead.get('description') or ''}"
+    if _SELLER.search(full):
+        return "the author offers their own services (job seeker / freelancer), not a buyer"
+    if _NON_IT_ROLE.search(role) and not _DEV_PERSON.search(role):
+        return "the role is not software work"
+    if not _DEV_ROLE.search(f"{full} {lead.get('ai_requirement') or ''} {lead.get('ai_tech_stack') or ''}"):
+        return "no software work mentioned"
+    if _RESTRICTED.search(full):
+        return "the post excludes agencies or requires a location / citizenship we cannot meet"
+    if _ONSITE.search(role) and not re.search(r"\bremote\b", role, re.I):
+        return "on-site role"
+    return ""
+
+
+def is_outreach_ready(lead: dict) -> bool:
+    """True only for buyer leads that pass every check in outreach_block_reason()."""
+    return not outreach_block_reason(lead)
 
 
 def _age_label(lead: dict) -> str:

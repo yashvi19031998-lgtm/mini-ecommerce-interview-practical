@@ -61,7 +61,7 @@ class QualityPipeline(unittest.TestCase):
         self.assertEqual(lq.derive_contact_channel({}), "none")
 
     def test_outreach_ready_requires_buyer_score_and_email(self):
-        good = {"ai_category": "client_project", "ai_score": "8", "email": "a@b.in"}
+        good = {"ai_category": "client_project", "ai_score": "8", "email": "a@b.in", "description": "Need a React developer to build our web app"}
         self.assertTrue(lq.is_outreach_ready(good))
         self.assertFalse(lq.is_outreach_ready({**good, "ai_category": "service_provider"}))
         self.assertFalse(lq.is_outreach_ready({**good, "ai_score": "5"}))

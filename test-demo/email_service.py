@@ -62,9 +62,17 @@ def load_env():
 
 load_env()
 
-def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_duplicate_check: bool = False, company_name: str = "") -> dict:
+def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_duplicate_check: bool = False,
+                    company_name: str = "", verify: str = "strict") -> dict:
     """
     Sends an email using Gmail SMTP credentials.
+
+    verify - checks the recipient's mailbox with its mail server BEFORE sending, because
+    "Address not found" bounces get the Gmail account blocked:
+      "strict"  (default: automatic, bulk and import e-mail) - send only when the mailbox is confirmed
+      "lenient" (a mail the user writes by hand) - also allows catch-all domains
+      None      (follow-ups to an address that already accepted mail, tests to our own inbox) - no check
+    A mailbox that does not exist is never e-mailed, whatever the setting.
     CRITICAL SAFETY: Checks get_already_sent_emails(). If to_email was EVER sent
     an email previously, the send is BLOCKED immediately to prevent spamming!
     Also enforces Do-Not-Contact blacklist rules (e.g. excluded companies like 8dots).
@@ -98,6 +106,24 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
 
     if not to_email or "@" not in to_email:
         return {"success": False, "error": f"Invalid recipient email: {to_email}"}
+
+    # MAILBOX CHECK: never send to an address the receiving server says does not exist
+    if verify:
+        try:
+            from email_checks import verify_mailbox, VALID, CATCH_ALL, INVALID
+            verdict, detail = verify_mailbox(clean_email, sender=smtp_user)
+        except Exception as verr:  # the check itself failed: do not risk a bounce
+            verdict, detail = "unknown", f"address check failed: {verr}"
+            VALID, CATCH_ALL, INVALID = "valid", "catch_all", "invalid"
+        allowed = {VALID} if verify == "strict" else {VALID, CATCH_ALL}
+        if verdict not in allowed:
+            print(f"       [NOT VERIFIED] {clean_email}: {verdict} - {detail}")
+            return {
+                "success": False,
+                "error": f"E-mail not sent - address not verified ({verdict}): {detail}",
+                "verify": verdict,
+                "invalid": verdict == INVALID,
+            }
 
 
     # STRICT DUPLICATE SHIELD: Under no circumstances allow sending to the same email twice!

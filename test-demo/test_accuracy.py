@@ -87,7 +87,7 @@ class PromptAndStaleRules(unittest.TestCase):
             path = os.path.join(d, "m.csv")
             self._write(path, [
                 {"lead_id": "LEAD-00001", "company_name": "Old", "email": "a@old.in", "posted_at": _days_ago(30)},
-                {"lead_id": "LEAD-00002", "company_name": "Fresh", "email": "b@fresh.in", "posted_at": _days_ago(2)},
+                {"lead_id": "LEAD-00002", "company_name": "Fresh", "email": "b@fresh.in", "posted_at": _days_ago(2), "description": "Need a React developer to build our web app"},
             ])
             with mock.patch.object(lq, "_get_client", return_value=self._fake_client(9)):
                 stats = lq.run(path)
@@ -98,7 +98,7 @@ class PromptAndStaleRules(unittest.TestCase):
             self.assertEqual(stats["outreach_ready"], 1)  # only the fresh lead
 
     def test_lead_that_goes_stale_later_is_not_emailed_or_alerted(self):
-        lead = {"ai_category": "client_project", "ai_score": "9", "email": "a@b.in", "posted_at": _days_ago(20)}
+        lead = {"ai_category": "client_project", "ai_score": "9", "email": "a@b.in", "posted_at": _days_ago(20), "description": "Need a React developer to build our web app"}
         self.assertFalse(lq.is_outreach_ready(lead))
         self.assertFalse(sn.is_hot_lead(lead))
         lead["posted_at"] = _days_ago(1)

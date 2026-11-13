@@ -61,10 +61,31 @@ MAX_PENDING_EMAILS_PER_RUN = max(0, _int_or(
     _per_run_setting if _per_run_setting not in (None, "") else os.getenv("MAX_PENDING_EMAILS_PER_RUN"), 5))
 # Gmail suspends sending for ~24 h above about 500 recipients a day (free accounts). Stay well below it,
 # counting every mail the app sent today (manual, bulk, follow-ups and this run).
-MAX_EMAILS_PER_DAY = max(1, _int_or(os.getenv("MAX_EMAILS_PER_DAY"), 300))
+# 2026-11-13: two Gmail accounts were blocked, so the default is low; raise it slowly as the account ages.
+MAX_EMAILS_PER_DAY = max(1, _int_or(os.getenv("MAX_EMAILS_PER_DAY"), 50))
+# Pause automatic e-mail when this many bounces ("Address not found") came back in the last 24 hours.
+MAX_BOUNCES_PER_DAY = 2
 # Stop the run's e-mailing after this many failures in a row (wrong password, Gmail block...): retrying
 # every lead only hammers Gmail and marks good leads FAILED.
 MAX_CONSECUTIVE_SEND_FAILURES = 3
+
+
+def bounces_last_24h(now=None) -> int:
+    """Bounces recorded by the Gmail reply check (followup_store) in the last 24 hours."""
+    now = now or datetime.datetime.now()
+    try:
+        rows = followup_store.history(types=["bounce"], limit=500)["items"]
+    except Exception:
+        return 0
+    n = 0
+    for r in rows:
+        try:
+            when = datetime.datetime.strptime(str(r.get("occurred_at", ""))[:19], "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        if now - when <= datetime.timedelta(hours=24):
+            n += 1
+    return n
 
 
 def emails_sent_today(path=None):
@@ -337,6 +358,12 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
     failures_in_row = 0
     from lead_normalizer import EMAIL_BLACKLIST_DOMAINS
 
+    recent_bounces = bounces_last_24h()
+    if recent_bounces >= MAX_BOUNCES_PER_DAY:
+        print(f"       [AUTO-MAIL-PENDING] PAUSED: {recent_bounces} e-mails bounced in the last 24 hours. "
+              f"No automatic e-mail until that settles, to protect the Gmail account.")
+        return 0
+
     if sent_today >= daily_cap:
         print(f"       [AUTO-MAIL-PENDING] Daily limit reached ({sent_today}/{daily_cap} e-mails today). "
               f"The rest are sent on the next run after midnight.")
@@ -355,7 +382,7 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
             break
 
         status = str(lead_obj.get("email_status", "")).strip().upper()
-        if status in ("SENT", "INVALID", "INVALID_DOMAIN"):
+        if status in ("SENT", "INVALID", "INVALID_DOMAIN", "UNVERIFIABLE", "EXCLUDED_COMPANY"):
             continue
 
         # Only contact leads the AI qualified as real buyers with a high score
@@ -426,6 +453,19 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
                 time.sleep(delay_sec)
         elif mail_res.get("excluded"):
             lead_obj["email_status"] = "EXCLUDED_COMPANY"
+        elif mail_res.get("verify"):
+            # The mailbox check stopped it: nothing was sent, so this is not a send failure
+            verdict = mail_res["verify"]
+            print(f"       -> [AUTO-MAIL-PENDING] [NOT SENT] {raw_email}: {mail_res.get('error')}")
+            if verdict == "invalid":
+                lead_obj["email_status"] = "INVALID"          # would bounce: never try again
+            elif verdict == "catch_all":
+                lead_obj["email_status"] = "UNVERIFIABLE"     # cannot be confirmed: no automatic e-mail
+            elif "port 25" in str(mail_res.get("error", "")):
+                print("       [AUTO-MAIL-PENDING] This computer cannot check mailboxes (port 25 blocked), so no "
+                      "e-mail is sent from here. Run the cycle from a computer where the check works.")
+                break
+            # "unknown" (timeout / temporary answer): leave as is, tried again next run
         else:
             lead_obj["email_status"] = "FAILED"
             failures_in_row += 1
@@ -484,7 +524,7 @@ def run_followup_step(registry: MasterLeadRegistry) -> None:
         sig = format_signature(load_settings()) if (format_signature and load_settings) else ""
         company_by_email = {str(i.get("email", "")).strip().lower(): i.get("lead_name", "") for i in due}
         res = followup_sequence.send(
-            due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True,
+            due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True, verify=None,
                                                        company_name=company_by_email.get(str(to).strip().lower(), "")),
             signature=sig, limit=cfg["max_per_run"])
         print(f"[*] Follow-up sequence: sent {res['sent']}, failed {res['failed']} (limit {cfg['max_per_run']}).")

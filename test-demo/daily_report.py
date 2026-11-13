@@ -46,7 +46,7 @@ ACTIVITY_CSV = os.path.join(BASE_DIR, "logs", "followup_activity.csv")
 RUNS_CSV = os.path.join(BASE_DIR, "logs", "scraper_runs.csv")
 SETTINGS_JSON = os.path.join(BASE_DIR, "company_settings.json")
 
-DAILY_CAP_DEFAULT = 300
+DAILY_CAP_DEFAULT = 50
 
 
 # ---------------------------------------------------------------- reading (missing file = no rows)

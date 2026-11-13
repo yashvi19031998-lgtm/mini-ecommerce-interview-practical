@@ -392,7 +392,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 />
                 <span style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                   0 = every qualified lead found is e-mailed in the same run. To protect the Gmail account the app
-                  never sends more than 300 e-mails in one day (Gmail blocks sending above about 500); the rest go the next day.
+                  never sends more than 50 e-mails in one day, and only to verified mailboxes (bounces got two Gmail accounts blocked); the rest go the next day.
                 </span>
               </div>
 

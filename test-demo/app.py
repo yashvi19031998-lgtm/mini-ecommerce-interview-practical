@@ -285,7 +285,7 @@ def send_single_lead_email():
 
     # User manually clicked Send in UI: allow manual test/send with bypass_duplicate_check=True.
     # The do-not-contact list is never bypassed: the lead's company name goes to the shield too.
-    result = send_smtp_email(to_email, subject, message, bypass_duplicate_check=True,
+    result = send_smtp_email(to_email, subject, message, bypass_duplicate_check=True, verify="lenient",
                              company_name=(_lead_info(lead_id) or {}).get("name", ""))
     if result.get("excluded"):
         return jsonify({"success": False, "error": result.get("error"), "excluded": True}), 403
@@ -508,7 +508,7 @@ def test_company_email():
         "are active and delivering properly.\n\n"
         f"---\n{sig}"
     )
-    result = send_smtp_email(to_email, subject, body)
+    result = send_smtp_email(to_email, subject, body, verify=None)  # our own inbox
     return jsonify(result)
 
 @app.route("/api/export-csv")
@@ -562,7 +562,7 @@ def get_scheduler_status():
         "auto_send_reason": auto_send_reason,
         "smtp_configured": bool(os.getenv("SMTP_USER") and os.getenv("SMTP_PASS")),
         "max_pending_emails": settings.get("maxPendingEmailsPerRun", 5),
-        "max_emails_per_day": int(os.getenv("MAX_EMAILS_PER_DAY")) if str(os.getenv("MAX_EMAILS_PER_DAY") or "").isdigit() and int(os.getenv("MAX_EMAILS_PER_DAY")) > 0 else 300,
+        "max_emails_per_day": int(os.getenv("MAX_EMAILS_PER_DAY")) if str(os.getenv("MAX_EMAILS_PER_DAY") or "").isdigit() and int(os.getenv("MAX_EMAILS_PER_DAY")) > 0 else 50,
         "default_keywords": settings.get("defaultKeywords", []),
         "default_city": settings.get("defaultCity", "Ahmedabad"),
         "default_state": settings.get("defaultState", "Gujarat"),
@@ -933,7 +933,7 @@ def followups_sequence_send():
     # here on purpose - only for steps the sequence planner marked as due.
     company_by_email = {str(i.get("email", "")).strip().lower(): i.get("lead_name", "") for i in due}
     result = followup_sequence.send(
-        due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True,
+        due, lambda to, sub, body: send_smtp_email(to, sub, body, bypass_duplicate_check=True, verify=None,
                                                    company_name=company_by_email.get(str(to).strip().lower(), "")),
         signature=format_signature(load_settings()))
     return jsonify({"success": True, **result, "not_due": len(wanted) - len(due)})

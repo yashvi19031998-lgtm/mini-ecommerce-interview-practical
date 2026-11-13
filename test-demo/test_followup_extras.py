@@ -145,7 +145,7 @@ class EmailHtmlEscaping(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(email_service, "SENT_LOG_FILE", os.path.join(d, "sent.csv")), \
                 mock.patch.dict(os.environ, {"SMTP_USER": "u@gmail.com", "SMTP_PASS": "p"}), \
-                mock.patch.object(email_service.smtplib, "SMTP", FakeSMTP):
+                mock.patch.object(email_service.smtplib, "SMTP", FakeSMTP),                 mock.patch("email_checks.verify_mailbox", return_value=("valid", "test")):
             res = email_service.send_smtp_email("x@acme.in", "Hi", "Hello <Acme & Co>\n<script>x</script>",
                                                 bypass_duplicate_check=True)
         self.assertTrue(res["success"])

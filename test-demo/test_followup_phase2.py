@@ -363,7 +363,7 @@ class Api(Base):
         self.assertIn(seq.OPT_OUT_LINE, body["due"][0]["preview"]["body"])
         sent = []
         with mock.patch.object(self.app, "send_smtp_email",
-                               side_effect=lambda to, s, b, bypass_duplicate_check=False, company_name="": sent.append(bypass_duplicate_check) or {"success": True}):
+                               side_effect=lambda to, s, b, bypass_duplicate_check=False, company_name="", verify="strict": sent.append(bypass_duplicate_check) or {"success": True}):
             r = self.client.post("/api/followups/sequence/send", headers=self.h, json={"lead_ids": ["L1", "L2"]})
         res = r.get_json()
         self.assertEqual((res["sent"], res["not_due"]), (1, 1))

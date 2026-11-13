@@ -98,7 +98,11 @@ REQUEST_DELAY = 3              # Polite delay between HTTP requests
 MIN_LEAD_SCORE = int(_live_settings.get("min_lead_score", 4))
 
 # Automated Direct Email Outreach
-AUTO_SEND_EMAIL = _live_settings.get("auto_send_email", True)
+# Never e-mails directly (2026-11-13: it mailed every saved company - a government address and an
+# error-tracking address included - with no qualification, address check or daily limit).
+# Its leads reach all_leads_master.csv through the hourly run, which qualifies them, verifies the
+# mailbox and applies the limits before any e-mail (run_all_scrapers.dispatch_pending_outreach_emails).
+AUTO_SEND_EMAIL = False
 
 # Output file paths
 LEADS_CSV = "leads_new.csv"
