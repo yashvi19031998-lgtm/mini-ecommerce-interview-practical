@@ -9,6 +9,7 @@ dnspython missing) the check returns True so outreach is not blocked by our own 
 """
 
 import re
+import subprocess
 from functools import lru_cache
 
 try:
@@ -24,28 +25,39 @@ DNS_TIMEOUT = 6.0
 
 @lru_cache(maxsize=2048)
 def domain_accepts_mail(domain: str) -> bool:
-    if not DNS_AVAILABLE:
-        return True
     domain = domain.lower().strip(".")
-    try:
-        answers = dns.resolver.resolve(domain, "MX", lifetime=DNS_TIMEOUT)
-        # A "null MX" (RFC 7505: preference 0, exchange ".") means the domain accepts no mail
-        return any(str(r.exchange) not in (".", "") for r in answers)
-    except dns.resolver.NXDOMAIN:
-        return False  # domain does not exist
-    except dns.resolver.NoAnswer:
-        pass  # no MX: fall back to implicit MX (A/AAAA)
-    except (dns.resolver.NoNameservers, dns.exception.Timeout):
-        return True  # our DNS problem, not proof the address is bad
-    for rtype in ("A", "AAAA"):
+    if DNS_AVAILABLE:
         try:
-            dns.resolver.resolve(domain, rtype, lifetime=DNS_TIMEOUT)
-            return True
-        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-            continue
+            answers = dns.resolver.resolve(domain, "MX", lifetime=DNS_TIMEOUT)
+            # A "null MX" (RFC 7505: preference 0, exchange ".") means the domain accepts no mail
+            return any(str(r.exchange) not in (".", "") for r in answers)
+        except dns.resolver.NXDOMAIN:
+            return False  # domain does not exist
+        except dns.resolver.NoAnswer:
+            pass  # no MX: fall back to implicit MX (A/AAAA)
         except (dns.resolver.NoNameservers, dns.exception.Timeout):
-            return True
-    return False
+            return True  # our DNS problem, not proof the address is bad
+        for rtype in ("A", "AAAA"):
+            try:
+                dns.resolver.resolve(domain, rtype, lifetime=DNS_TIMEOUT)
+                return True
+            except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+                continue
+            except (dns.resolver.NoNameservers, dns.exception.Timeout):
+                return True
+        return False
+
+    # Fallback when dnspython is not installed:
+    # 1. Check if we can find MX hosts
+    hosts = _mx_hosts(domain)
+    if hosts:
+        return True
+    # 2. Check if host has an A record / resolves via socket
+    try:
+        socket.gethostbyname(domain)
+        return True
+    except Exception:
+        return False
 
 
 def can_receive_mail(email: str) -> bool:
@@ -105,14 +117,39 @@ _lock = threading.Lock()
 
 
 def _mx_hosts(domain: str):
-    if not DNS_AVAILABLE:
-        return []
+    domain = (domain or "").lower().strip(".")
+    if DNS_AVAILABLE:
+        try:
+            answers = dns.resolver.resolve(domain, "MX", lifetime=DNS_TIMEOUT)
+            hosts = [str(r.exchange).rstrip(".") for r in sorted(answers, key=lambda r: r.preference)]
+            return [h for h in hosts if h]
+        except dns.resolver.NoAnswer:
+            return [domain]  # implicit MX
+        except Exception:
+            pass
+
+    # System nslookup fallback if dnspython is absent or resolution fails
     try:
-        answers = dns.resolver.resolve(domain, "MX", lifetime=DNS_TIMEOUT)
-        hosts = [str(r.exchange).rstrip(".") for r in sorted(answers, key=lambda r: r.preference)]
-        return [h for h in hosts if h]
-    except dns.resolver.NoAnswer:
-        return [domain]  # implicit MX
+        out = subprocess.check_output(
+            ["nslookup", "-type=mx", domain],
+            text=True,
+            stderr=subprocess.STDOUT,
+            timeout=DNS_TIMEOUT
+        )
+        hosts = [h.strip().rstrip(".") for h in re.findall(r"mail exchanger\s*=\s*([\w\.-]+)", out, re.IGNORECASE)]
+        if hosts:
+            return hosts
+        if "can't find" in out or "Non-existent" in out or "NXDOMAIN" in out:
+            return []
+        # Fallback to domain itself if domain resolves
+        socket.gethostbyname(domain)
+        return [domain]
+    except Exception:
+        pass
+
+    try:
+        socket.gethostbyname(domain)
+        return [domain]
     except Exception:
         return []
 
