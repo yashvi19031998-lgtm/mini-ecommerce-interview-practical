@@ -582,3 +582,59 @@ export function buildWhatsAppLink(phone, companyName, template) {
 
   return `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}`;
 }
+
+// ---------------------------------------------------------------------------
+// 16. Reports Engine API (reports_engine.py)
+// ---------------------------------------------------------------------------
+
+function toReportQueryString(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.preset) params.set('preset', filters.preset);
+  if (filters.date_from) params.set('date_from', filters.date_from);
+  if (filters.date_to) params.set('date_to', filters.date_to);
+  if (filters.source && filters.source !== 'all') params.set('source', filters.source);
+  if (filters.status && filters.status.toUpperCase() !== 'ALL') params.set('status', filters.status);
+  const q = params.toString();
+  return q ? `?${q}` : '';
+}
+
+export async function fetchReportOptions() {
+  return await apiFetch('/api/reports/options');
+}
+
+export async function fetchReportSummary(filters = {}) {
+  return await apiFetch(`/api/reports/summary${toReportQueryString(filters)}`);
+}
+
+export async function fetchReportScrapers(filters = {}) {
+  return await apiFetch(`/api/reports/scrapers${toReportQueryString(filters)}`);
+}
+
+export async function fetchReportSources(filters = {}) {
+  return await apiFetch(`/api/reports/sources${toReportQueryString(filters)}`);
+}
+
+export async function fetchReportFollowups(filters = {}, quietDays = 5) {
+  const baseQ = toReportQueryString(filters);
+  const sep = baseQ ? '&' : '?';
+  const q = `${baseQ}${sep}quiet_days=${encodeURIComponent(quietDays)}`;
+  return await apiFetch(`/api/reports/followups${q}`);
+}
+
+export async function fetchReportPipeline(filters = {}) {
+  return await apiFetch(`/api/reports/pipeline${toReportQueryString(filters)}`);
+}
+
+export async function fetchReportOutreach(filters = {}) {
+  return await apiFetch(`/api/reports/outreach${toReportQueryString(filters)}`);
+}
+
+export async function fetchReportDataHealth() {
+  return await apiFetch('/api/reports/data-health');
+}
+
+export async function fetchReportActivity(day) {
+  const q = day ? `?day=${encodeURIComponent(day)}` : '';
+  return await apiFetch(`/api/reports/activity${q}`);
+}
+

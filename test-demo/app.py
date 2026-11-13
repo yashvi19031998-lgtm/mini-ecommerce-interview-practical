@@ -562,6 +562,7 @@ def get_scheduler_status():
         "auto_send_reason": auto_send_reason,
         "smtp_configured": bool(os.getenv("SMTP_USER") and os.getenv("SMTP_PASS")),
         "max_pending_emails": settings.get("maxPendingEmailsPerRun", 5),
+        "max_emails_per_day": int(os.getenv("MAX_EMAILS_PER_DAY")) if str(os.getenv("MAX_EMAILS_PER_DAY") or "").isdigit() and int(os.getenv("MAX_EMAILS_PER_DAY")) > 0 else 300,
         "default_keywords": settings.get("defaultKeywords", []),
         "default_city": settings.get("defaultCity", "Ahmedabad"),
         "default_state": settings.get("defaultState", "Gujarat"),
@@ -1878,6 +1879,124 @@ def lead_care_enrichment_save():
         return jsonify({"success": False, "error": str(e)}), 500
     _cached_leads_data.clear()
     return jsonify({"success": True, **res})
+
+
+# REPORTS (reports_engine.py)
+import reports_engine
+
+def _report_context():
+    """Helper to load data files using BASE_DIR without writing anything."""
+    leads = read_leads()
+    runs_path = os.path.join(BASE_DIR, "logs", "scraper_runs.csv")
+    sent_path = os.path.join(BASE_DIR, "logs", "sent_emails.csv")
+    act_path = os.path.join(BASE_DIR, "logs", "followup_activity.csv")
+    runs = reports_engine.load_runs(runs_path)
+    sent = reports_engine.load_sent(sent_path)
+    acts = reports_engine.load_activities(act_path)
+    return leads, runs, sent, acts
+
+def _report_filters():
+    return {
+        "preset": request.args.get("preset"),
+        "date_from": request.args.get("date_from"),
+        "date_to": request.args.get("date_to"),
+        "source": request.args.get("source"),
+        "status": request.args.get("status"),
+    }
+
+@app.route("/api/reports/summary", methods=["GET"])
+def report_summary_endpoint():
+    try:
+        leads, runs, sent, acts = _report_context()
+        res = reports_engine.summary(leads, runs, acts, sent, _report_filters())
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/scrapers", methods=["GET"])
+def report_scrapers_endpoint():
+    try:
+        _, runs, _, _ = _report_context()
+        res = reports_engine.scraper_report(runs, _report_filters())
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/sources", methods=["GET"])
+def report_sources_endpoint():
+    try:
+        leads, _, _, acts = _report_context()
+        res = reports_engine.source_report_rows(leads, acts, _report_filters())
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/followups", methods=["GET"])
+def report_followups_endpoint():
+    try:
+        leads, _, sent, acts = _report_context()
+        quiet_days_raw = request.args.get("quiet_days", 5)
+        try:
+            quiet_days = int(quiet_days_raw)
+        except (ValueError, TypeError):
+            raise ValueError("quiet_days must be an integer between 1 and 60.")
+        if quiet_days < 1 or quiet_days > 60:
+            raise ValueError("quiet_days must be between 1 and 60.")
+
+        seq_plan = followup_sequence.plan(_lead_index())
+        settings = load_settings()
+        res = reports_engine.followup_watchlist(leads, acts, sent, seq_plan, settings, quiet_days=quiet_days)
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/pipeline", methods=["GET"])
+def report_pipeline_endpoint():
+    try:
+        leads, _, _, acts = _report_context()
+        res = reports_engine.pipeline(leads, acts, _report_filters())
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/outreach", methods=["GET"])
+def report_outreach_endpoint():
+    try:
+        leads, _, sent, acts = _report_context()
+        settings = load_settings()
+        res = reports_engine.outreach(leads, acts, sent, settings, _report_filters())
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/data-health", methods=["GET"])
+def report_data_health_endpoint():
+    try:
+        leads, _, _, _ = _report_context()
+        res = reports_engine.data_health(leads)
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/activity", methods=["GET"])
+def report_activity_endpoint():
+    try:
+        leads, runs, sent, acts = _report_context()
+        day = request.args.get("day")
+        res = reports_engine.activity_log(runs, acts, sent, leads, day_str=day)
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/options", methods=["GET"])
+def report_options_endpoint():
+    try:
+        leads = read_leads()
+        res = reports_engine.get_filter_options(leads)
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))

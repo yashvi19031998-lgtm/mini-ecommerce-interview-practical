@@ -32,6 +32,7 @@ import ScraperConsole from '../components/ScraperConsole';
 import LeadImporter from '../components/LeadImporter';
 import SettingsView from '../components/SettingsView';
 import Dashboard from '../components/Dashboard';
+import Reports from '../components/Reports';
 import JobPortalScraper from '../components/JobPortalScraper';
 import AutoScheduler from '../components/AutoScheduler';
 import FollowUpHistory from '../components/FollowUpHistory';
@@ -328,6 +329,15 @@ function DashboardContent() {
                 leads={leads}
                 onOpenJobPortal={() => setActiveTab('jobportal')}
                 onOpenLeads={() => setActiveTab('leads')}
+              />
+            )}
+
+            {/* Reports module */}
+            {activeTab === 'reports' && (
+              <Reports
+                onOpenLeads={() => setActiveTab('leads')}
+                onOpenFollowups={() => setActiveTab('followups')}
+                onOpenScraper={() => setActiveTab('autoscheduler')}
               />
             )}
 

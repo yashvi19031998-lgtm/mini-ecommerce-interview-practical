@@ -23,6 +23,7 @@ export default function Header({
 }) {
   const tabTitles = {
     dashboard: { root: 'LeadsGen AI', leaf: 'Dashboard' },
+    reports: { root: 'LeadsGen AI', leaf: 'Reports' },
     jobportal: { root: 'Scraping / Mining', leaf: 'Job Portals' },
     searchengines: { root: 'Scraping / Mining', leaf: 'Search Engines' },
     'mining-maps': { root: 'Scraping / Mining', leaf: 'Google Maps' },
