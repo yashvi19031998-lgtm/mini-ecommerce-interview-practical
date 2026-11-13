@@ -67,8 +67,13 @@ except ImportError:
 # 1. CONFIGURATION
 # ==============================================================================
 
-# Search queries focused on IT / software companies and service requests
-SEARCH_QUERIES = [
+# Dynamic settings loader
+try:
+    _live_settings = load_settings() if load_settings else {}
+except Exception:
+    _live_settings = {}
+
+SEARCH_QUERIES = _live_settings.get("default_keywords") or [
     'software development company',
     'web development company',
     'IT services and software company',
@@ -81,16 +86,19 @@ SEARCH_QUERIES = [
     'software development agency',
 ]
 
-# Configurable search location (leave as "" if you do not want location filtering)
-SEARCH_LOCATION = "Ahmedabad"
+TARGET_CITIES = _live_settings.get("target_cities") or [
+    "Ahmedabad", "Surat", "Vadodara", "Mumbai", "Pune", "Bengaluru", "Hyderabad", "Delhi NCR"
+]
+
+SEARCH_LOCATION = ""  # Replaced by dynamic iteration over TARGET_CITIES
 
 MAX_RESULTS_PER_QUERY = 10     # Max search results to evaluate per query
 REQUEST_TIMEOUT = 10           # HTTP request timeout in seconds
 REQUEST_DELAY = 3              # Polite delay between HTTP requests
-MIN_LEAD_SCORE = 4             # Quality threshold: minimum score required for leads.csv
+MIN_LEAD_SCORE = int(_live_settings.get("min_lead_score", 4))
 
 # Automated Direct Email Outreach
-AUTO_SEND_EMAIL = True         # Automatically dispatch customized outreach email when a valid lead is found
+AUTO_SEND_EMAIL = _live_settings.get("auto_send_email", True)
 
 # Output file paths
 LEADS_CSV = "leads_new.csv"
@@ -1017,9 +1025,13 @@ def main():
     print("     IT & SOFTWARE HIRING - ACCURACY LEAD SCRAPER")
     print("=" * 70)
     print(f"Configured Queries:    {len(SEARCH_QUERIES)}")
-    print(f"Location Filter:       {SEARCH_LOCATION if SEARCH_LOCATION else 'Global'}")
+    print("BUSINESS LEAD SCRAPER - ALL CITIES & MULTI-KEYWORD ENGINE")
+    print("=" * 70)
+    print(f"Target Keywords:       {len(SEARCH_QUERIES)} keywords")
+    print(f"Target Cities:         {', '.join(TARGET_CITIES[:5])}... ({len(TARGET_CITIES)} total)")
     print(f"Max Results Per Query: {MAX_RESULTS_PER_QUERY}")
     print(f"Min Lead Score:        {MIN_LEAD_SCORE}")
+    print(f"Auto Email Outreach:   {'ENABLED' if AUTO_SEND_EMAIL else 'DISABLED'}")
     print("=" * 70 + "\n")
 
     total_search_results = 0
@@ -1027,9 +1039,19 @@ def main():
     candidate_sites: List[Dict[str, str]] = []
     seen_domains: Set[str] = set()
 
-    # Step 1: Execute Searches
+    # Step 1: Execute Searches across Cities and Keywords
+    # Pick a rotation of cities and queries to prevent blocking
+    query_combinations = []
     for raw_query in SEARCH_QUERIES:
-        query = f"{raw_query} {SEARCH_LOCATION}".strip() if SEARCH_LOCATION else raw_query
+        for city in TARGET_CITIES:
+            c_str = "" if city.lower() in ("remote / worldwide", "global", "") else city
+            q = f"{raw_query} {c_str}".strip()
+            query_combinations.append(q)
+
+    # Balanced run limit
+    sample_queries = query_combinations[:30] if len(query_combinations) > 30 else query_combinations
+
+    for query in sample_queries:
         print(f'[SEARCH] Query: {query}')
         results = search_web(query, MAX_RESULTS_PER_QUERY)
         print(f'[SEARCH] Found: {len(results)} results\n')
