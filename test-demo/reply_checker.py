@@ -3,7 +3,8 @@ FollowUp Phase 2 - read the Gmail inbox (IMAP, read-only) and record replies, bo
 
 Setup: Gmail -> Google Account -> Security -> 2-Step Verification -> App passwords.
 The same App Password used for SMTP works for IMAP. Settings (.env / GitHub secrets):
-    IMAP_HOST=imap.gmail.com (default)    IMAP_USER / IMAP_PASSWORD (default: SMTP_USER / SMTP_PASS)
+    IMAP_HOST=imap.gmail.com (default). The sending account (SMTP_USER / SMTP_PASS) is always read,
+    because bounces arrive there; a different IMAP_USER / IMAP_PASSWORD inbox is read as well.
 
 Only messages FROM an address we emailed are considered. For each one we store the subject and the
 first 500 characters of the text - never the full message.
@@ -39,17 +40,28 @@ OPT_OUT_PATTERNS = [r"^\s*stop\b", r"\bunsubscribe\b", r"\bremove me\b", r"\bnot
 EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}")
 
 
+def imap_accounts() -> List[Dict[str, str]]:
+    """Inboxes to read. The SENDING account comes first: "Address not found" bounces always land in the
+    inbox of the account that sent the mail (SMTP_USER), whatever IMAP_USER says. A different IMAP_USER
+    (e.g. the inbox replies are forwarded to) is read as well."""
+    host = os.getenv("IMAP_HOST", "imap.gmail.com")
+    accounts = []
+    for user, password in ((os.getenv("SMTP_USER", ""), os.getenv("SMTP_PASS", "")),
+                           (os.getenv("IMAP_USER", ""), os.getenv("IMAP_PASSWORD", ""))):
+        user = user.strip()
+        if user and password and user.lower() not in {a["user"].lower() for a in accounts}:
+            accounts.append({"host": host, "user": user, "password": password})
+    return accounts
+
+
 def imap_settings() -> Dict[str, str]:
-    return {
-        "host": os.getenv("IMAP_HOST", "imap.gmail.com"),
-        "user": os.getenv("IMAP_USER") or os.getenv("SMTP_USER", ""),
-        "password": os.getenv("IMAP_PASSWORD") or os.getenv("SMTP_PASS", ""),
-    }
+    """The first inbox (the sending account when it is set) - kept for callers that need one."""
+    accounts = imap_accounts()
+    return accounts[0] if accounts else {"host": os.getenv("IMAP_HOST", "imap.gmail.com"), "user": "", "password": ""}
 
 
 def is_configured() -> bool:
-    s = imap_settings()
-    return bool(s["user"] and s["password"])
+    return bool(imap_accounts())
 
 
 # ---------------------------------------------------------------------------
@@ -131,39 +143,69 @@ def _save_state(state: Dict[str, Any]) -> None:
         json.dump(state, f)
 
 
-def fetch_events(contacted: Set[str], imap_factory=imaplib.IMAP4_SSL) -> List[Dict[str, Any]]:
-    """Reads new inbox messages (read-only) and returns classified events. Raises RuntimeError on IMAP errors."""
-    s = imap_settings()
-    if not (s["user"] and s["password"]):
-        raise RuntimeError("Gmail reply check is not set up: add IMAP_USER/IMAP_PASSWORD (or SMTP_USER/SMTP_PASS)")
-    state = _load_state()
-    last_uid = int(state.get("last_uid", 0) or 0)
-    since = (datetime.date.today() - datetime.timedelta(days=LOOKBACK_DAYS)).strftime("%d-%b-%Y")
+def _uid_state(state: Dict[str, Any]) -> Dict[str, int]:
+    """Last message seen, per inbox. Older state files kept one number for the single inbox read then."""
+    uids = state.get("uids")
+    if not isinstance(uids, dict):
+        uids = {}
+        legacy_user = (os.getenv("IMAP_USER") or os.getenv("SMTP_USER") or "").strip().lower()
+        if state.get("last_uid") and legacy_user:
+            uids[legacy_user] = int(state.get("last_uid") or 0)
+        state["uids"] = uids
+    return uids
+
+
+def _fetch_one(account: Dict[str, str], last_uid: int, contacted: Set[str], since: str, imap_factory):
+    conn = imap_factory(account["host"])
+    conn.login(account["user"], account["password"])
+    conn.select("INBOX", readonly=True)
+    typ, data = conn.uid("search", None, f"(SINCE {since})")
+    if typ != "OK":
+        raise RuntimeError("inbox search failed")
+    uids = [int(u) for u in (data[0] or b"").split() if int(u) > last_uid][-MAX_MESSAGES_PER_RUN:]
     events = []
-    try:
-        conn = imap_factory(s["host"])
-        conn.login(s["user"], s["password"])
-        conn.select("INBOX", readonly=True)
-        typ, data = conn.uid("search", None, f"(SINCE {since})")
-        if typ != "OK":
-            raise RuntimeError("inbox search failed")
-        uids = [int(u) for u in (data[0] or b"").split() if int(u) > last_uid][-MAX_MESSAGES_PER_RUN:]
-        for uid in uids:
-            typ, msg_data = conn.uid("fetch", str(uid), "(BODY.PEEK[])")
-            if typ != "OK" or not msg_data or not isinstance(msg_data[0], tuple):
-                continue
-            event = classify(msg_data[0][1], contacted)
-            if event:
-                events.append({**event, "uid": uid})
-        if uids:
-            state["last_uid"] = max(uids)
-        state["last_checked_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        _save_state(state)
-        conn.logout()
-    except imaplib.IMAP4.error as e:
-        raise RuntimeError(f"Gmail login/IMAP error: {e}") from e
-    except OSError as e:
-        raise RuntimeError(f"Could not connect to {s['host']}: {e}") from e
+    for uid in uids:
+        typ, msg_data = conn.uid("fetch", str(uid), "(BODY.PEEK[])")
+        if typ != "OK" or not msg_data or not isinstance(msg_data[0], tuple):
+            continue
+        event = classify(msg_data[0][1], contacted)
+        if event:
+            events.append({**event, "uid": uid, "inbox": account["user"]})
+    conn.logout()
+    return events, (max(uids) if uids else last_uid)
+
+
+def fetch_events(contacted: Set[str], imap_factory=imaplib.IMAP4_SSL) -> List[Dict[str, Any]]:
+    """Reads new messages (read-only) from every inbox in imap_accounts() and returns classified events.
+    Raises RuntimeError only when no inbox could be read."""
+    accounts = imap_accounts()
+    if not accounts:
+        raise RuntimeError("Gmail reply check is not set up: add SMTP_USER/SMTP_PASS (or IMAP_USER/IMAP_PASSWORD)")
+    state = _load_state()
+    uids = _uid_state(state)
+    since = (datetime.date.today() - datetime.timedelta(days=LOOKBACK_DAYS)).strftime("%d-%b-%Y")
+    events, errors = [], []
+    for account in accounts:
+        key = account["user"].lower()
+        try:
+            found, last = _fetch_one(account, int(uids.get(key, 0) or 0), contacted, since, imap_factory)
+        except imaplib.IMAP4.error as e:
+            errors.append(f"Gmail login/IMAP error for {account['user']}: {e}")
+            continue
+        except OSError as e:
+            errors.append(f"Could not connect to {account['host']} for {account['user']}: {e}")
+            continue
+        # A message forwarded from one inbox to the other is counted once
+        seen = {e.get("message_id") for e in events if e.get("message_id")}
+        events.extend(e for e in found if not e.get("message_id") or e["message_id"] not in seen)
+        uids[key] = last
+    if errors and len(errors) == len(accounts):
+        raise RuntimeError("; ".join(errors))
+    for err in errors:
+        print(f"[reply check] {err}")
+    state["last_checked_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    state.pop("last_uid", None)
+    _save_state(state)
     return events
 
 

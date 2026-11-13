@@ -224,3 +224,45 @@ class QuickScraperNeverMailsDirectly(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BounceInboxIsTheSendingAccount(unittest.TestCase):
+    def test_sending_account_first_and_other_inbox_too(self):
+        import reply_checker as rc
+        env = {"SMTP_USER": "sender@gmail.com", "SMTP_PASS": "a", "IMAP_USER": "other@gmail.com", "IMAP_PASSWORD": "b"}
+        with mock.patch.dict(os.environ, env):
+            users = [a["user"] for a in rc.imap_accounts()]
+        self.assertEqual(users, ["sender@gmail.com", "other@gmail.com"])
+        with mock.patch.dict(os.environ, {**env, "IMAP_USER": "Sender@gmail.com"}):
+            self.assertEqual(len(rc.imap_accounts()), 1)   # same inbox is not read twice
+
+    def test_one_broken_inbox_does_not_hide_bounces_from_the_other(self):
+        import tempfile, reply_checker as rc
+        tmp = tempfile.mkdtemp(prefix="imap_")
+        bounce = (b"From: mailer-daemon@googlemail.com\r\nTo: sender@gmail.com\r\nSubject: Delivery Status Notification "
+                  b"(Failure)\r\nMessage-ID: <dsn1@x>\r\n\r\nAddress not found: ravi@acme.in\r\n")
+
+        class Imap:
+            def __init__(self, host): self.user = None
+            def login(self, user, pw):
+                if user == "other@gmail.com":
+                    raise rc.imaplib.IMAP4.error("bad password")
+                self.user = user
+            def select(self, *a, **k): return "OK", [b"1"]
+            def uid(self, cmd, *args):
+                if cmd == "search":
+                    return "OK", [b"7"]
+                return "OK", [(b"7 (BODY[] {1}", bounce)]
+            def logout(self): pass
+
+        env = {"SMTP_USER": "sender@gmail.com", "SMTP_PASS": "a", "IMAP_USER": "other@gmail.com", "IMAP_PASSWORD": "b"}
+        with mock.patch.dict(os.environ, env), mock.patch.object(rc, "STATE_FILE", os.path.join(tmp, "s.json")), \
+                mock.patch("builtins.print"):
+            events = rc.fetch_events({"ravi@acme.in"}, imap_factory=Imap)
+        self.assertEqual([(e["type"], e["email"], e["inbox"]) for e in events], [("bounce", "ravi@acme.in", "sender@gmail.com")])
+
+    def test_old_state_file_keeps_its_position_for_the_old_inbox(self):
+        import reply_checker as rc
+        with mock.patch.dict(os.environ, {"IMAP_USER": "other@gmail.com", "SMTP_USER": "sender@gmail.com"}):
+            uids = rc._uid_state({"last_uid": 50312})
+        self.assertEqual(uids, {"other@gmail.com": 50312})   # the sending inbox starts from its own beginning
