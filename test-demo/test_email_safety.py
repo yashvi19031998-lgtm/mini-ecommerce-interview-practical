@@ -266,3 +266,23 @@ class BounceInboxIsTheSendingAccount(unittest.TestCase):
         with mock.patch.dict(os.environ, {"IMAP_USER": "other@gmail.com", "SMTP_USER": "sender@gmail.com"}):
             uids = rc._uid_state({"last_uid": 50312})
         self.assertEqual(uids, {"other@gmail.com": 50312})   # the sending inbox starts from its own beginning
+
+
+class MailCheckStatusForTheReport(unittest.TestCase):
+    def test_status_is_written_only_after_a_check_and_shown_in_the_report(self):
+        import json, tempfile, daily_report as dr
+        path = os.path.join(tempfile.mkdtemp(prefix="mcs_"), "logs", "status.json")
+        with mock.patch.dict(ec._port25_blocked, {"value": None}):
+            self.assertEqual(ec.record_check_status(path), {})
+            self.assertFalse(os.path.exists(path))
+        with mock.patch.dict(ec._port25_blocked, {"value": True}), mock.patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}):
+            st = ec.record_check_status(path)
+        self.assertEqual((st["mailbox_check"], st["where"]), ("blocked", "GitHub Actions"))
+        self.assertEqual(ec.read_check_status(path)["mailbox_check"], "blocked")
+        with mock.patch.object(dr, "_mail_check_status", return_value=st):
+            report = dr.build_report(datetime.date(2026, 11, 13), [], [], [], [], {})
+        _, body, _ = dr.render(report)
+        self.assertIn("Mailbox check is <b>blocked</b> on GitHub Actions", body)
+        with mock.patch.object(dr, "_mail_check_status", return_value={}):
+            _, body, _ = dr.render(dr.build_report(datetime.date(2026, 11, 13), [], [], [], [], {}))
+        self.assertNotIn("Mailbox check", body)

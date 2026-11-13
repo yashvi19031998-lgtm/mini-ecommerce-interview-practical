@@ -190,3 +190,42 @@ def verify_mailbox(email: str, sender: str = "") -> tuple:
             return CATCH_ALL, "domain accepts every address, so this mailbox cannot be confirmed"
         return VALID, f"mailbox confirmed by {mx}"
     return UNKNOWN, last_error or "no mail server answered"
+
+
+# ---------------------------------------------------------------------------
+# Whether mailbox checks work on the machine running the hourly job (GitHub runners often block port 25).
+# Saved to logs/mail_check_status.json (committed with the other logs) and shown in the daily report.
+# ---------------------------------------------------------------------------
+STATUS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs", "mail_check_status.json")
+
+
+def record_check_status(path: str = None) -> dict:
+    """Writes what this run learned about port 25. Does nothing when no mailbox was checked this run."""
+    import datetime
+    import json
+    blocked = _port25_blocked["value"]
+    if blocked is None:
+        return {}
+    status = {
+        "mailbox_check": "blocked" if blocked else "works",
+        "checked_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "where": "GitHub Actions" if os.getenv("GITHUB_ACTIONS") == "true" else "this computer",
+    }
+    path = path or STATUS_FILE
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(status, fh)
+    except OSError:
+        pass
+    return status
+
+
+def read_check_status(path: str = None) -> dict:
+    import json
+    try:
+        with open(path or STATUS_FILE, encoding="utf-8") as fh:
+            data = json.load(fh)
+            return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}

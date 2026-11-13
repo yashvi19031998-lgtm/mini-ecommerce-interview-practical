@@ -147,6 +147,14 @@ def send_kind(source):
 
 
 # ---------------------------------------------------------------- the report
+def _mail_check_status() -> dict:
+    try:
+        from email_checks import read_check_status
+        return read_check_status()
+    except Exception:
+        return {}
+
+
 def build_report(day, leads, sent, activities, runs, settings, daily_cap=DAILY_CAP_DEFAULT):
     by_email, by_id = lead_index(leads)
 
@@ -229,6 +237,7 @@ def build_report(day, leads, sent, activities, runs, settings, daily_cap=DAILY_C
         "total_leads": len(leads),
         "excluded_companies": settings.get("excludedCompanies", []),
         "test_mails_to_own_address": own_tests,
+        "mail_check": _mail_check_status(),
     }
     return {"day": day.isoformat(), "totals": totals, "by_kind": dict(by_kind), "by_source": dict(by_source),
             "intro": sorted(intro, key=lambda r: r["time"]), "followups": followups, "other_sends": other_sends,
@@ -260,6 +269,19 @@ def _table(rows, cols, empty):
     for r in rows:
         body += "<tr>" + "".join(f'<td style="padding:6px 8px;border-bottom:1px solid #f2f2f3;font-size:13px;vertical-align:top">{e(str(r.get(k, "")))}</td>' for k, _ in cols) + "</tr>"
     return f'<table style="border-collapse:collapse;width:100%;margin:6px 0 18px">{"<tr>" + head + "</tr>"}{body}</table>'
+
+
+def _mail_check_html(mc: dict) -> str:
+    """Tells the owner whether automatic e-mail can work where the hourly job runs."""
+    if not mc:
+        return ""
+    if mc.get("mailbox_check") == "blocked":
+        return ('<p style="background:#fdf1e3;color:#a2650d;padding:10px 12px;border-radius:10px">Mailbox check is '
+                f'<b>blocked</b> on {html.escape(str(mc.get("where", "")))} (last seen {html.escape(str(mc.get("checked_at", "")))}). '
+                'To avoid bounces, no automatic e-mail is sent from there. Send from the app on your computer '
+                '(Run 1-Hour Cycle Now), or add a mailbox-verification service.</p>')
+    return (f'<p style="font-size:13px;color:#1f9254">Mailbox check works on {html.escape(str(mc.get("where", "")))} '
+            f'(last seen {html.escape(str(mc.get("checked_at", "")))}).</p>')
 
 
 def render(report):
@@ -314,6 +336,7 @@ daily limit: <b>{st['daily_cap_used']} / {st['daily_cap']}</b> used<br>
 Total leads: <b>{st['total_leads']:,}</b> &middot; leads whose last send failed: <b>{st['leads_failed_status']}</b> &middot;
 do-not-contact list: {e(', '.join(map(str, st['excluded_companies'])) or 'empty')}
 {f"<br>Test mails to our own address (not counted above): <b>{st['test_mails_to_own_address']}</b>" if st['test_mails_to_own_address'] else ''}</p>
+{_mail_check_html(st.get('mail_check') or {})}
 <p style="color:#8a8f98;font-size:12px">The attached CSV lists every e-mail sent on this day. Sent automatically by the daily report (GitHub Actions).</p>
 </body></html>"""
 

@@ -471,6 +471,13 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
             failures_in_row += 1
             print(f"       -> [AUTO-MAIL-PENDING] [FAILED] {mail_res.get('error')}")
 
+    try:  # remember whether mailbox checks work here (shown in the daily report)
+        from email_checks import record_check_status
+        st = record_check_status()
+        if st:
+            print(f"       [AUTO-MAIL-PENDING] Mailbox check on {st['where']}: {st['mailbox_check']}")
+    except Exception:
+        pass
     return dispatched
 
 
