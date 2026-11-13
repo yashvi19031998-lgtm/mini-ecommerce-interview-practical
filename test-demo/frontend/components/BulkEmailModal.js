@@ -1,21 +1,28 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Mail, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, Building, User } from 'lucide-react';
+import { outreachNames } from '../lib/leadNames';
 
 export default function BulkEmailModal({
   selectedLeadIds = [],
   leads = [],
   isOpen,
   onClose,
-  onBulkSend
+  onBulkSend,
+  signature = ''
 }) {
   const [subject, setSubject] = useState('Partnership & Dedicated Tech Team for {company}');
   const [message, setMessage] = useState(
-    `Hi {name} Team,\n\n` +
-    `I came across your business {company} in {location}. Sangeeta Infotech specializes in dedicated full-stack development, modern web applications, and backend scaling.\n\n` +
-    `We would love to know if your team needs extra engineering hands or specialized talent on a monthly or project engagement.\n\n` +
-    `Would you be open to a 10-minute discovery call this week?`
+    `Hi {name},\n\n` +
+    `I came across {company} and your business presence in {location}.\n\n` +
+    `At Sangeeta Infotech, we specialize in high-performance web applications, mobile apps, and custom software systems. ` +
+    `We help ambitious companies scale engineering velocity and launch features faster with dependable tech talent.\n\n` +
+    `Key expertise we offer:\n` +
+    `• Full-Stack Web Development & Modern Portals\n` +
+    `• Mobile Apps (iOS & Android)\n` +
+    `• AI Integrations & Automation Workflows\n\n` +
+    `Would you be open to a brief 10-minute call this week to explore how we can support your tech needs?`
   );
   const [delayMs, setDelayMs] = useState(1500);
   const [isSending, setIsSending] = useState(false);
@@ -154,7 +161,12 @@ export default function BulkEmailModal({
 
           {/* Message Template */}
           <div className="form-group">
-            <label className="form-label">Email Message Template</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label className="form-label" style={{ margin: 0 }}>Email Message Template</label>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Smart Placeholders: <code>{'{name}'}</code>, <code>{'{company}'}</code>, <code>{'{location}'}</code>
+              </span>
+            </div>
             <textarea
               className="form-input"
               rows={7}
@@ -163,6 +175,43 @@ export default function BulkEmailModal({
               disabled={isSending}
             />
           </div>
+
+          {/* Dynamic Personalized Preview for First Lead */}
+          {validEmailLeads.length > 0 && (() => {
+            const sampleLead = validEmailLeads[0];
+            const names = outreachNames(sampleLead['Company Name'] || sampleLead.company_name);
+            const sampleLoc = String(sampleLead.Address || sampleLead.location || 'your region').trim();
+            const previewSub = subject
+              .replace(/{company}/g, names.company)
+              .replace(/{name}/g, names.greeting)
+              .replace(/{location}/g, sampleLoc);
+            const previewBody = message
+              .replace(/{company}/g, names.company)
+              .replace(/{name}/g, names.greeting)
+              .replace(/{location}/g, sampleLoc);
+
+            return (
+              <div style={{ marginTop: '0.85rem', padding: '0.75rem', background: 'var(--bg-subtle, #f7f7f8)', borderRadius: '8px', border: '1px solid var(--border-light, #ececee)' }}>
+                <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--primary-blue, #1a6dff)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Sparkles size={13} />
+                  Live Personalized Preview for: {names.company} ({sampleLead.Email})
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  Subject: {previewSub}
+                </div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', whiteSpace: 'pre-line', lineHeight: '1.4' }}>
+                  {previewBody}
+                  {signature && (
+                    <>
+                      <br /><br />
+                      ---<br />
+                      {signature.trim()}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="modal-footer">
