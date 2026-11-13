@@ -20,6 +20,7 @@ import argparse
 import datetime
 import json
 import os
+import time
 
 import env_loader  # noqa: F401  (loads .env before reading settings below)
 import slack_notifier
@@ -493,6 +494,87 @@ def qualify_one_heuristic(lead: dict) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Free option: Google Gemini (used only when no Anthropic key is set)
+# Get a key at https://aistudio.google.com -> "Get API key"; put it in .env / GitHub secrets as GEMINI_API_KEY.
+# The free tier has daily limits and Google may use the text sent to improve its products (the text is the
+# lead's own public post). On a rate limit the rest of the run uses the rule-based classifier.
+# ---------------------------------------------------------------------------
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_DELAY_SEC = float(os.getenv("GEMINI_DELAY_SEC", "4.5"))  # stay under free-tier requests-per-minute limits
+GEMINI_TIMEOUT = 40
+
+
+class GeminiRateLimited(RuntimeError):
+    """Gemini said 429/402 (free-tier limit or no credit): stop calling it for this run."""
+
+
+def gemini_key() -> str:
+    return (os.getenv("GEMINI_API_KEY") or "").strip()
+
+
+_GEMINI_FORMAT = (
+    "\n\nAnswer with ONLY one JSON object, no other text, with exactly these keys: "
+    '"category" (one of: ' + ", ".join(AI_CATEGORIES) + '), "score" (integer 0-10), '
+    '"summary" (one sentence: who they are and what they want), "requirement" (the concrete work they need, or ""), '
+    '"tech_stack" (comma-separated technologies mentioned, or ""), "budget" (budget or rate exactly as stated, or ""), '
+    '"reason" (short justification for the category and score).'
+)
+
+
+def _parse_gemini_json(text: str) -> dict:
+    t = (text or "").strip()
+    if t.startswith("```"):
+        t = t.strip("`")
+        t = t[t.find("{"):] if "{" in t else t
+    start, end = t.find("{"), t.rfind("}")
+    if start < 0 or end <= start:
+        raise ValueError("no JSON object in the reply")
+    data = json.loads(t[start:end + 1])
+    if not isinstance(data, dict) or data.get("category") not in AI_CATEGORIES:
+        raise ValueError(f"unexpected category {data.get('category') if isinstance(data, dict) else data!r}")
+    try:
+        data["score"] = max(0, min(10, int(float(data.get("score", 0)))))
+    except (TypeError, ValueError):
+        raise ValueError("score is not a number")
+    for k in ("summary", "requirement", "tech_stack", "budget", "reason"):
+        data[k] = str(data.get(k) or "")
+    return data
+
+
+def qualify_one_gemini(lead: dict, post=None) -> dict:
+    """Classifies one lead with Gemini. Raises GeminiRateLimited on 429/402, RuntimeError/ValueError otherwise."""
+    import requests
+    post = post or requests.post
+    key = gemini_key()
+    if not key:
+        raise RuntimeError("GEMINI_API_KEY is not set")
+    prompt = (SYSTEM_PROMPT + _GEMINI_FORMAT + f"\n\nToday's date: {datetime.date.today().isoformat()}"
+              f"\n\nQualify this lead:\n\n{_lead_text(lead)}")
+    body = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json", "maxOutputTokens": 1024},
+    }
+    resp = post(GEMINI_URL.format(model=GEMINI_MODEL), json=body, timeout=GEMINI_TIMEOUT,
+                headers={"x-goog-api-key": key, "Content-Type": "application/json"})
+    if resp.status_code in (402, 429):
+        raise GeminiRateLimited(f"Gemini limit reached (HTTP {resp.status_code})")
+    if resp.status_code != 200:
+        try:
+            msg = resp.json().get("error", {}).get("message", "")
+        except ValueError:
+            msg = resp.text[:200]
+        raise RuntimeError(f"Gemini HTTP {resp.status_code}: {msg[:200]}")
+    data = resp.json()
+    try:
+        parts = data["candidates"][0]["content"]["parts"]
+    except (KeyError, IndexError, TypeError):
+        reason = (data.get("promptFeedback") or {}).get("blockReason") or "no answer"
+        raise RuntimeError(f"Gemini returned no text ({reason})")
+    return _parse_gemini_json("".join(p.get("text", "") for p in parts if isinstance(p, dict)))
+
+
 def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -> dict:
     stats = {"qualified": 0, "failed": 0, "skipped_no_key": False}
     pending = [l for l in registry.leads if not l.get("ai_qualified_at")]
@@ -500,10 +582,14 @@ def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -
         return stats
 
     client = _get_client()
-    if client is None:
-        print(f"[AI] ANTHROPIC_API_KEY not set - evaluating {min(len(pending), limit)} leads via Fast Heuristic NLP Classifier...")
-    else:
+    use_gemini = client is None and bool(gemini_key())
+    if client is not None:
         print(f"[AI] Qualify leads via Claude AI ({AI_MODEL}) on up to {limit} leads...")
+    elif use_gemini:
+        print(f"[AI] Qualify leads via Google Gemini ({GEMINI_MODEL}, free tier) on up to {limit} leads...")
+    else:
+        print(f"[AI] No AI key (ANTHROPIC_API_KEY / GEMINI_API_KEY) - evaluating {min(len(pending), limit)} leads via Fast Heuristic NLP Classifier...")
+    gemini_calls = 0
 
     # Newest leads first: they are the most likely to still be open
     pending.sort(key=lambda l: l.get("first_seen_at", ""), reverse=True)
@@ -521,6 +607,19 @@ def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -
                 result = qualify_one(client, lead)
             except Exception as e:
                 # Fall back to heuristic engine if Claude API has issues
+                result = qualify_one_heuristic(lead)
+        elif use_gemini:
+            if gemini_calls and GEMINI_DELAY_SEC > 0:
+                time.sleep(GEMINI_DELAY_SEC)
+            gemini_calls += 1
+            try:
+                result = qualify_one_gemini(lead)
+            except GeminiRateLimited as e:
+                print(f"[AI] {e} - the rest of this run uses the rule-based classifier.")
+                use_gemini = False
+                result = qualify_one_heuristic(lead)
+            except Exception as e:  # one bad answer: this lead falls back to the rules
+                print(f"[AI] Gemini could not classify {lead.get('lead_id')}: {str(e)[:120]} - using rules")
                 result = qualify_one_heuristic(lead)
         else:
             result = qualify_one_heuristic(lead)

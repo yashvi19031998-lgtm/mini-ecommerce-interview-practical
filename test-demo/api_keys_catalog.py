@@ -16,6 +16,11 @@ INTEGRATIONS: List[Dict] = [
      "keys": ["ANTHROPIC_API_KEY|ANTHROPIC_AUTH_TOKEN"],
      "purpose": "AI lead scoring and qualification", "used_by": "AI Lead Quality, Slack alerts",
      "cost": "paid", "cost_note": "Pay per use", "url": "https://console.anthropic.com/settings/keys"},
+    {"group": "Core", "id": "gemini", "name": "Google Gemini (free AI option)",
+     "keys": ["GEMINI_API_KEY"],
+     "purpose": "AI lead qualification when no Anthropic key is set", "used_by": "AI Lead Quality",
+     "cost": "free", "cost_note": "Free tier with daily limits; Google may use the text sent to improve its products",
+     "url": "https://aistudio.google.com/apikey"},
 
     {"group": "Email", "id": "smtp", "name": "Gmail SMTP (send)",
      "keys": ["SMTP_USER", "SMTP_PASS"],
