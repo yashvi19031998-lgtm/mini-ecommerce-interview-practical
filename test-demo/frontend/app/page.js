@@ -38,6 +38,7 @@ import AutoScheduler from '../components/AutoScheduler';
 import FollowUpHistory from '../components/FollowUpHistory';
 import CrmSources from '../components/CrmSources';
 import Toast from '../components/Toast';
+import ChatAssistant from '../components/ChatAssistant';
 import { Loader2 } from 'lucide-react';
 
 import {
@@ -525,6 +526,9 @@ function DashboardContent() {
           showToast={showToast}
         />
       )}
+
+      {/* In-app assistant: floating button, bottom right */}
+      <ChatAssistant />
 
       {/* Global Toast Container */}
       <div className="toast-container" aria-live="polite">

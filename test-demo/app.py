@@ -1998,6 +1998,135 @@ def report_options_endpoint():
         return jsonify({"success": False, "error": str(e)}), 400
 
 
+# ==============================================================================
+# IN-APP CHAT ASSISTANT (chat_assistant.py) - read-only answers about leads, e-mails, scrapers
+# ==============================================================================
+import chat_assistant
+
+
+def _chat_context():
+    leads, runs, sent, acts = _report_context()
+    return {"leads": leads, "runs": runs, "sent": sent, "acts": acts, "settings": load_settings()}
+
+
+@app.route("/api/chat", methods=["POST"])
+def chat_endpoint():
+    data = _json_body()
+    try:
+        res = chat_assistant.answer(data.get("message"), _chat_context)
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, **res})
+
+
+# ==============================================================================
+# WEBSITE CHATBOT (website_chatbot.py) - PUBLIC: no login. Lives outside /api/ on purpose
+# (the login guard covers /api/ only); protected by an origin allow-list, size limits and rate limits.
+# ==============================================================================
+import re
+import website_chatbot
+from flask import Response
+
+WIDGET_DIR = os.path.join(BASE_DIR, "widget")
+MAX_PUBLIC_BODY = 8 * 1024
+
+
+def _widget_origin_ok(origin: str) -> bool:
+    if not origin:
+        return True  # same-origin request (the demo page served by this backend)
+    return origin.rstrip("/") in website_chatbot.allowed_origins() or (
+        BIND_HOST in ("127.0.0.1", "localhost", "::1") and re.match(r"^https?://(127\.0\.0\.1|localhost)(:\d+)?$", origin))
+
+
+def _cors(resp, origin: str):
+    if origin and _widget_origin_ok(origin):
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        resp.headers["Access-Control-Max-Age"] = "600"
+    resp.headers["Vary"] = "Origin"
+    return resp
+
+
+def _save_website_lead(lead: dict) -> str:
+    """Adds the visitor as a lead (normal duplicate check) and tells the owner by e-mail. Returns the lead id."""
+    global _cached_leads_data
+    contact = lead.get("email") or lead.get("phone") or ""
+    raw = {
+        # Never one shared placeholder name: the duplicate check would merge different visitors into one lead
+        "company_name": lead.get("name") or f"Website enquiry - {contact}",
+        "full_name": lead.get("name", ""),
+        "email": lead.get("email", ""),
+        "mobile_number": lead.get("phone", ""),
+        # The page goes in the description, not source_url: every visitor of one page shares that URL, and the
+        # duplicate check matches leads on source_url.
+        "description": f"Website chat enquiry: {lead.get('requirement', '')}"
+                       + (f" (page: {lead.get('page')})" if lead.get("page") else ""),
+        "source": "Website Chatbot",
+        "lead_type": "inbound",
+    }
+    with leads_write_lock:
+        registry = MasterLeadRegistry(MASTER_PATH)
+        outcome, saved = registry.add_lead(raw, default_source="Website Chatbot")
+        if outcome == "skipped_invalid" or not registry.save_master_safely():
+            return ""
+    _cached_leads_data.clear()
+    lead_id = (saved or {}).get("lead_id", "") if isinstance(saved, dict) else ""
+    followup_store.safe_log(lead_id, "note", "Website chat enquiry", details=lead.get("requirement", ""),
+                            source="website chatbot", lead_name=raw["company_name"], lead_email=raw["email"])
+
+    def _notify():
+        try:
+            owner = load_settings().get("email") or os.getenv("SMTP_USER", "")
+            if owner:
+                body = (f"New enquiry from the website chatbot.\n\nName: {lead.get('name') or '-'}\n"
+                        f"E-mail: {lead.get('email') or '-'}\nPhone: {lead.get('phone') or '-'}\n"
+                        f"Page: {lead.get('page') or '-'}\nLead ID: {lead_id}\n\nRequirement:\n{lead.get('requirement')}")
+                send_smtp_email(owner, f"New website enquiry: {lead.get('name') or lead.get('email') or lead.get('phone')}",
+                                body, bypass_duplicate_check=True, verify=None)
+        except Exception as err:
+            print(f"[website chatbot] owner notification failed: {err}")
+    threading.Thread(target=_notify, daemon=True).start()
+    return lead_id or "saved"
+
+
+@app.route("/public/chat", methods=["POST", "OPTIONS"])
+def public_chat():
+    origin = request.headers.get("Origin", "")
+    if request.method == "OPTIONS":
+        return _cors(Response(status=204), origin)
+    if not _widget_origin_ok(origin):
+        return _cors(jsonify({"success": False, "error": "This website is not allowed to use the chat."}), origin), 403
+    if (request.content_length or 0) > MAX_PUBLIC_BODY:
+        return _cors(jsonify({"success": False, "error": "Message too long."}), origin), 413
+    payload = request.get_json(silent=True, force=True)
+    ip = request.remote_addr or "unknown"
+    try:
+        res = website_chatbot.handle(payload, load_settings(), ip, _save_website_lead)
+    except PermissionError as e:
+        return _cors(jsonify({"success": False, "error": str(e)}), origin), 429
+    except ValueError as e:
+        return _cors(jsonify({"success": False, "error": str(e)}), origin), 400
+    return _cors(jsonify({"success": True, **res}), origin)
+
+
+@app.route("/widget/chatbot.js", methods=["GET"])
+def widget_script():
+    with open(os.path.join(WIDGET_DIR, "chatbot.js"), encoding="utf-8") as fh:
+        return Response(fh.read(), mimetype="application/javascript")
+
+
+@app.route("/widget/demo", methods=["GET"])
+def widget_demo():
+    """A test page for the website chatbot - only when the backend runs on this computer."""
+    if BIND_HOST not in ("127.0.0.1", "localhost", "::1"):
+        return "Not found", 404
+    return ("<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,"
+            "initial-scale=1'><title>Website chatbot demo</title></head><body style='font-family:system-ui;padding:24px'>"
+            "<h1>Website chatbot demo</h1><p>This page stands in for the company website. Use the chat button "
+            "at the bottom right.</p><script src='/widget/chatbot.js' defer></script></body></html>")
+
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)
