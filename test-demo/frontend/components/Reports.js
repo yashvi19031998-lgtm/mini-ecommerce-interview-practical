@@ -12,8 +12,10 @@ import {
   Calendar,
   RotateCw,
   AlertCircle,
-  Filter
+  Filter,
+  UserPlus
 } from 'lucide-react';
+import { UntouchedPanel } from './FollowUpHistory';
 
 import {
   fetchReportOptions,
@@ -36,20 +38,24 @@ import OutreachTab from './reports/OutreachTab';
 import DataHealthTab from './reports/DataHealthTab';
 import DailyLogTab from './reports/DailyLogTab';
 
-const TABS = [
+// Report sections. Shown as the Reports submenu in the sidebar (Sidebar.js imports this list).
+export const REPORT_SECTIONS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'not-contacted', label: 'New Leads - Not Contacted', icon: UserPlus, noFilters: true },
   { id: 'followups', label: 'Follow-up Watchlist', icon: BellRing },
   { id: 'scrapers', label: 'Scrapers', icon: Cpu },
   { id: 'sources', label: 'Sources', icon: Globe },
   { id: 'pipeline', label: 'Pipeline', icon: TrendingUp },
   { id: 'outreach', label: 'Outreach', icon: Send },
-  { id: 'data-health', label: 'Data Health', icon: ShieldAlert },
-  { id: 'daily-log', label: 'Daily Log', icon: Calendar },
+  { id: 'data-health', label: 'Data Health', icon: ShieldAlert, noFilters: true },
+  { id: 'daily-log', label: 'Daily Log', icon: Calendar, noFilters: true },
 ];
+const TABS = REPORT_SECTIONS;
 
-export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper }) {
+// section / onSectionChange: when given (sidebar submenu), the sidebar picks the section and the tab bar is hidden.
+export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper, section = null, onSectionChange = null }) {
   // Load saved active tab or default to 'overview'
-  const [activeTab, setActiveTab] = useState(() => {
+  const [ownTab, setActiveTab] = useState(() => {
     try {
       return localStorage.getItem('reports_active_tab') || 'overview';
     } catch {
@@ -105,11 +111,15 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper })
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
+  const activeTab = section && TABS.some(t => t.id === section) ? section : ownTab;
+  const current = TABS.find(t => t.id === activeTab) || TABS[0];
+
   // Overdue count badge
   const overdueCount = summaryData?.attention_counts?.overdue_followups || summaryData?.cards_by_id?.overdue_followups?.value || 0;
 
   // Persist tab changes
   const handleTabChange = (tabId) => {
+    if (onSectionChange) onSectionChange(tabId);
     setActiveTab(tabId);
     try {
       localStorage.setItem('reports_active_tab', tabId);
@@ -226,7 +236,7 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper })
           // If overdue leads exist and user has not set an explicit active tab, auto-open followups
           try {
             const explicitlySaved = localStorage.getItem('reports_active_tab');
-            if (!explicitlySaved && (res?.attention_counts?.overdue_followups > 0 || res?.cards_by_id?.overdue_followups?.value > 0)) {
+            if (!section && !explicitlySaved && (res?.attention_counts?.overdue_followups > 0 || res?.cards_by_id?.overdue_followups?.value > 0)) {
               setActiveTab('followups');
             }
           } catch {}
@@ -249,7 +259,7 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper })
       {/* Page Title & Subtitle */}
       <div className="rp-page-header">
         <div className="rp-page-header-text">
-          <h1 className="rp-page-title">Executive Reports & Analytics</h1>
+          <h1 className="rp-page-title">{section ? `Reports - ${current.label}` : 'Executive Reports & Analytics'}</h1>
           <p className="rp-page-subtitle">
             Lead generation pipeline health, scraper reliability, outreach performance, and follow-up tracking.
           </p>
@@ -268,7 +278,8 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper })
         </div>
       </div>
 
-      {/* Filter Control Bar */}
+      {/* Filter Control Bar (hidden for sections that do not use the period / source / stage filters) */}
+      {!current.noFilters && (
       <div className="rp-filter-bar">
         {/* Preset Selector */}
         <div className="rp-filter-group">
@@ -349,8 +360,10 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper })
           </select>
         </div>
       </div>
+      )}
 
-      {/* Tabs Navigation Bar */}
+      {/* Tabs Navigation Bar (only when the sidebar submenu is not driving the section) */}
+      {!section && (
       <div className="rp-tabs-nav" role="tablist" aria-label="Report sections">
         {TABS.map((tab) => {
           const Icon = tab.icon;
@@ -378,6 +391,7 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper })
           );
         })}
       </div>
+      )}
 
       {/* Error Alert */}
       {error && (
@@ -413,6 +427,10 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper })
             onOpenFollowups={onOpenFollowups}
             onOpenScraper={onOpenScraper}
           />
+        )}
+
+        {activeTab === 'not-contacted' && (
+          <UntouchedPanel onOpen={onOpenFollowups ? () => onOpenFollowups() : null} onNotice={(_, msg) => setError(msg)} />
         )}
 
         {activeTab === 'followups' && (

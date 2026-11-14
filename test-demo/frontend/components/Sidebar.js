@@ -8,6 +8,10 @@ import {
   ShoppingCart, Globe, MessageCircle, House, FileSearch, Network, Factory, Phone, Wrench, Ship, Store,
   Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Network as NetworkIcon, Link2, TextSearch, ListTree, FolderUp, Wrench as WrenchIcon, Gauge, Globe as GlobeIcon, CalendarClock, MailSearch, Sparkles, CheckSquare, HeartPulse, Eraser, Wand2, BarChart3
 } from 'lucide-react';
+import { REPORT_SECTIONS } from './Reports';
+
+// Reports submenu: one entry per report section (ids rp-<section>, see Reports.js REPORT_SECTIONS)
+export const REPORT_ITEMS = REPORT_SECTIONS.map(s => ({ id: `rp-${s.id}`, label: s.label, icon: s.icon }));
 
 // Scraping / Mining submenu (order as requested). soon = planned module (MiningComingSoon.js)
 export const MINING_ITEMS = [
@@ -97,7 +101,8 @@ export default function Sidebar({
     {
       id: 'reports',
       label: 'Reports',
-      icon: BarChart3
+      icon: BarChart3,
+      children: REPORT_ITEMS
     },
     {
       id: 'mining',
@@ -186,7 +191,7 @@ export default function Sidebar({
   ];
 
   // Groups with a submenu: open by default (main work areas); the group of the active page always opens
-  const [openGroups, setOpenGroups] = useState({ mining: true, extraction: true, bulk: true, crawler: true, utilities: true, domains: true, leadcare: true });
+  const [openGroups, setOpenGroups] = useState({ reports: true, mining: true, extraction: true, bulk: true, crawler: true, utilities: true, domains: true, leadcare: true });
   const activeGroup = navItems.find(i => i.children && i.children.some(c => c.id === activeTab))?.id;
   useEffect(() => { if (activeGroup) setOpenGroups(prev => (prev[activeGroup] ? prev : { ...prev, [activeGroup]: true })); }, [activeGroup]);
   const toggleGroup = (id) => setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));

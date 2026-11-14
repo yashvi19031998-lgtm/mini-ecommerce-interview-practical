@@ -335,8 +335,10 @@ function DashboardContent() {
             )}
 
             {/* Reports module */}
-            {activeTab === 'reports' && (
+            {(activeTab === 'reports' || activeTab.startsWith('rp-')) && (
               <Reports
+                section={activeTab.startsWith('rp-') ? activeTab.slice(3) : 'overview'}
+                onSectionChange={(id) => setActiveTab(`rp-${id}`)}
                 onOpenLeads={() => setActiveTab('leads')}
                 onOpenFollowups={() => setActiveTab('followups')}
                 onOpenScraper={() => setActiveTab('autoscheduler')}

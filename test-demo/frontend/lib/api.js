@@ -219,6 +219,11 @@ export async function fetchFollowupQueue(bucket = 'all') {
   return await apiFetch(`/api/followups/queue?bucket=${encodeURIComponent(bucket)}`);
 }
 
+// New leads nobody has contacted yet, highest score first. band = all|high|medium|low
+export async function fetchUntouchedLeads({ band = 'all', hasEmail = false } = {}) {
+  return await apiFetch(`/api/followups/untouched?band=${encodeURIComponent(band)}&has_email=${hasEmail ? 1 : 0}`);
+}
+
 // 21. FollowUp History: activity feed (newest first)
 export async function fetchFollowupHistory({ leadId = '', types = [], q = '', limit = 50, offset = 0 } = {}) {
   const params = new URLSearchParams({ lead_id: leadId, types: types.join(','), q, limit, offset });

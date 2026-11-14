@@ -853,6 +853,67 @@ def followups_queue():
     return jsonify({"success": True, "items": items, "total": len(items)})
 
 
+SCORE_BANDS = {"high": (7, 10), "medium": (4, 6), "low": (0, 3)}
+
+
+def _score_of(lead):
+    """AI score 0-10 (falls back to the scraper's intent score); None when the lead was never scored."""
+    for key in ("ai_score", "intent_score"):
+        try:
+            return max(0, min(10, int(round(float(str(lead.get(key, "")).strip())))))
+        except ValueError:
+            continue
+    return None
+
+
+def _band_of(score):
+    if score is None:
+        return "unscored"
+    return next(b for b, (lo, hi) in SCORE_BANDS.items() if lo <= score <= hi)
+
+
+@app.route("/api/followups/untouched", methods=["GET"])
+def followups_untouched():
+    """New leads nobody has contacted yet: no e-mail sent, no activity logged, still open.
+    ?band=all|high|medium|low|unscored  ?has_email=1 (only leads with an e-mail address)"""
+    band = request.args.get("band", "all").lower()
+    if band not in ("all", "unscored", *SCORE_BANDS):
+        return jsonify({"success": False, "error": "band must be all, high, medium, low or unscored"}), 400
+    only_email = request.args.get("has_email") == "1"
+    touched = followup_store.touched_lead_ids()
+    counts = {"all": 0, "high": 0, "medium": 0, "low": 0, "unscored": 0}
+    items = []
+    for l in read_leads():
+        lid = str(l.get("id"))
+        status = str(l.get("Status") or "NEW").upper()
+        if lid in touched or status not in ("NEW", "", "NAN") or str(l.get("Email Status", "")).upper() in ("SENT", "INVALID"):
+            continue
+        email = str(l.get("Email") or "").split(",")[0].strip()
+        if email in ("N/A", "nan"):
+            email = ""
+        if only_email and "@" not in email:
+            continue
+        score = _score_of(l)
+        b = _band_of(score)
+        counts["all"] += 1
+        counts[b] += 1
+        if band != "all" and b != band:
+            continue
+        items.append({
+            "id": lid,
+            "name": str(l.get("Company Name") or l.get("full_name") or ""),
+            "email": email,
+            "phone": str(l.get("Mobile Number") or "").split(",")[0].strip().replace("N/A", ""),
+            "source": str(l.get("Source") or ""),
+            "score": score, "band": b,
+            "summary": str(l.get("ai_summary") or l.get("description") or "")[:200],
+            "found_at": str(l.get("first_seen_at") or ""),
+        })
+    items.sort(key=lambda i: i["found_at"], reverse=True)                                  # newest first...
+    items.sort(key=lambda i: i["score"] if i["score"] is not None else -1, reverse=True)  # ...within highest score first
+    return jsonify({"success": True, "items": items[:500], "total": len(items), "counts": counts})
+
+
 @app.route("/api/followups/history", methods=["GET"])
 def followups_history():
     try:

@@ -13,8 +13,87 @@ import {
 import { SequencesPanel, ReportPanel } from './FollowUpSequences';
 import {
   fetchFollowupSummary, fetchFollowupQueue, fetchFollowupHistory, fetchLeadTimeline,
-  logFollowupActivity, updateFollowup, importSentEmailsHistory
+  logFollowupActivity, updateFollowup, importSentEmailsHistory, fetchUntouchedLeads
 } from '../lib/api';
+
+const SCORE_BANDS = [
+  { id: 'all', label: 'All' },
+  { id: 'high', label: 'High score (7-10)' },
+  { id: 'medium', label: 'Medium (4-6)' },
+  { id: 'low', label: 'Low (0-3)' }
+];
+
+// ---------- New leads nobody has contacted yet ----------
+export function UntouchedPanel({ onOpen = null, onLog = null, onNotice, reloadKey }) {
+  const [band, setBand] = useState('high');
+  const [hasEmail, setHasEmail] = useState(false);
+  const [data, setData] = useState({ items: [], total: 0, counts: null });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchUntouchedLeads({ band, hasEmail })
+      .then(res => setData({ items: res.items || [], total: res.total || 0, counts: res.counts || null }))
+      .catch(err => onNotice('error', err.message))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [band, hasEmail, reloadKey]);
+
+  return (
+    <div className="theme-table-container">
+      <div className="fu-chip-group" style={{ paddingBottom: 12, alignItems: 'center' }}>
+        {SCORE_BANDS.map(b => (
+          <button key={b.id} type="button" className={`fu-chip ${band === b.id ? 'active' : ''}`} onClick={() => setBand(b.id)}>
+            {b.label}{data.counts ? ` (${data.counts[b.id] ?? 0})` : ''}
+          </button>
+        ))}
+        <label className="jp-hint" style={{ display: 'inline-flex', gap: 6, alignItems: 'center', marginLeft: 8 }}>
+          <input type="checkbox" checked={hasEmail} onChange={(e) => setHasEmail(e.target.checked)} /> Only leads with an e-mail
+        </label>
+      </div>
+      <div className="jp-hint" style={{ paddingBottom: 8 }}>
+        New leads with no e-mail sent and no call, note or follow-up logged yet. Highest score first.
+        {data.total > data.items.length ? ` Showing ${data.items.length} of ${data.total}.` : ''}
+      </div>
+      <div className="theme-table-scroll">
+        <table className="jp-table">
+          <thead>
+            <tr><th style={{ width: 70 }}>Score</th><th>Lead</th><th>Contact</th><th>Found</th>{onLog && <th style={{ width: 170 }}>Actions</th>}</tr>
+          </thead>
+          <tbody>
+            {loading && data.items.length === 0 ? (
+              <tr><td colSpan={onLog ? 5 : 4} className="jp-empty"><Loader2 size={14} className="animate-spin" /> Loading…</td></tr>
+            ) : data.items.length === 0 ? (
+              <tr><td colSpan={onLog ? 5 : 4} className="jp-empty">No uncontacted leads in this group.</td></tr>
+            ) : data.items.map(item => (
+              <tr key={item.id}>
+                <td><span className={`fu-score b-${item.band}`} title={`${item.band} score`}>{item.score ?? '—'}</span></td>
+                <td>
+                  {onOpen
+                    ? <button type="button" className="fu-link" onClick={() => onOpen(item.id)}>{item.name || item.email || item.id}</button>
+                    : <span>{item.name || item.email || item.id}</span>}
+                  <div className="jp-cell-sub fu-clamp" title={item.summary}>{item.source}{item.summary ? ` · ${item.summary}` : ''}</div>
+                </td>
+                <td>
+                  <div>{item.email || <span className="jp-hint">No e-mail</span>}</div>
+                  {item.phone && <div className="jp-cell-sub">{item.phone}</div>}
+                </td>
+                <td><div>{relative(item.found_at) || '—'}</div></td>
+                {onLog && (
+                  <td>
+                    <button type="button" className="theme-pill-btn" onClick={() => onLog({ id: item.id, name: item.name || item.email || item.id })}>
+                      <Plus size={13} /> Log activity
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 const TYPE_META = {
   email_sent: { label: 'Email sent', icon: Mail },
@@ -493,6 +572,9 @@ export default function FollowUpHistory({ leads = [], showToast }) {
         <button type="button" role="tab" aria-selected={tab === 'queue'} className={`fu-tab ${tab === 'queue' ? 'active' : ''}`} onClick={() => setTab('queue')}>
           Follow-up Queue {summary ? `(${summary.pending})` : ''}
         </button>
+        <button type="button" role="tab" aria-selected={tab === 'untouched'} className={`fu-tab ${tab === 'untouched' ? 'active' : ''}`} onClick={() => setTab('untouched')}>
+          Not Contacted Yet
+        </button>
         <button type="button" role="tab" aria-selected={tab === 'history'} className={`fu-tab ${tab === 'history' ? 'active' : ''}`} onClick={() => setTab('history')}>
           Activity History {summary ? `(${summary.activities_total})` : ''}
         </button>
@@ -506,6 +588,9 @@ export default function FollowUpHistory({ leads = [], showToast }) {
 
       {tab === 'sequences' && <SequencesPanel onNotice={say} onChanged={() => { loadSummary(); }} />}
       {tab === 'report' && <ReportPanel />}
+      {tab === 'untouched' && (
+        <UntouchedPanel reloadKey={summary?.activities_total ?? 0} onOpen={setTimelineLead} onLog={(lead) => setLogFor(lead)} onNotice={say} />
+      )}
 
       {/* ---------- Queue ---------- */}
       {tab === 'queue' && (

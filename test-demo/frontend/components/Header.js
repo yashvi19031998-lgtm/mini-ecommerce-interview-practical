@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { REPORT_SECTIONS } from './Reports';
 import { 
   Search, RefreshCw, Play, Send, Moon, Sun, Bell, 
   Menu, LogOut, ChevronRight, CheckCircle2, AlertCircle
@@ -24,6 +25,7 @@ export default function Header({
   const tabTitles = {
     dashboard: { root: 'LeadsGen AI', leaf: 'Dashboard' },
     reports: { root: 'LeadsGen AI', leaf: 'Reports' },
+    ...Object.fromEntries(REPORT_SECTIONS.map(s => [`rp-${s.id}`, { root: 'Reports', leaf: s.label }])),
     jobportal: { root: 'Scraping / Mining', leaf: 'Job Portals' },
     searchengines: { root: 'Scraping / Mining', leaf: 'Search Engines' },
     'mining-maps': { root: 'Scraping / Mining', leaf: 'Google Maps' },

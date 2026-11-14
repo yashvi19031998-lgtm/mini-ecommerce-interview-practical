@@ -2336,6 +2336,10 @@ input, button, select, textarea {
 }
 .fu-badge.s-pending { background: var(--warning-bg); color: var(--warning-amber); }
 .fu-badge.s-done { background: var(--success-bg); color: var(--success-green); }
+.fu-score { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 2px 8px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700; }
+.fu-score.b-high { background: var(--success-bg); color: var(--success-green); }
+.fu-score.b-medium { background: var(--warning-bg); color: var(--warning-amber); }
+.fu-score.b-low, .fu-score.b-unscored { background: var(--bg-subtle); color: var(--text-muted); }
 .fu-overlay {
   position: fixed; inset: 0; z-index: 60; background: rgba(17, 18, 20, 0.35);
   display: flex; justify-content: center; align-items: flex-start; padding: 6vh 16px; overflow-y: auto;

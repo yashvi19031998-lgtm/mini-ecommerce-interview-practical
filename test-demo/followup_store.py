@@ -260,6 +260,11 @@ def queue(bucket: str = "all", now: datetime.datetime = None) -> List[Dict[str, 
     return sorted(items, key=lambda r: r["due_at"])
 
 
+def touched_lead_ids() -> set:
+    """Lead ids that have ANY activity or follow-up logged (i.e. someone already worked on them)."""
+    return {r["lead_id"] for r in _read_all() if r.get("lead_id")}
+
+
 def last_contact_by_lead() -> Dict[str, Dict[str, str]]:
     """Most recent non-followup activity per lead id (for 'last contacted' in the queue)."""
     latest: Dict[str, Dict[str, str]] = {}
