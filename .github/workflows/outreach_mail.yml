@@ -4,8 +4,8 @@ name: Outreach Mail (office hours)
 # replies / bounces / opt-outs. No scraping here: that is auto_scraper_1hr.yml.
 on:
   schedule:
-    # Monday-Saturday, 10:37 AM, 1:37 PM and 4:37 PM India time (cron is UTC; odd minute = less queue delay)
-    - cron: '7 5,8,11 * * 1-6'
+    # Runs every single hour at :45 (smoothly interleaved between scrapers at :15 and :30)
+    - cron: '45 * * * *'
   workflow_dispatch: # Manual run from the GitHub Actions tab
 
 permissions:

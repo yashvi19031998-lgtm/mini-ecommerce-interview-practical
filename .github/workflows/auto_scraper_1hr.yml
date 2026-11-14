@@ -2,9 +2,8 @@ name: 1-Hour Auto Lead Scraper
 
 on:
   schedule:
-    # Irregular minutes to decrease GitHub queue delay; concurrency group prevents duplicate runs
-    - cron: '23 * * * *'
-    - cron: '53 * * * *'
+    # Runs hourly at :15 past the hour
+    - cron: '15 * * * *'
   workflow_dispatch: # Manual run from the GitHub Actions tab
 
 # Lead data lives in the Supabase database (one table, see test-demo/docs/database.md), not in git.
