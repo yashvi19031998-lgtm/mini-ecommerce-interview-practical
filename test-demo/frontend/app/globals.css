@@ -3297,3 +3297,9 @@ main input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; flex-s
   .ca-launcher { right: 16px; bottom: 16px; }
   .ca-panel { right: 8px; left: 8px; bottom: 8px; width: auto; height: calc(100vh - 16px); border-radius: 16px; }
 }
+
+/* Reply Today (components/ReplyToday.js): post on the left, reply on the right; stacked on narrow screens */
+.rt-card { display: flex; flex-wrap: wrap; gap: 12px 20px; padding: 14px 4px; border-top: 1px solid var(--border-light); }
+.rt-post { flex: 1 1 280px; min-width: 0; }
+.rt-reply { flex: 1 1 360px; min-width: 0; }
+.rt-reply textarea { width: 100%; box-sizing: border-box; }

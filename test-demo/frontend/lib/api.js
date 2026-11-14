@@ -224,6 +224,19 @@ export async function fetchUntouchedLeads({ band = 'all', hasEmail = false } = {
   return await apiFetch(`/api/followups/untouched?band=${encodeURIComponent(band)}&has_email=${hasEmail ? 1 : 0}`);
 }
 
+// 20b. Reply Today: fresh buyer posts with no e-mail (answer them on Reddit / Freelancer / HN by hand)
+export async function fetchReplyToday({ days = 3 } = {}) {
+  return await apiFetch(`/api/followups/reply-today?days=${encodeURIComponent(days)}`);
+}
+
+export async function fetchReplyDraft(leadId) {
+  return await apiFetch('/api/followups/reply-draft', { method: 'POST', body: JSON.stringify({ lead_id: leadId }) });
+}
+
+export async function markReplyDone(leadId, text = '') {
+  return await apiFetch('/api/followups/reply-done', { method: 'POST', body: JSON.stringify({ lead_id: leadId, text }) });
+}
+
 // 21. FollowUp History: activity feed (newest first)
 export async function fetchFollowupHistory({ leadId = '', types = [], q = '', limit = 50, offset = 0 } = {}) {
   const params = new URLSearchParams({ lead_id: leadId, types: types.join(','), q, limit, offset });

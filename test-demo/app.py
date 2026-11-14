@@ -925,6 +925,46 @@ def followups_untouched():
     return jsonify({"success": True, "items": items[:500], "total": len(items), "counts": counts})
 
 
+@app.route("/api/followups/reply-today", methods=["GET"])
+def followups_reply_today():
+    """Fresh buyer posts with no e-mail (reply on Reddit / Freelancer / HN by hand). ?days=3"""
+    import reply_today
+    try:
+        days = max(1, min(30, int(request.args.get("days", reply_today.DEFAULT_DAYS))))
+    except ValueError:
+        return jsonify({"success": False, "error": "days must be a number"}), 400
+    items, counts = reply_today.build_items(read_leads(), followup_store.touched_lead_ids(), days=days)
+    return jsonify({"success": True, "items": items, "counts": counts, "days": days})
+
+
+@app.route("/api/followups/reply-draft", methods=["POST"])
+def followups_reply_draft():
+    import reply_today
+    lead_id = str((request.get_json(silent=True) or {}).get("lead_id") or "")
+    lead = next((l for l in read_leads() if str(l.get("id")) == lead_id), None)
+    if not lead:
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+    return jsonify({"success": True, **reply_today.draft_reply(lead)})
+
+
+@app.route("/api/followups/reply-done", methods=["POST"])
+def followups_reply_done():
+    """Marks a post as answered on its platform: logs a note, so it leaves Reply Today and Not Contacted."""
+    import reply_today
+    data = request.get_json(silent=True) or {}
+    lead_id = str(data.get("lead_id") or "")
+    lead = next((l for l in read_leads() if str(l.get("id")) == lead_id), None)
+    if not lead:
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+    how = reply_today.CHANNELS.get(str(lead.get("contact_channel") or ""), "the post")
+    try:
+        act = followup_store.add_activity(lead_id, "note", f"Replied on {how}", details=str(data.get("text") or "")[:2000],
+                                          source="reply today", lead_name=str(lead.get("Company Name") or "")[:120])
+    except followup_store.FollowupError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "activity": act})
+
+
 @app.route("/api/followups/history", methods=["GET"])
 def followups_history():
     try:
