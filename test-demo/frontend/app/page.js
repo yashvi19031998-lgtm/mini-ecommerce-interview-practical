@@ -511,6 +511,7 @@ function DashboardContent() {
           isOpen={true}
           selectedLeadIds={bulkEmailLeadIds}
           leads={leads}
+          signature={signature}
           onClose={() => {
             setBulkEmailOpen(false);
             setBulkEmailLeadIds([]);

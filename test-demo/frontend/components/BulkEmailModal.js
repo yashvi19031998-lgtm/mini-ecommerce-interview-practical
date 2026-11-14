@@ -1,21 +1,28 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Mail, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, Building, User } from 'lucide-react';
+import { outreachNames } from '../lib/leadNames';
 
 export default function BulkEmailModal({
   selectedLeadIds = [],
   leads = [],
   isOpen,
   onClose,
-  onBulkSend
+  onBulkSend,
+  signature = ''
 }) {
   const [subject, setSubject] = useState('Partnership & Dedicated Tech Team for {company}');
   const [message, setMessage] = useState(
-    `Hi {name} Team,\n\n` +
-    `I came across your business {company} in {location}. Sangeeta Infotech specializes in dedicated full-stack development, modern web applications, and backend scaling.\n\n` +
-    `We would love to know if your team needs extra engineering hands or specialized talent on a monthly or project engagement.\n\n` +
-    `Would you be open to a 10-minute discovery call this week?`
+    `Hi {name},\n\n` +
+    `I came across {company} and your business presence in {location}.\n\n` +
+    `At Sangeeta Infotech, we specialize in high-performance web applications, mobile apps, and custom software systems. ` +
+    `We help ambitious companies scale engineering velocity and launch features faster with dependable tech talent.\n\n` +
+    `Key expertise we offer:\n` +
+    `• Full-Stack Web Development & Modern Portals\n` +
+    `• Mobile Apps (iOS & Android)\n` +
+    `• AI Integrations & Automation Workflows\n\n` +
+    `Would you be open to a brief 10-minute call this week to explore how we can support your tech needs?`
   );
   const [delayMs, setDelayMs] = useState(1500);
   const [isSending, setIsSending] = useState(false);
@@ -70,7 +77,7 @@ export default function BulkEmailModal({
       }, (job) => setProgress(toProgress(job)));
       if (res) setProgress(toProgress({ ...res, done: true }));
     } catch (err) {
-      setProgress(p => ({ ...(p || {}), done: true, stopped: err.message }));
+      setProgress(p => ({ ...(p || {}), done: true, stopped: err.message || 'Failed to dispatch emails' }));
     } finally {
       setIsSending(false);
     }
@@ -90,6 +97,8 @@ export default function BulkEmailModal({
     const label = REASONS[r.reason] || r.reason || 'Not sent';
     reasonCounts[label] = (reasonCounts[label] || 0) + 1;
   });
+
+  const firstError = (progress?.results || []).find(r => !r.success && r.error)?.error || '';
 
   const pct = progress && progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0;
 
@@ -131,8 +140,10 @@ export default function BulkEmailModal({
           {progress && (
             <div className="campaign-progress-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--primary-lavender)' }}>
-                  {progress.done ? 'Finished' : `Checking mailboxes and sending… ${progress.processed} of ${progress.total}`}
+                <span style={{ fontWeight: 600, color: progress.done && progress.sent === 0 ? 'var(--danger-red, #dc2626)' : 'var(--primary-lavender)' }}>
+                  {progress.done
+                    ? (progress.sent > 0 ? 'Finished' : 'Finished - nothing was sent')
+                    : `Checking mailboxes and sending… ${progress.processed} of ${progress.total}`}
                 </span>
                 <span style={{ color: 'var(--text-secondary)' }}>
                   {progress.sent} sent · {progress.notSent} not sent
@@ -141,7 +152,7 @@ export default function BulkEmailModal({
               <div className="progress-bar-track">
                 <div
                   className="progress-bar-fill"
-                  style={{ width: `${pct}%` }}
+                  style={{ width: `${pct}%`, background: progress.sent === 0 && progress.done ? '#dc2626' : undefined }}
                 />
               </div>
               {!progress.done && (
@@ -150,8 +161,10 @@ export default function BulkEmailModal({
                   You can close this window; sending continues on the server.
                 </div>
               )}
-              {progress.stopped && (
-                <div role="alert" style={{ fontSize: '0.78rem', color: 'var(--danger-red)' }}>{progress.stopped}</div>
+              {(progress.stopped || (progress.done && progress.sent === 0 && firstError)) && (
+                <div role="alert" style={{ marginTop: '8px', fontSize: '0.78rem', color: '#dc2626', background: '#fef2f2', padding: '6px 10px', borderRadius: '6px', border: '1px solid #fee2e2' }}>
+                  <strong>Reason:</strong> {progress.stopped || firstError}
+                </div>
               )}
               {Object.keys(reasonCounts).length > 0 && (
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
@@ -192,7 +205,12 @@ export default function BulkEmailModal({
 
           {/* Message Template */}
           <div className="form-group">
-            <label className="form-label">Email Message Template</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label className="form-label" style={{ margin: 0 }}>Email Message Template</label>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Smart Placeholders: <code>{'{name}'}</code>, <code>{'{company}'}</code>, <code>{'{location}'}</code>
+              </span>
+            </div>
             <textarea
               className="form-input"
               rows={7}
@@ -201,6 +219,43 @@ export default function BulkEmailModal({
               disabled={isSending}
             />
           </div>
+
+          {/* Dynamic Personalized Preview for First Lead */}
+          {validEmailLeads.length > 0 && (() => {
+            const sampleLead = validEmailLeads[0];
+            const names = outreachNames(sampleLead['Company Name'] || sampleLead.company_name);
+            const sampleLoc = String(sampleLead.Address || sampleLead.location || 'your region').trim();
+            const previewSub = subject
+              .replace(/{company}/g, names.company)
+              .replace(/{name}/g, names.greeting)
+              .replace(/{location}/g, sampleLoc);
+            const previewBody = message
+              .replace(/{company}/g, names.company)
+              .replace(/{name}/g, names.greeting)
+              .replace(/{location}/g, sampleLoc);
+
+            return (
+              <div style={{ marginTop: '0.85rem', padding: '0.75rem', background: 'var(--bg-subtle, #f7f7f8)', borderRadius: '8px', border: '1px solid var(--border-light, #ececee)' }}>
+                <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--primary-blue, #1a6dff)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Sparkles size={13} />
+                  Live Personalized Preview for: {names.company} ({sampleLead.Email})
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  Subject: {previewSub}
+                </div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', whiteSpace: 'pre-line', lineHeight: '1.4' }}>
+                  {previewBody}
+                  {signature && (
+                    <>
+                      <br /><br />
+                      ---<br />
+                      {signature.trim()}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="modal-footer">
