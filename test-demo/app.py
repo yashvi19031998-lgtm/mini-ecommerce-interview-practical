@@ -12,6 +12,7 @@ from werkzeug.exceptions import HTTPException
 from settings_manager import load_settings, save_settings, format_signature, auto_send_state
 from email_service import send_smtp_email
 import sync_to_supabase
+import datastore
 
 from api_auth import init_auth
 import followup_store
@@ -503,9 +504,9 @@ def start_scraper():
         
         try:
             target_csv = "all_leads_master.csv" if mode == "all" else "leads_new.csv"
-            sync_to_supabase.sync(csv_filepath=target_csv)
+            synced = sync_to_supabase.sync(csv_filepath=target_csv, lock=leads_write_lock)
             with scraper_lock:
-                scraper_logs.append(f"[{time.strftime('%H:%M:%S')}] Supabase sync completed successfully!")
+                scraper_logs.append(f"[{time.strftime('%H:%M:%S')}] " + ("Saved to the database." if synced else "Database sync skipped (see Settings)."))
         except Exception as e:
             with scraper_lock:
                 scraper_logs.append(f"[{time.strftime('%H:%M:%S')}] Supabase sync notice: {e}")
@@ -536,12 +537,19 @@ def stop_scraper():
 
 @app.route("/api/sync-supabase", methods=["POST"])
 def trigger_supabase_sync():
-    try:
-        if sync_to_supabase.sync() is False:
-            return jsonify({"success": False, "error": "Supabase sync did not run: add SUPABASE_URL and a Supabase key in .env."}), 400
-        return jsonify({"success": True, "message": "Leads synced to Supabase successfully!"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    """Sync all app data with the database (one table, see datastore.py) right now."""
+    if not datastore.configured():
+        return jsonify({"success": False, "error": "Database not set up: add SUPABASE_URL and SUPABASE_KEY in .env."}), 400
+    report = datastore.sync(lock=leads_write_lock)
+    if not report.get("ok"):
+        return jsonify({"success": False, "error": f"Database sync failed: {report.get('error')}"}), 502
+    return jsonify({"success": True, "message": f"Database up to date ({sync_to_supabase.summary(report)}).",
+                    "report": report})
+
+
+@app.route("/api/datastore/status", methods=["GET"])
+def datastore_status():
+    return jsonify({"success": True, "configured": datastore.configured(), "last_sync": datastore.last_status()})
 
 @app.route("/api/settings", methods=["GET", "POST"])
 def handle_settings():
@@ -2260,4 +2268,14 @@ if __name__ == "__main__":
     print("SANGEETA INFOTECH - ALL-IN-ONE LEAD & OUTREACH HUB")
     print(f">> URL: http://127.0.0.1:{port}  (bound to {BIND_HOST})")
     print("=" * 60 + "\n")
+    # All data lives in the database (one table): load it now, then keep both sides in step every 2 minutes
+    if datastore.configured():
+        print("[DB] Loading data from the database...")
+        first = datastore.sync(lock=leads_write_lock)
+        print(f"[DB] {'OK - ' + sync_to_supabase.summary(first) if first.get('ok') else 'NOT synced: ' + str(first.get('error'))}")
+        later = threading.Timer(120, lambda: datastore.start_background_sync(lock=leads_write_lock))
+        later.daemon = True
+        later.start()
+    else:
+        print("[DB] SUPABASE_URL / SUPABASE_KEY missing - data is kept in local files only.")
     app.run(host=BIND_HOST, port=port, debug=False, threaded=True)

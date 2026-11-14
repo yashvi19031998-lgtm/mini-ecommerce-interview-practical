@@ -372,7 +372,7 @@ export default function Sidebar({
               className="theme-quick-btn"
             >
               <Send size={12} />
-              <span>Sync with Supabase</span>
+              <span>Sync Database</span>
             </button>
           </div>
         )}

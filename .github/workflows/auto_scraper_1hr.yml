@@ -6,22 +6,26 @@ on:
     - cron: '23 * * * *'
   workflow_dispatch: # Manual run from the GitHub Actions tab
 
+# Lead data lives in the Supabase database (one table, see test-demo/docs/database.md), not in git.
 permissions:
-  contents: write
+  contents: read
 
-# Never run two scrapes at once: they would edit the same CSV and fight over the push.
+# Never run two scrapes at once: they would work on the same data.
 # A run that starts while another is going waits for it instead of being dropped.
 concurrency:
   group: lead-scraper
   cancel-in-progress: false
 
 jobs:
-  scrape-and-commit:
+  scrape-and-save:
     runs-on: ubuntu-latest
     timeout-minutes: 50 # a hung scraper must not burn 6 hours or overlap the next run
     # Log timestamps in India time, so the 12 AM daily report (daily_report.yml) counts the right day
     env:
       TZ: Asia/Kolkata
+      # The database (SUPABASE_KEY must be the service_role key: Supabase -> Project Settings -> API)
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
     defaults:
       run:
@@ -55,10 +59,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Leads, sent-mail log, follow-ups and settings come from the database. If it cannot be read,
+      # stop here: without the sent-mail log the run could e-mail people a second time.
+      - name: Load data from the database
+        run: python datastore.py sync --required
+
       # If the code is broken, stop here - before any scraping or emailing happens.
       - name: Run tests
         id: tests
-        run: python -m unittest test_lead_system test_quality_and_auth test_feedly test_accuracy test_html_cache test_sources test_website_signals test_apollo test_job_portals test_followups test_followup_phase2 test_followup_extras test_crm_sources test_api_keys test_search_cache test_search_engine test_supabase_sync test_maps_sources test_global_directories test_realestate_sources test_ecommerce_sources test_adlibrary_sources test_whatsapp_sources test_social_sources test_indian_directories test_corporate_registries test_bulk_contacts test_web_crawler test_file_uploads test_website_analyzer test_domain_tools test_lead_cleanup test_lead_enrichment test_api_safety test_auto_scheduler_and_settings test_reports_engine test_email_limits test_email_safety test_gemini_option test_chatbots test_followup_untouched
+        run: python -m unittest test_lead_system test_quality_and_auth test_feedly test_accuracy test_html_cache test_sources test_website_signals test_apollo test_job_portals test_followups test_followup_phase2 test_followup_extras test_crm_sources test_api_keys test_search_cache test_search_engine test_supabase_sync test_maps_sources test_global_directories test_realestate_sources test_ecommerce_sources test_adlibrary_sources test_whatsapp_sources test_social_sources test_indian_directories test_corporate_registries test_bulk_contacts test_web_crawler test_file_uploads test_website_analyzer test_domain_tools test_lead_cleanup test_lead_enrichment test_api_safety test_auto_scheduler_and_settings test_reports_engine test_email_limits test_email_safety test_gemini_option test_chatbots test_followup_untouched test_datastore
 
       - name: Run all scrapers, AI qualification and alerts
         env:
@@ -82,8 +91,6 @@ jobs:
           # Gmail reply check (defaults to SMTP_USER / SMTP_PASS when not set)
           IMAP_USER: ${{ secrets.IMAP_USER }}
           IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           # --- settings (Settings -> Secrets and variables -> Actions -> Variables) ---
           # Auto-email is ON by default in 1-hour auto scraper (can be overridden via repo vars)
           AUTO_SEND_EMAIL: ${{ vars.AUTO_SEND_EMAIL || 'true' }}
@@ -112,32 +119,8 @@ jobs:
           path: test-demo/html_cache
           key: html-cache-${{ github.run_id }}
 
-      - name: Commit & push updated lead data
+      - name: Save data to the database
         # Run even if the scrape step failed part-way (so leads already collected are kept),
         # but never when the tests failed
         if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Only lead data and run logs - never anything else the run created
-          git add -- '*.csv' logs/
-
-          if git diff --staged --quiet; then
-            echo "No lead changes to commit."
-            exit 0
-          fi
-
-          git commit -m "Auto-update leads: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-
-          # Someone may have pushed meanwhile: rebase and retry, and fail loudly if it never works
-          for attempt in 1 2 3; do
-            if git pull --rebase origin master && git push origin master; then
-              echo "Pushed on attempt $attempt."
-              exit 0
-            fi
-            git rebase --abort 2>/dev/null || true
-            sleep $((attempt * 10))
-          done
-          echo "::error::Could not push lead updates after 3 attempts."
-          exit 1
+        run: python datastore.py sync --required

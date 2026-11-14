@@ -33,7 +33,7 @@ jobs:
         working-directory: test-demo
 
     steps:
-      - name: Check out repository (latest leads and logs)
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
           ref: master
@@ -43,9 +43,19 @@ jobs:
         with:
           python-version: '3.11'
 
-      # The report only needs the Python standard library - nothing to install.
+      # The report itself only needs the Python standard library; loading the data needs requests.
+      - name: Install requests
+        run: python -m pip install requests
+
       - name: Test the report
         run: python -m unittest test_daily_report
+
+      # Leads and the sent-mail log of the day come from the database (one table, see docs/database.md)
+      - name: Load data from the database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python datastore.py sync --required
 
       - name: Build and e-mail the report
         env:
