@@ -209,6 +209,12 @@ class DatastoreSyncTests(unittest.TestCase):
         self.assertEqual(json.load(open(runner.path("company_settings.json")))["company_name"], "Owner")
         self.assertEqual(self.db.rows[("state", "logs/mail_check_status.json")]["data"]["mailbox_check"], "works")
 
+    def test_required_sync_stops_on_an_empty_database(self):
+        runner = self.new_machine()                     # wrong key: the table looks empty
+        with mock.patch.object(datastore, "BASE_DIR", runner.dir),              mock.patch.object(datastore, "SNAPSHOT", os.path.join(runner.dir, ".datastore", "s.json")),              mock.patch.object(datastore, "STATUS_FILE", os.path.join(runner.dir, ".datastore", "l.json")),              mock.patch.object(datastore, "configured", return_value=True),              mock.patch.object(datastore, "remote_hashes", self.db.hashes),              mock.patch.object(datastore, "remote_rows", self.db.get),              mock.patch.object(datastore, "upsert", self.db.upsert),              mock.patch.object(datastore, "delete", self.db.delete):
+            with self.assertRaises(datastore.DatastoreError):
+                datastore.sync(required=True)
+
     def test_not_configured_is_a_no_op(self):
         with mock.patch.object(datastore, "configured", return_value=False):
             r = datastore.sync()
@@ -216,6 +222,14 @@ class DatastoreSyncTests(unittest.TestCase):
         with mock.patch.object(datastore, "configured", return_value=False):
             with self.assertRaises(datastore.DatastoreError):
                 datastore.sync(required=True)
+
+
+class FilterTests(unittest.TestCase):
+    def test_keys_with_quotes_spaces_and_slashes_are_escaped(self):
+        from urllib.parse import unquote
+        got = unquote(datastore._in(['"hire dev" Ahmedabad', "logs/x.json", "a,b", r"c\d"]))
+        self.assertEqual(got, r'in.("\"hire dev\" Ahmedabad","logs/x.json","a,b","c\\d")')
+        self.assertNotIn(" ", datastore._in(["a b"]))
 
 
 class PlanTests(unittest.TestCase):

@@ -173,7 +173,10 @@ def _req(method, params="", body=None, headers=None):
 
 
 def _in(keys):
-    return "in.(" + ",".join('"' + k.replace('"', '') + '"' for k in keys) + ")"
+    """PostgREST in.(...) filter: every key double-quoted (backslash and quote escaped), then URL-encoded."""
+    from urllib.parse import quote
+    vals = ",".join('"' + k.replace("\\", "\\\\").replace('"', '\\"') + '"' for k in keys)
+    return quote(f"in.({vals})", safe="")
 
 
 def remote_hashes(kind):
@@ -459,6 +462,11 @@ def sync(lock=None, required=False):
                 for kind in CSV_KINDS:
                     sync_csv(kind, lock=lock if kind == "lead" else None, report=kinds)
                 sync_state(kinds)
+            if required:
+                empty = [k for k in ("lead", "sent_email") if not kinds.get(k, {}).get("rows")]
+                if empty:   # a wrong (anon) key reads an EMPTY table instead of failing
+                    raise DatastoreError(f"no {' / '.join(empty)} rows in the database - is SUPABASE_KEY the "
+                                         f"service_role key? Stopping so nobody is e-mailed twice.")
             report["ok"] = True
         except Exception as e:
             report["error"] = str(e)[:300]
