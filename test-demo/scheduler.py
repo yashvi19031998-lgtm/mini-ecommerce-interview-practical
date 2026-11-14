@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 # Schedule configuration
-INTERVAL_HOURS = 2
+INTERVAL_HOURS = int(os.getenv("AUTO_SCHEDULER_INTERVAL_HOURS", "1"))
 INTERVAL_SECONDS = INTERVAL_HOURS * 3600
 
 # Choose default scraper script:
@@ -18,7 +18,7 @@ def run_scheduled_job():
     now_str = start_time.strftime("%Y-%m-%d %H:%M:%S")
     
     print("\n" + "=" * 65)
-    print(f"[{now_str}] ⚡ STARTING AUTOMATED 2-HOUR RUN: {SCRAPER_SCRIPT}")
+    print(f"[{now_str}] ⚡ STARTING AUTOMATED {INTERVAL_HOURS}-HOUR RUN: {SCRAPER_SCRIPT}")
     print("Features: Direct Email Outreach + Supabase Cloud DB Sync")
     print("=" * 65 + "\n")
     
@@ -39,8 +39,8 @@ def run_scheduled_job():
 
 def main():
     print(f"============================================================")
-    print(f"   SANGEETA INFOTECH - 2-HOUR AUTONOMOUS LEAD ENGINE")
-    print(f"   Script: {SCRAPER_SCRIPT} | Interval: Every {INTERVAL_HOURS} Hours")
+    print(f"   AUTONOMOUS LEAD ENGINE - CONTINUOUS SCHEDULER")
+    print(f"   Script: {SCRAPER_SCRIPT} | Interval: Every {INTERVAL_HOURS} Hour(s)")
     print(f"============================================================")
     print("Press Ctrl + C at any time to pause or stop.\n")
     

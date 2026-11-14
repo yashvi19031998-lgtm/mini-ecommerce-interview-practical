@@ -5,7 +5,7 @@
 // Backend: website_analyzer.py via /api/utilities/website-analyzer; save via /api/bulk-contacts/save (kind websites).
 
 import React, { useMemo, useState } from 'react';
-import { Gauge, Loader2, X, Save, Download, AlertTriangle, ShieldCheck, Search, ChevronDown, ChevronRight, Lightbulb, ExternalLink } from 'lucide-react';
+import { Gauge, Loader2, X, Save, Download, AlertTriangle, Search, ChevronDown, ChevronRight, Lightbulb, ExternalLink } from 'lucide-react';
 import { analyzeWebsites, bulkSaveContacts } from '../lib/api';
 
 const BATCH = 5;
@@ -162,12 +162,8 @@ export default function WebsiteAnalyzer({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Gauge size={18} /> Website Analyzer</div>
-            <div className="theme-panel-sub">Check a prospect’s website before you call: health score, technology, SEO, security, mobile, contacts — and what you can sell them.</div>
+            <div className="theme-panel-sub">Audit client websites for technology stack, SEO, SSL security, performance, and contact details.</div>
           </div>
-        </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
-          <span>Reads only the home page (like one visit), obeys robots.txt, opens public addresses only and also checks the SSL certificate. 5 sites are checked at a time.</span>
         </div>
         {error && <div role="alert" className="jp-alert jp-alert-error" style={{ marginBottom: '0.75rem' }}><AlertTriangle size={14} /> {error}</div>}
         <form onSubmit={run} noValidate>

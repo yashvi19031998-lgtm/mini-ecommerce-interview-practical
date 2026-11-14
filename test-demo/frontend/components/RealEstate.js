@@ -190,13 +190,13 @@ export default function RealEstate({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><House size={18} /> Real Estate</div>
-            <div className="theme-panel-sub">Builders, developers and property agents from the RERA register, maps and property portals. Deep Search finds their website, email and phone.</div>
+            <div className="theme-panel-sub">Find verified builders, developers, and property agents with contact information.</div>
           </div>
         </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
         <MiningForm
           idPrefix="re" onSubmit={submit} busy={searching} disabled={!!deepRun || !!optsError || !opts}
-          busyHint="Searching — the first Karnataka RERA search downloads the full register (about 10 s)."
+          busyHint="Searching real estate sources..."
           keywords={{ label: 'Keywords', hint: `(Enter or comma, up to ${opts?.maxKeywords || 5}; a builder name also works)`,
             values: keywords, setValues: setKeywords, max: opts?.maxKeywords || 5, error: errors.keywords,
             onClear: () => clear('keywords'), placeholder: 'e.g. builder, apartment, villa, Prestige' }}

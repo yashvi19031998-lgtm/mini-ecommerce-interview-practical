@@ -8,21 +8,20 @@
 // Backend: web_crawler.py via /api/web-crawler/<tool>; contacts + save via /api/bulk-contacts/*.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bug, Link2, TextSearch, ListTree, Loader2, X, Save, Download, AlertTriangle, ShieldCheck, Search, ScanSearch, ExternalLink } from 'lucide-react';
+import { Bug, Link2, TextSearch, ListTree, Loader2, X, Save, Download, AlertTriangle, Search, ScanSearch, ExternalLink } from 'lucide-react';
 import { fetchWebCrawlerOptions, runWebCrawler, bulkWebsiteContacts, bulkSaveContacts } from '../lib/api';
 import ChipInput from './ChipInput';
 
 const META = {
   site: { icon: Bug, title: 'Site Crawler', button: 'Crawl',
-    sub: 'Crawl one or more websites page by page and collect every email, phone and social link they show.' },
+    sub: 'Crawl target websites to extract emails, phone numbers, and social links.' },
   links: { icon: Link2, title: 'Link Harvester', button: 'Harvest links',
-    sub: 'Give list pages — association members, expo exhibitors, “top companies” articles — and get the company websites they link to, then their contacts.' },
+    sub: 'Extract outbound company domains from directory and member listing pages.' },
   keywords: { icon: TextSearch, title: 'Keyword Page Finder', button: 'Find pages',
-    sub: 'Find the pages of a website that mention words like “careers”, “tender”, “franchise” or “distributor wanted”.' },
+    sub: 'Locate specific pages containing targeted keywords and phrases.' },
   sitemap: { icon: ListTree, title: 'Sitemap Explorer', button: 'Read sitemap',
-    sub: 'List every page a website publishes in its sitemap, with last-updated dates — see how big a site is and what is new.' }
+    sub: 'Parse website XML sitemaps to inspect structure and recently updated URLs.' }
 };
-const RULES = 'Obeys each site’s robots.txt and crawl-delay (at least 1 s between pages of a site), opens public addresses only, uses the page cache and an honest User-Agent. Each run stops after 90 s — run again to continue (pages already read come from the cache).';
 const KEYWORD_SUGGESTIONS = ['careers', 'tender', 'franchise', 'distributor', 'dealer', 'vendor registration', 'contact', 'pricing', 'hiring', 'partner'];
 
 function csvDownload(rows, cols, name) {
@@ -234,7 +233,6 @@ export default function WebCrawler({ tool, onLeadsSaved }) {
             <div className="theme-panel-sub">{meta.sub}</div>
           </div>
         </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}><ShieldCheck size={14} /><span>{RULES}</span></div>
         {error && <div role="alert" className="jp-alert jp-alert-error" style={{ marginBottom: '0.75rem' }}><AlertTriangle size={14} /> {error}</div>}
         <form onSubmit={run} noValidate>
           <div className="jp-form-grid">

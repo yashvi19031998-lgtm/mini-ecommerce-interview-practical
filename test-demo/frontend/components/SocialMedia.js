@@ -5,7 +5,7 @@
 // Backend: social_sources.py via /api/social/*; Deep Search via /api/search-engine/deep (rows with a website).
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Share2, Search, Loader2, X, ExternalLink, Save, Download, AlertTriangle, ScanSearch, ShieldCheck } from 'lucide-react';
+import { Share2, Search, Loader2, X, ExternalLink, Save, Download, AlertTriangle, ScanSearch } from 'lucide-react';
 import { fetchSocialSources, searchSocial, saveSocialResults, runDeepSearch } from '../lib/api';
 import CacheNote from './CacheNote';
 import MiningForm from './MiningForm';
@@ -171,17 +171,13 @@ export default function SocialMedia({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Share2 size={18} /> Social Media</div>
-            <div className="theme-panel-sub">Business pages on Instagram, Facebook, LinkedIn, X and YouTube — many small businesses have only a social page and no website.</div>
+            <div className="theme-panel-sub">Discover business profiles across Instagram, Facebook, LinkedIn, X, and YouTube.</div>
           </div>
-        </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
-          <span>Business pages only: profiles that look like a private person are skipped (DPDP Act 2023). Data comes from search results — the app never opens the social sites.</span>
         </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
         <MiningForm
           idPrefix="sm" onSubmit={submit} busy={searching} disabled={!!deepRun || !!optsError || !opts}
-          busyHint="Searching each network one query at a time — can take up to a minute."
+          busyHint="Searching business profiles..."
           keywords={{ label: 'Business type / keywords', hint: `(Enter or comma, up to ${opts?.maxKeywords || 5})`,
             values: keywords, setValues: setKeywords, max: opts?.maxKeywords || 5, error: errors.keywords,
             onClear: () => clear('keywords'), placeholder: 'e.g. bakery, interior designer, boutique' }}

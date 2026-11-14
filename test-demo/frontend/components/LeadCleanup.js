@@ -5,7 +5,7 @@
 // Backend: lead_cleanup.py via /api/lead-care/cleanup*.
 
 import React, { useEffect, useState } from 'react';
-import { Eraser, Loader2, X, AlertTriangle, ShieldCheck, RefreshCw, Undo2, History, ChevronDown, ChevronRight } from 'lucide-react';
+import { Eraser, Loader2, X, AlertTriangle, RefreshCw, Undo2, History, ChevronDown, ChevronRight } from 'lucide-react';
 import { scanLeadCleanup, applyLeadCleanup, undoLeadCleanup } from '../lib/api';
 
 const FIELD_LABEL = { website: 'Website', email: 'E-mail', mobile_number: 'Phone' };
@@ -70,16 +70,11 @@ export default function LeadCleanup({ onLeadsChanged }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Eraser size={18} /> Data Cleanup</div>
-            <div className="theme-panel-sub">Fill gaps in your saved leads from information they already contain — safely.</div>
+            <div className="theme-panel-sub">Standardize formats and populate missing lead attributes with automatic backup and rollback.</div>
           </div>
           <button type="button" className="theme-pill-btn neutral" onClick={() => load()} disabled={busy}>
             {busy ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} Check again
           </button>
-        </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
-          <span><strong>Nothing is ever deleted.</strong> No lead is removed and no filled value is changed — only empty fields are filled.
-            The whole leads file is backed up before each run, every change is logged, and any run can be undone.</span>
         </div>
         {error && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {error}</div>}
         {scan && (

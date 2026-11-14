@@ -165,7 +165,7 @@ export default function JobPortalScraper({ showToast, onLeadsSaved }) {
               <Briefcase size={18} /> Job Portal Scraper
             </div>
             <div className="theme-panel-sub">
-              Find companies hiring for these roles in a state. A company that is hiring is a sales lead.
+              Search job portals for hiring companies by role and location.
             </div>
           </div>
         </div>
@@ -178,7 +178,7 @@ export default function JobPortalScraper({ showToast, onLeadsSaved }) {
 
         <MiningForm
           idPrefix="jp" onSubmit={handleSearch} busy={isSearching} disabled={!!catalogError}
-          submitLabel="Search Jobs" busyHint={`Searching ${selectedPortals.size} portal(s) — this can take up to a minute.`}
+          submitLabel="Search Jobs" busyHint={`Searching ${selectedPortals.size} portal(s)...`}
           keywords={{ id: 'jp-title-input', label: 'Job Titles', hint: `(press Enter or comma to add, up to ${maxTitles})`,
             values: titles, setValues: setTitles, max: maxTitles, error: formErrors.titles, onClear: () => clearError('titles'),
             placeholder: 'e.g. React Developer, Python Developer' }}

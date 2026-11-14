@@ -4,7 +4,7 @@
 // Members / phone numbers are never collected. Backend: whatsapp_sources.py via /api/whatsapp/*.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { MessageCircle, Search, Loader2, X, ExternalLink, Save, Download, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Search, Loader2, X, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { fetchWhatsAppSources, searchWhatsApp, saveWhatsAppResults } from '../lib/api';
 import CacheNote from './CacheNote';
 import MiningForm from './MiningForm';
@@ -127,17 +127,13 @@ export default function WhatsAppGroups({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MessageCircle size={18} /> WhatsApp Groups</div>
-            <div className="theme-panel-sub">Public group invite links for a topic — join communities where your clients are. Group name and link only.</div>
+            <div className="theme-panel-sub">Find public WhatsApp group links for relevant industries and professional communities.</div>
           </div>
-        </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
-          <span>Member phone numbers are never collected: that needs joining groups with automation (WhatsApp bans the number) and personal numbers are protected by India's DPDP Act 2023.</span>
         </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
         <MiningForm
           idPrefix="wa" onSubmit={submit} busy={searching} disabled={!!optsError || !opts}
-          busyHint="Searching — can take up to a minute."
+          busyHint="Searching WhatsApp groups..."
           keywords={{ label: 'Topics', hint: `(Enter or comma, up to ${opts?.maxKeywords || 5})`,
             values: keywords, setValues: setKeywords, max: opts?.maxKeywords || 5, error: errors.keywords,
             onClear: () => clear('keywords'), placeholder: 'e.g. real estate, startup, freelancers, wholesale' }}

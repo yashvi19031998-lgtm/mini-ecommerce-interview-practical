@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Network, Factory, Phone, Wrench, Store, Ship, Search, Loader2, X, ExternalLink, Save, Download,
-  AlertTriangle, ScanSearch, ShieldCheck, Ban
+  AlertTriangle, ScanSearch, Ban
 } from 'lucide-react';
 import { fetchIndianDirectorySources, searchIndianDirectories, saveIndianDirectoryResults, runDeepSearch } from '../lib/api';
 import CacheNote from './CacheNote';
@@ -15,24 +15,24 @@ import MiningForm from './MiningForm';
 
 const META = {
   mlmdiary: { icon: Network, title: 'MLMDiary Scraper',
-    sub: 'MLM / network-marketing companies listed in the MLMDiary directory, by state and city.',
+    sub: 'MLM and direct selling companies directory by location.',
     kwLabel: 'MLM company name', kwHint: '(optional — leave empty for all companies)', kwPlaceholder: 'e.g. Vestige, Zenvex',
     suggestions: [] },
   indiamart: { icon: Factory, title: 'IndiaMART Scraper',
-    sub: 'Suppliers and manufacturers from IndiaMART category pages — city-wise or all India.',
+    sub: 'Suppliers and manufacturers directory across Indian cities.',
     kwLabel: 'Product / category', kwPlaceholder: 'e.g. bakery products, packaging material',
     suggestions: ['bakery products', 'packaging material', 'industrial machinery', 'led lights', 'solar panel', 'office furniture'] },
-  justdial: { icon: Phone, title: 'Justdial Scraper', sub: 'Local businesses listed on Justdial.' },
+  justdial: { icon: Phone, title: 'Justdial Scraper', sub: 'Local business listings and service providers.' },
   sulekha: { icon: Wrench, title: 'Sulekha Scraper',
-    sub: 'Local service providers per city, with phone numbers (interior designers, movers, tutors…).',
+    sub: 'Service providers and local professionals across Indian cities.',
     kwLabel: 'Service / category', kwPlaceholder: 'e.g. interior designers decorators, packers and movers',
     suggestions: ['interior designers decorators', 'packers and movers'] },
   tradeindia: { icon: Store, title: 'TradeIndia Scraper',
-    sub: 'Manufacturers and suppliers from TradeIndia category pages.',
+    sub: 'Manufacturers, exporters, and wholesale suppliers directory.',
     kwLabel: 'Product / category', kwPlaceholder: 'e.g. bakery products',
     suggestions: ['bakery products', 'packaging material', 'industrial machinery'] },
   exportersindia: { icon: Ship, title: 'ExportersIndia Scraper',
-    sub: 'Exporters and suppliers from ExportersIndia category pages — city-wise or all India.',
+    sub: 'B2B exporters, manufacturers, and industrial suppliers.',
     kwLabel: 'Product / category', kwPlaceholder: 'e.g. bakery products',
     suggestions: ['bakery products', 'packaging material'] }
 };
@@ -217,19 +217,10 @@ export default function IndianDirectory({ sourceId, onLeadsSaved, onOpenSource }
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div className="theme-card-panel" style={{ marginBottom: 0 }}>
         {header}
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
-          <span>
-            {isMlm
-              ? 'Only MLM companies are collected. Member names and phone numbers are personal data (DPDP Act 2023) and are never stored.'
-              : 'Reads the public category pages the site allows (robots.txt), slowly and with caching. Numbers the site hides behind a click are not collected.'}
-            {source?.note ? ` ${source.note}` : ''}
-          </span>
-        </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
         <MiningForm
           idPrefix={`dx-${sourceId}`} onSubmit={submit} busy={searching} disabled={!!deepRun || !!optsError || !opts}
-          busyHint={isMlm ? 'MLMDiary asks for 5 seconds between pages — about 15 seconds.' : 'Reading the category pages one at a time — usually under a minute.'}
+          busyHint="Searching directories..."
           keywords={{ label: meta.kwLabel || 'Product / category', hint: meta.kwHint || `(Enter or comma, up to ${opts?.maxKeywords || 5})`,
             values: keywords, setValues: setKeywords, max: opts?.maxKeywords || 5, error: errors.keywords,
             onClear: () => clear('keywords'), placeholder: meta.kwPlaceholder, suggestions: meta.suggestions }}

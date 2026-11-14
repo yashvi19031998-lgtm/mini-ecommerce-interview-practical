@@ -241,7 +241,7 @@ export default function Ecommerce({ onLeadsSaved, onOpenSearchEngine }) {
               <ShoppingCart size={18} /> Ecommerce Platforms
             </div>
             <div className="theme-panel-sub">
-              Find online stores and direct-to-consumer (D2C) sellers in India across Shopify, WooCommerce, and Instagram.
+              Find online stores and direct-to-consumer brands across Shopify, WooCommerce, and Instagram.
             </div>
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function Ecommerce({ onLeadsSaved, onOpenSearchEngine }) {
           onSubmit={submit}
           busy={searching}
           disabled={!!deepRun || !!optsError || !opts}
-          busyHint="Searching ecommerce platforms — can take up to a minute."
+          busyHint="Searching ecommerce stores..."
           keywords={{
             label: 'Product / category',
             hint: `(Enter or comma, up to ${opts?.maxKeywords || 5})`,

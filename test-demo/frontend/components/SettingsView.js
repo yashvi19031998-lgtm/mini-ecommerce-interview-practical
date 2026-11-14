@@ -302,11 +302,7 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                 <div className="settings-note" role="note">
                   <Key size={14} style={{ flexShrink: 0, marginTop: 2 }} />
                   <span>
-                    The mail server, port and password are read from the server&apos;s <code>.env</code> file, so they
-                    are not edited here. For safety the mail password is not entered or saved here. Put it in the server&apos;s <code>.env</code> file
-                    as <code>SMTP_USER</code> and <code>SMTP_PASS</code> (for Gmail, a 16-character App Password from
-                    myaccount.google.com/apppasswords), then restart the backend. &ldquo;Send Test Verification Email&rdquo; below
-                    confirms it works, and the API Keys list at the bottom of this page shows whether it is set.
+                    Mail credentials (<code>SMTP_USER</code>, <code>SMTP_PASS</code>) are securely loaded from server configuration. Use &ldquo;Send Test Verification Email&rdquo; below to confirm delivery.
                   </span>
                 </div>
               </div>

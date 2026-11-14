@@ -176,7 +176,6 @@ export default function GoogleMaps({ onLeadsSaved }) {
   };
 
   const busy = searching || !!deepRun;
-  const noKeySources = (opts?.sources || []).filter(s => s.status === 'needs_key');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -184,18 +183,13 @@ export default function GoogleMaps({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MapPin size={18} /> Google Maps</div>
-            <div className="theme-panel-sub">Local businesses by category and city: phone, website, address and rating. Use “Without website” to find businesses that need one.</div>
+            <div className="theme-panel-sub">Find local businesses with phone, website, address, and ratings.</div>
           </div>
         </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
-        {noKeySources.length > 0 && (
-          <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-            <span>{noKeySources.map(s => s.name).join(', ')}: add the key in Settings → API Keys for Google Maps data with ratings. OpenStreetMap works without a key.</span>
-          </div>
-        )}
         <MiningForm
           idPrefix="gm" onSubmit={submit} busy={searching} disabled={!!deepRun || !!optsError || !opts}
-          busyHint="Searching map data — can take up to a minute."
+          busyHint="Searching map sources..."
           keywords={{ label: 'Business category / keywords', hint: `(Enter or comma, up to ${opts?.maxKeywords || 5})`,
             values: keywords, setValues: setKeywords, max: opts?.maxKeywords || 5, error: errors.keywords,
             onClear: () => clear('keywords'), placeholder: 'e.g. restaurant, hospital, school, furniture shop' }}

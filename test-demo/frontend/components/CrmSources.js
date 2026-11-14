@@ -125,14 +125,14 @@ export default function CrmSources({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Building2 size={18} /> CRM Sources</div>
-            <div className="theme-panel-sub">Find businesses by category and city, and decision makers from B2B contact databases.</div>
+            <div className="theme-panel-sub">Find businesses and decision makers from B2B directories and contact databases.</div>
           </div>
         </div>
         {catalogError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {catalogError}</div>}
 
         <MiningForm
           idPrefix="crm" onSubmit={submit} busy={searching} disabled={!!catalogError}
-          busyHint={`Searching ${selected.size} source(s) — can take up to a minute.`}
+          busyHint="Searching CRM sources..."
           keywords={{ label: 'Business category / keywords', hint: `(Enter or comma, up to ${limits.maxKeywords})`,
             values: keywords, setValues: setKeywords, max: limits.maxKeywords, error: errors.keywords,
             onClear: () => clear('keywords'), placeholder: 'e.g. software, hospital, real estate, manufacturer' }}

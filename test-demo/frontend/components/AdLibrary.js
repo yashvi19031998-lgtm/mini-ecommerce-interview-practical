@@ -176,13 +176,13 @@ export default function AdLibrary({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Megaphone size={18} /> Ad Library</div>
-            <div className="theme-panel-sub">Businesses that are paying for ads right now — they have budget. Found from ad tags on their websites, the Meta Ad Library API and Google Ads Transparency.</div>
+            <div className="theme-panel-sub">Identify active advertisers across Meta Ad Library and Google Ads Transparency.</div>
           </div>
         </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
         <MiningForm
           idPrefix="ad" onSubmit={submit} busy={searching} disabled={!!deepRun || !!optsError || !opts}
-          busyHint="Searching and checking websites for ad tags — can take up to a minute."
+          busyHint="Searching active advertisers..."
           keywords={{ label: 'Business type / keywords', hint: `(Enter or comma, up to ${opts?.maxKeywords || 5})`,
             values: keywords, setValues: setKeywords, max: opts?.maxKeywords || 5, error: errors.keywords,
             onClear: () => clear('keywords'), placeholder: 'e.g. coaching classes, dental clinic, interior designer' }}

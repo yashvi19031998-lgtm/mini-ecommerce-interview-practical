@@ -6,7 +6,7 @@
 // Backend: file_uploads.py via /api/file-uploads/*.
 
 import React, { useEffect, useRef, useState } from 'react';
-import { FolderUp, Upload, Loader2, AlertTriangle, ShieldCheck, FileSpreadsheet, Contact2, FileText, Mail, FileType2, Image as ImageIcon } from 'lucide-react';
+import { FolderUp, Upload, Loader2, AlertTriangle, FileSpreadsheet, Contact2, FileText, Mail, FileType2, Image as ImageIcon } from 'lucide-react';
 import { fetchFileUploadOptions, parseUploadedFile } from '../lib/api';
 import BulkContacts from './BulkContacts';
 
@@ -67,12 +67,8 @@ export default function FileUploads({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><FolderUp size={18} /> File Uploads</div>
-            <div className="theme-panel-sub">Upload a file you already have — Excel list, phone contacts, expo catalogue, brochure, e-mails or a visiting card — and turn the contacts in it into leads.</div>
+            <div className="theme-panel-sub">Import contacts from Excel, vCard, PDF, Word documents, email archives, or business card images.</div>
           </div>
-        </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
-          <span>The file is read on your server and not kept. Up to 10 MB. Duplicates (inside the file and against your Leads) are shown before anything is saved; nothing is sent to anyone.</span>
         </div>
 
         <div className="jp-status-row" style={{ marginBottom: '0.75rem', flexWrap: 'wrap' }}>

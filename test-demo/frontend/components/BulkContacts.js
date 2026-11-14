@@ -8,24 +8,20 @@
 // Backend: bulk_contacts.py via /api/bulk-contacts/*.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Globe2, MailCheck, PhoneCall, FileUp, Loader2, X, Save, Download, AlertTriangle, ShieldCheck, Search, Upload } from 'lucide-react';
+import { Globe2, MailCheck, PhoneCall, FileUp, Loader2, X, Save, Download, AlertTriangle, Search, Upload } from 'lucide-react';
 import {
   fetchBulkContactsOptions, bulkWebsiteContacts, bulkVerifyEmails, bulkCleanPhones, bulkImportPreview, bulkImportCheck, bulkSaveContacts
 } from '../lib/api';
 
 const META = {
   websites: { icon: Globe2, title: 'Bulk Website Contacts',
-    sub: 'Paste many website addresses — get the email, phone and social links from each site.',
-    note: 'Opens each site’s homepage and contact pages (public addresses only, cached, honest User-Agent). Directory and social pages are skipped — use their own menus.' },
+    sub: 'Extract emails, phone numbers, and social profiles directly from domain lists.' },
   emails: { icon: MailCheck, title: 'Bulk Email Verifier',
-    sub: 'Check a list of e-mail addresses before you send: format, typos, disposable, role and whether the domain accepts mail.',
-    note: 'Checks the domain’s mail (MX) record in DNS. Mailboxes are not “probed” over SMTP — that is unreliable and gets your sending IP blacklisted. “Valid” means the domain accepts e-mail.' },
+    sub: 'Verify deliverability, format syntax, disposable providers, and domain MX records.' },
   phones: { icon: PhoneCall, title: 'Bulk Phone Cleaner',
-    sub: 'Turn a messy list of numbers into clean +91 numbers — mobile / landline, fake and duplicate numbers marked.',
-    note: 'Works offline. Paste numbers one per line, or whole text — numbers are found in it.' },
+    sub: 'Format, validate, and standardize phone numbers with duplicate detection.' },
   import: { icon: FileUp, title: 'Contact Import & Dedupe',
-    sub: 'Upload a CSV, match its columns, see duplicates (inside the file and against your Leads), then save only the new contacts.',
-    note: 'CSV files up to 5 MB / 5,000 rows. Excel: File → Save As → CSV first. Nothing is sent to anyone.' }
+    sub: 'Upload CSV files, map columns, detect duplicates, and import directly to Leads.' }
 };
 const STATUS_CLASS = { valid: 'deep-found', found: 'deep-found', new: 'deep-found', risky: 'deep-partial', unknown: 'deep-none',
   invalid: 'deep-error', error: 'deep-error', duplicate: 'deep-none', in_leads: 'inleads', none: 'deep-none', skipped: 'deep-none' };
@@ -332,7 +328,6 @@ export default function BulkContacts({ tool, onLeadsSaved, preset = null }) {
                   <div className="theme-panel-sub">{meta.sub}</div>
                 </div>
               </div>
-              <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}><ShieldCheck size={14} /><span>{meta.note}</span></div>
             </>
           )}
           {error && <div role="alert" className="jp-alert jp-alert-error" style={{ marginBottom: '0.75rem' }}><AlertTriangle size={14} /> {error}</div>}

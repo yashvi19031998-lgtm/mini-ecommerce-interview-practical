@@ -220,19 +220,23 @@ export default function SearchEngine({ onLeadsSaved }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><SearchCode size={18} /> Search Engines</div>
-            <div className="theme-panel-sub">Ready-made searches find companies and listings; Deep Search opens their websites for email and phone.</div>
+            <div className="theme-panel-sub">Search targeted web results with deep contact discovery.</div>
           </div>
         </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
 
         <MiningForm
           idPrefix="se" onSubmit={submit} busy={searching} disabled={!!deepRun || !!optsError || !opts}
-          busyHint="Queries run one by one to respect rate limits — can take up to a minute."
-          keywords={{ label: 'Keywords', hint: `(Enter or comma, up to ${opts?.maxKeywords || 5})`, values: keywords,
+          busyHint="Running queries..."
+          keywords={{
+            label: 'Keywords', hint: `(Enter or comma, up to ${opts?.maxKeywords || 5})`, values: keywords,
             setValues: setKeywords, max: opts?.maxKeywords || 5, error: errors.keywords, onClear: () => clear('keywords'),
-            placeholder: 'e.g. software company, furniture manufacturer, CA firm' }}
-          audience={{ values: audience, setValues: setAudience, max: 5,
-            hint: '(optional — industries or segments, up to 5; added to every query as "A" OR "B")' }}
+            placeholder: 'e.g. software company, furniture manufacturer, CA firm'
+          }}
+          audience={{
+            values: audience, setValues: setAudience, max: 5,
+            hint: '(optional — industries or segments, up to 5; added to every query as "A" OR "B")'
+          }}
           extra={(
             <>
               <div className="form-group">
@@ -274,8 +278,10 @@ export default function SearchEngine({ onLeadsSaved }) {
               </div>
             </>
           )}
-          location={{ mode: 'india', state, setState, states: opts?.states || ['All India'], stateRequired: false,
-            city, setCity, cityError: errors.city, onClear: clear }}
+          location={{
+            mode: 'india', state, setState, states: opts?.states || ['All India'], stateRequired: false,
+            city, setCity, cityError: errors.city, onClear: clear
+          }}
           maxResults={{ value: maxResults, setValue: setMaxResults, choices: opts?.maxResultsChoices || [10, 25, 50, 100] }}
         />
       </div>

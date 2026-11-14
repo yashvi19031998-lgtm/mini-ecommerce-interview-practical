@@ -6,7 +6,7 @@
 // Backend: lead_enrichment.py via /api/lead-care/enrichment/*.
 
 import React, { useMemo, useState } from 'react';
-import { Wand2, Loader2, X, Save, AlertTriangle, ShieldCheck, Search, Square } from 'lucide-react';
+import { Wand2, Loader2, X, Save, AlertTriangle, Search, Square } from 'lucide-react';
 import { findEnrichmentCandidates, runLeadEnrichment, saveLeadEnrichment } from '../lib/api';
 
 const NEEDS = [
@@ -109,14 +109,8 @@ export default function LeadEnrichment({ onLeadsChanged, onOpenCleanup }) {
         <div className="theme-panel-header" style={{ marginBottom: '1rem' }}>
           <div>
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Wand2 size={18} /> Lead Enrichment</div>
-            <div className="theme-panel-sub">Find missing e-mails, phones and websites for leads you already saved — then keep only what you approve.</div>
+            <div className="theme-panel-sub">Enrich existing leads with missing emails, phone numbers, websites, and technical signals.</div>
           </div>
-        </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
-          <span><strong>Nothing is saved until you click Save, and nothing old is changed:</strong> only empty fields are filled, after a backup of the leads file;
-            every save can be undone from <button type="button" className="jp-linklike" onClick={onOpenCleanup} style={{ background: 'none', border: 0, padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>Data Cleanup → history</button>.
-            Leads without a website need the search engine to find one (DuckDuckGo finds few — a SearXNG / Brave / Serper setup finds more).</span>
         </div>
         {error && <div role="alert" className="jp-alert jp-alert-error" style={{ marginBottom: '0.75rem' }}><AlertTriangle size={14} /> {error}</div>}
         <form onSubmit={find} noValidate>

@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Landmark, BadgeCheck, Receipt, Search, Loader2, X, ExternalLink, Save, Download, AlertTriangle, ScanSearch,
-  ShieldCheck, FileText
+  FileText
 } from 'lucide-react';
 import {
   fetchCorporateRegistryOptions, searchCorporateRegistries, fetchCompanyDetails, saveCorporateRegistryResults, runDeepSearch
@@ -16,11 +16,11 @@ import MiningForm from './MiningForm';
 
 const META = {
   company: { icon: Landmark, title: 'Company Scraper',
-    sub: 'Registered companies from the MCA register (via ZaubaCorp) — by industry, place, type, status and age, or by name.' },
+    sub: 'Search registered companies from the MCA corporate database by industry, location, and status.' },
   pvtltd: { icon: BadgeCheck, title: 'PVT LTD Scraper',
-    sub: 'Private Limited companies from the MCA register — newly registered ones by default, ideal for website / IT leads.' },
+    sub: 'Search private limited company registrations, filings, and incorporation records.' },
   gst: { icon: Receipt, title: 'GST No Scraper',
-    sub: 'GST numbers from IndiaMART seller pages, or check GST numbers you already have.' }
+    sub: 'Lookup verified GSTIN records and business tax registration details.' }
 };
 const DEEP_LABELS = { found: 'Found', partial: 'Website only', none: 'Nothing found', error: 'Failed' };
 const rowKey = (r) => `${r.source_id}|${r.cin || r.gstin || ''}|${r.url}|${r.company}`;
@@ -249,14 +249,6 @@ export default function CorporateRegistry({ mode, onLeadsSaved }) {
             <div className="theme-panel-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icon size={18} /> {meta.title}</div>
             <div className="theme-panel-sub">{meta.sub}</div>
           </div>
-        </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
-          <span>
-            {isGst
-              ? 'GST numbers are read from IndiaMART seller pages (robots.txt respected) and checked offline. Live GST status needs the GST portal, which has a captcha — not available.'
-              : 'Public MCA register data, read from ZaubaCorp listing pages (2 s between requests, cached). Director names are personal data and are not collected; e-mails the site hides from bots are not decoded — use Deep Search.'}
-          </span>
         </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
 

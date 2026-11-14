@@ -8,23 +8,19 @@
 // Backend: domain_tools.py via /api/domain-tools/<tool>; save via /api/bulk-contacts/save (kind websites).
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, MailSearch, Sparkles, CheckSquare, Loader2, X, Save, Download, AlertTriangle, ShieldCheck, Search, ExternalLink } from 'lucide-react';
+import { CalendarClock, MailSearch, Sparkles, CheckSquare, Loader2, X, Save, Download, AlertTriangle, Search, ExternalLink } from 'lucide-react';
 import { fetchDomainToolOptions, runDomainTool, bulkSaveContacts } from '../lib/api';
 import ChipInput from './ChipInput';
 
 const META = {
   age: { icon: CalendarClock, title: 'Domain Age & Expiry', button: 'Check',
-    sub: 'When was a domain registered, when does it expire, who is the registrar and where is its DNS — new and expiring domains are flagged.',
-    note: 'Uses RDAP, the domain registries’ official public service. Owner contact details are never read.' },
+    sub: 'Lookup RDAP registration dates, expiration timelines, registrar, and DNS host.' },
   dns: { icon: MailSearch, title: 'Email & DNS Checker', button: 'Check',
-    sub: 'Who runs a company’s e-mail (Google Workspace, Zoho, Microsoft 365, hosting mail), is SPF / DMARC set, where is the DNS and website.',
-    note: 'Reads public DNS records only. Mailboxes are never contacted.' },
+    sub: 'Check email setup, mail servers, SPF/DMARC records, and DNS hosts.' },
   new: { icon: Sparkles, title: 'New Domains Finder', button: 'Find',
-    sub: 'Domains registered in the last days that contain your keywords — brand-new businesses that will need a website, e-mail and marketing.',
-    note: 'Source: WhoisDS free daily list of newly registered domains (.com, .net, .org, .online, .store… — it has no .in). Each day is downloaded once.' },
+    sub: 'Find newly registered domain names matching target business keywords.' },
   available: { icon: CheckSquare, title: 'Domain Availability', button: 'Check',
-    sub: 'Is a name free as .com / .in / .co.in and more? Also suggests close variants.',
-    note: '“Available” means the registry has no record right now. Premium or reserved names can still be refused or cost more — confirm at a registrar.' }
+    sub: 'Check domain name availability across top extensions with variations.' }
 };
 
 function csvDownload(rows, cols, name) {
@@ -200,7 +196,6 @@ export default function DomainTools({ tool, onLeadsSaved }) {
             <div className="theme-panel-sub">{meta.sub}</div>
           </div>
         </div>
-        <div className="jp-alert se-alert-info" role="note" style={{ marginBottom: '0.75rem' }}><ShieldCheck size={14} /><span>{meta.note}</span></div>
         {error && <div role="alert" className="jp-alert jp-alert-error" style={{ marginBottom: '0.75rem' }}><AlertTriangle size={14} /> {error}</div>}
         <form onSubmit={run} noValidate>
           {(tool === 'age' || tool === 'dns') && (

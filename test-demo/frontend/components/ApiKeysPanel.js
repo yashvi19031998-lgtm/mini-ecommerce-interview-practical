@@ -55,7 +55,7 @@ export default function ApiKeysPanel() {
           <div>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>API Keys &amp; Integrations</h3>
             <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-              Add keys in <code>test-demo/.env</code>, then restart the Python backend. Key values are never shown here.
+              Configure environment variables in server configuration. Key values are securely stored.
             </p>
           </div>
         </div>

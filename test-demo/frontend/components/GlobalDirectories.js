@@ -259,7 +259,7 @@ export default function GlobalDirectories({ onLeadsSaved, onOpenSearchEngine }) 
               <Globe size={18} /> Global Directories
             </div>
             <div className="theme-panel-sub">
-              Find companies outside India from official registers and open directories.
+              Find international companies from official registries and open directories.
             </div>
           </div>
         </div>
@@ -275,7 +275,7 @@ export default function GlobalDirectories({ onLeadsSaved, onOpenSearchEngine }) 
           onSubmit={submit}
           busy={searching}
           disabled={!!catalogError}
-          busyHint="Searching global directories — can take up to a minute."
+          busyHint="Searching global directories..."
           keywords={{
             label: 'Keywords / Business category',
             hint: `(Enter or comma, up to ${limits.maxKeywords})`,
