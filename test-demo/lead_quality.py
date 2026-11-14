@@ -185,6 +185,56 @@ def _role_text(lead: dict) -> str:
     return f"{lead.get('company_name') or ''} | {head}"
 
 
+def _env_int(name, default):
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return int(default)
+
+
+def is_prospect_lead(lead: dict) -> bool:
+    """A prospect (a company with a reason to need software, no request yet) that may get the
+    prospect intro e-mail: only when AUTO_EMAIL_PROSPECT_SIGNALS=true. Real buyers always go first and
+    prospects have their own daily limit (MAX_PROSPECT_EMAILS_PER_DAY, run_all_scrapers.py)."""
+    return (lead.get("ai_category") == "prospect_signal"
+            and os.getenv("AUTO_EMAIL_PROSPECT_SIGNALS", "false").lower() in ("true", "1", "yes"))
+
+
+# Prospect e-mail is only for businesses that may NEED software. Other software / IT firms are competitors,
+# and many "prospects" are really articles, lists or big brands picked up by web searches.
+_IT_FIRM = re.compile(
+    r"soft\w*|info\s?tech|infosys\w*|info\s?systems?|technolog\w*|techno\w*|\btech\b|tech\s?labs?|"
+    r"\bsolutions?\b|\bit\s+(services?|company|companies|consult\w*|firm|solutions?)\b|"
+    r"web\s?(design\w*|develop\w*)|app\s?develop\w*|mobile\s+apps?|digital\s+(agency|marketing|solutions?)|"
+    r"\bdevelopers?\b|\bdevelopment\b|\bstudios?\b|\blabs?\b|consult\w*|outsourc\w*|\bcoding\b|\bcodes?\b|"
+    r"\bsaas\b|\bai\b|\bdata\w*\b", re.I)
+_IT_SOURCE = re.compile(r"goodfirms|clutch|software|\bit\s+(company|services|consult)|web\s?development|"
+                        r"app\s+development|developer|freelanc|upwork|remote|hacker\s*news|jobicy|telegram", re.I)
+_ARTICLE = re.compile(r"^\s*(how\s+to|the\s+(definitive|ultimate|complete|best)|top\b|best\b|\d+\s+best|list\s+of|"
+                      r"official\b|job\s+opportunit|hire\b|online$|software$|what\s+is|why\b)", re.I)
+_BIG_DOMAINS = {"wikihow.com", "aol.com", "corp.aol.com", "airbnb.com", "deloitte.com", "mapquest.com", "jquery.com",
+                "freelancer.com", "upwork.com", "microsoft.com", "google.com", "amazon.com", "apple.com", "meta.com",
+                "facebook.com", "linkedin.com", "indeed.com", "governmentjobs.com", "wikipedia.org", "github.com",
+                "midtowncomics.com", "itprofiles.com", "sortlist.com", "goodfirms.co", "clutch.co"}
+
+
+def prospect_block_reason(lead: dict) -> str:
+    """Why a prospect must not get the prospect intro mail, or ''."""
+    company = str(lead.get("company_name") or "").strip()
+    email = str(lead.get("email") or "").split(",")[0].strip().lower()
+    domain = email.rsplit("@", 1)[-1]
+    if len(company) < 3 or _ARTICLE.search(company) or _ARTICLE.search(str(lead.get("title") or "")):
+        return "looks like an article, list or job page, not a business"
+    if domain in _BIG_DOMAINS or any(domain.endswith("." + d) for d in _BIG_DOMAINS):
+        return "large brand / platform, not a prospect"
+    if domain.endswith((".gov", ".gov.in", ".nic.in", ".edu", ".ac.in")):
+        return "government / education address"
+    site = str(lead.get("website") or "")
+    if _IT_SOURCE.search(str(lead.get("source") or "")) or _IT_FIRM.search(f"{company} {domain} {site}"):
+        return "software / IT company (competitor), not a prospect"
+    return ""
+
+
 def outreach_block_reason(lead: dict) -> str:
     """Why this lead must NOT get an automatic cold e-mail, or '' when it may (the mailbox is still
     verified at send time)."""
@@ -193,12 +243,11 @@ def outreach_block_reason(lead: dict) -> str:
     except ValueError:
         score = 0
     email = str(lead.get("email") or "").split(",")[0].strip()
-    buyer_cats = set(BUYER_CATEGORIES)
-    if os.getenv("AUTO_EMAIL_PROSPECT_SIGNALS", "false").lower() in ("true", "1", "yes"):
-        buyer_cats.add("prospect_signal")
-    if lead.get("ai_category") not in buyer_cats:
+    prospect = is_prospect_lead(lead)
+    if lead.get("ai_category") not in BUYER_CATEGORIES and not prospect:
         return f"not a buyer ({lead.get('ai_category') or 'not qualified yet'})"
-    min_score = int(os.getenv("MIN_AI_SCORE_FOR_AUTO_EMAIL", str(MIN_AI_SCORE_FOR_AUTO_EMAIL)))
+    min_score = (_env_int("MIN_AI_SCORE_FOR_PROSPECT_EMAIL", 3) if prospect
+                 else _env_int("MIN_AI_SCORE_FOR_AUTO_EMAIL", MIN_AI_SCORE_FOR_AUTO_EMAIL))
     if score < min_score:
         return f"score {score} below {min_score}"
     if not email:
@@ -216,6 +265,8 @@ def outreach_block_reason(lead: dict) -> str:
     full = f"{role} {lead.get('description') or ''}"
     if _SELLER.search(full):
         return "the author offers their own services (job seeker / freelancer), not a buyer"
+    if prospect:
+        return prospect_block_reason(lead)  # a company, not a job post: the job-post checks below do not apply
     if _NON_IT_ROLE.search(role) and not _DEV_PERSON.search(role):
         return "the role is not software work"
     if not _DEV_ROLE.search(f"{full} {lead.get('ai_requirement') or ''} {lead.get('ai_tech_stack') or ''}"):

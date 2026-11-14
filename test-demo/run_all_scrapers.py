@@ -63,6 +63,28 @@ MAX_PENDING_EMAILS_PER_RUN = max(0, _int_or(
 # counting every mail the app sent today (manual, bulk, follow-ups and this run).
 # 2026-11-13: two Gmail accounts were blocked, so the default is low; raise it slowly as the account ages.
 MAX_EMAILS_PER_DAY = max(1, _int_or(os.getenv("MAX_EMAILS_PER_DAY"), 50))
+# Prospects (companies with no request yet, AUTO_EMAIL_PROSPECT_SIGNALS=true) get their own, smaller daily
+# limit inside MAX_EMAILS_PER_DAY, and are e-mailed only after every ready real buyer.
+MAX_PROSPECT_EMAILS_PER_DAY = max(0, _int_or(os.getenv("MAX_PROSPECT_EMAILS_PER_DAY"), 15))
+PROSPECT_SOURCE = "auto outreach (prospect)"
+# Short intro for prospects, used when the AI e-mail writer is not available.
+PROSPECT_SUBJECT = "Software help for {company}"
+PROSPECT_MESSAGE = ("Hi {name},\n\n"
+                    "I came across {company} and wanted to introduce Sangeeta Infotech, a software team from "
+                    "Ahmedabad. We build and look after websites, web apps, mobile apps and online stores, and we "
+                    "also work as an extra development team when in-house capacity is short.\n\n"
+                    "If anything like that is on your list for the coming months, would a short call be useful? "
+                    "If not, just let me know and I will not write again.")
+
+
+def prospect_emails_sent_today(now=None) -> int:
+    """Prospect intro e-mails sent today (follow-up log, source PROSPECT_SOURCE)."""
+    today = (now or datetime.datetime.now()).strftime("%Y-%m-%d")
+    try:
+        rows = followup_store.history(types=["email_sent"], limit=1000)["items"]
+    except Exception:
+        return 0
+    return sum(1 for r in rows if r.get("source") == PROSPECT_SOURCE and str(r.get("occurred_at", "")).startswith(today))
 # Pause automatic e-mail when this many bounces ("Address not found") came back in the last 24 hours.
 MAX_BOUNCES_PER_DAY = 2
 # Stop the run's e-mailing after this many failures in a row (wrong password, Gmail block...): retrying
@@ -405,7 +427,15 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
               f"The rest are sent on the next run after midnight.")
         return 0
 
-    for lead_obj in registry.leads:
+    try:
+        from lead_quality import is_prospect_lead
+    except ImportError:
+        is_prospect_lead = lambda lead: False
+    prospect_cap = MAX_PROSPECT_EMAILS_PER_DAY
+    prospects_today = prospect_emails_sent_today()
+    prospects_sent = 0
+    # Real buyers first, prospects after them (stable sort keeps the file order inside each group)
+    for lead_obj in sorted(registry.leads, key=lambda l: bool(is_prospect_lead(l))):
         if max_batch and dispatched >= max_batch:
             print(f"       [AUTO-MAIL-PENDING] Per-run limit of {max_batch} reached; the rest go in the next run.")
             break
@@ -421,9 +451,12 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
         if status in ("SENT", "INVALID", "INVALID_DOMAIN", "UNVERIFIABLE", "EXCLUDED_COMPANY"):
             continue
 
-        # Only contact leads the AI qualified as real buyers with a high score
+        # Only contact leads the AI qualified as real buyers with a high score (or allowed prospects)
         if not is_outreach_ready(lead_obj):
             continue
+        prospect = bool(is_prospect_lead(lead_obj))
+        if prospect and prospects_today + prospects_sent >= prospect_cap:
+            continue  # prospect limit for today reached; real buyers were already handled above
 
         raw_emails = str(lead_obj.get("email", "")).split(",")
         raw_email = raw_emails[0].strip() if raw_emails else ""
@@ -464,28 +497,38 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
             lead_obj["email_status"] = "EXCLUDED_COMPANY"
             continue
 
+        # Generate requirement-tailored personalized email via AI email generator
         try:
-            from followup_sequence import outreach_names
-        except ImportError:  # keep sending with the plain name if the module is missing
-            outreach_names = lambda name: (name, name)
-        msg_name, msg_company = outreach_names(comp_name)
-        custom_sub = sub_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
-        custom_msg = msg_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
+            from ai_email_generator import generate_personalized_email
+            draft = generate_personalized_email(lead_obj, settings=settings)
+            custom_sub = draft["subject"]
+            custom_msg = draft["body"]
+        except Exception:
+            try:
+                from followup_sequence import outreach_names
+            except ImportError:  # keep sending with the plain name if the module is missing
+                outreach_names = lambda name: (name, name)
+            msg_name, msg_company = outreach_names(comp_name)
+            s_tpl, m_tpl = (PROSPECT_SUBJECT, PROSPECT_MESSAGE) if prospect else (sub_tpl, msg_tpl)
+            custom_sub = s_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
+            custom_msg = m_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
+            if sig and sig.strip()[:20] not in custom_msg:
+                custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
 
-        if sig and sig.strip()[:20] not in custom_msg:
-            custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
-
-        print(f"       -> [AUTO-MAIL-PENDING] Dispatching outreach to {raw_email} ({comp_name})...")
+        kind = "prospect" if prospect else "buyer"
+        print(f"       -> [AUTO-MAIL-PENDING] Dispatching outreach ({kind}) to {raw_email} ({comp_name})...")
         mail_res = send_smtp_email(raw_email, custom_sub, custom_msg, company_name=comp_name)
         if mail_res.get("success"):
             lead_obj["email_status"] = "SENT"
             lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             sent_emails_seen.add(email_lower)
             followup_store.safe_log(lead_obj.get("lead_id", ""), "email_sent", f"Email sent: {custom_sub}",
-                                    details=custom_msg, source="auto outreach", lead_name=comp_name,
-                                    lead_email=raw_email)
+                                    details=custom_msg, source=PROSPECT_SOURCE if prospect else "auto outreach",
+                                    lead_name=comp_name, lead_email=raw_email)
             print(f"       -> [AUTO-MAIL-PENDING] [SUCCESS] Delivered via Gmail SMTP.")
             dispatched += 1
+            if prospect:
+                prospects_sent += 1
             failures_in_row = 0
             if delay_sec > 0:
                 time.sleep(delay_sec)

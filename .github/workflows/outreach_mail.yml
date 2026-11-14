@@ -70,6 +70,11 @@ jobs:
           MAX_PENDING_EMAILS_PER_RUN: ${{ vars.MAX_PENDING_EMAILS_PER_RUN || '0' }}
           MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '50' }}
           MIN_AI_SCORE_FOR_AUTO_EMAIL: ${{ vars.MIN_AI_SCORE_FOR_AUTO_EMAIL || '7' }}
+          # Prospects (companies with no request yet): short intro mail, after all real buyers,
+          # at most MAX_PROSPECT_EMAILS_PER_DAY of them (counted inside MAX_EMAILS_PER_DAY)
+          AUTO_EMAIL_PROSPECT_SIGNALS: ${{ vars.AUTO_EMAIL_PROSPECT_SIGNALS || 'true' }}
+          MIN_AI_SCORE_FOR_PROSPECT_EMAIL: ${{ vars.MIN_AI_SCORE_FOR_PROSPECT_EMAIL || '3' }}
+          MAX_PROSPECT_EMAILS_PER_DAY: ${{ vars.MAX_PROSPECT_EMAILS_PER_DAY || '15' }}
           STALE_AFTER_DAYS: ${{ vars.STALE_AFTER_DAYS || '14' }}
           # Follow-up sequence: OFF unless the variable FOLLOWUP_AUTO_SEND = true
           FOLLOWUP_AUTO_SEND: ${{ vars.FOLLOWUP_AUTO_SEND || 'false' }}
