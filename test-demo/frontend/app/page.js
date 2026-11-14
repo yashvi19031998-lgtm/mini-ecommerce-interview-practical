@@ -198,9 +198,9 @@ function DashboardContent() {
     }
   };
 
-  const handleSendBulkEmail = async ({ lead_ids, subject, message, delay_ms }) => {
+  const handleSendBulkEmail = async ({ lead_ids, subject, message, delay_ms }, onProgress = null) => {
     try {
-      const res = await sendBulkEmail({ lead_ids, subject, message, delay_ms });
+      const res = await sendBulkEmail({ lead_ids, subject, message, delay_ms }, onProgress);
       // Only leads the server really e-mailed are marked as sent. Before, every selected lead was shown
       // as EMAIL_SENT and the message counted all of them, even when some (or all) were refused.
       const sentIds = new Set((res.results || []).filter(r => r.success).map(r => String(r.id)));
@@ -212,11 +212,12 @@ function DashboardContent() {
         'Email Status': 'SENT',
         'Email Sent At': new Date().toISOString().replace('T', ' ').substring(0, 19)
       } : l));
-      const firstError = (res.results || []).find(r => !r.success)?.error;
+      const notSent = (Number(res.not_verified) || 0) + (Number(res.skipped) || 0) + failedCount;
+      const firstError = res.stopped_reason || (res.results || []).find(r => !r.success)?.error;
       if (sentCount === 0) {
         showToast(`No e-mails were sent. ${firstError || 'All selected leads were skipped.'}`, 'error');
-      } else if (failedCount > 0) {
-        showToast(`${sentCount} e-mail${sentCount === 1 ? '' : 's'} sent, ${failedCount} not sent. ${firstError || ''}`, 'info');
+      } else if (notSent > 0) {
+        showToast(`${sentCount} e-mail${sentCount === 1 ? '' : 's'} sent, ${notSent} not sent (see the list in the pop-up).`, 'info');
       } else {
         showToast(`Campaign finished! ${sentCount} e-mail${sentCount === 1 ? '' : 's'} dispatched.`, 'success');
       }

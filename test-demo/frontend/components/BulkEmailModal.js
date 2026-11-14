@@ -46,28 +46,52 @@ export default function BulkEmailModal({
   const selectedLeads = leads.filter(l => selectedLeadIds.includes(l.id));
   const validEmailLeads = selectedLeads.filter(l => l.Email && l.Email.includes('@') && l.Email !== 'N/A');
 
+  const toProgress = (job) => ({
+    sent: Number(job.sent) || 0,
+    notSent: (Number(job.failed) || 0) + (Number(job.not_verified) || 0) + (Number(job.skipped) || 0),
+    processed: Number(job.processed) || 0,
+    total: Number(job.total) || validEmailLeads.length,
+    done: !!job.done,
+    stopped: job.stopped_reason || '',
+    results: job.results || []
+  });
+
   const handleStartCampaign = async () => {
     setIsSending(true);
-    setProgress({ sent: 0, failed: 0, total: validEmailLeads.length });
+    setProgress({ sent: 0, notSent: 0, processed: 0, total: validEmailLeads.length, results: [] });
 
     try {
+      // Runs on the server in the background: every mailbox is checked before sending, so it takes minutes.
       const res = await onBulkSend({
         lead_ids: validEmailLeads.map(l => l.id),
         subject,
         message,
         delay_ms: delayMs
-      });
-      if (res) {
-        setProgress({ sent: Number(res.sent) || 0, failed: Number(res.failed) || 0, total: validEmailLeads.length, done: true });
-      }
-    } catch {
-      setProgress(p => ({ ...p, done: true }));
+      }, (job) => setProgress(toProgress(job)));
+      if (res) setProgress(toProgress({ ...res, done: true }));
+    } catch (err) {
+      setProgress(p => ({ ...(p || {}), done: true, stopped: err.message }));
     } finally {
       setIsSending(false);
     }
   };
 
-  const pct = progress && progress.total > 0 ? Math.round(((progress.sent + progress.failed) / progress.total) * 100) : 0;
+  const REASONS = {
+    not_verified: 'Address not confirmed by its mail server',
+    already_sent: 'Already e-mailed before',
+    no_email: 'No e-mail address',
+    excluded: 'On the do-not-contact list',
+    daily_limit: 'Daily limit reached',
+    stopped: 'Stopped',
+    error: 'Send failed'
+  };
+  const reasonCounts = {};
+  (progress?.results || []).filter(r => !r.success).forEach(r => {
+    const label = REASONS[r.reason] || r.reason || 'Not sent';
+    reasonCounts[label] = (reasonCounts[label] || 0) + 1;
+  });
+
+  const pct = progress && progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0;
 
   return (
     <div
@@ -95,7 +119,7 @@ export default function BulkEmailModal({
           </div>
           <button
             onClick={onClose}
-            disabled={isSending}
+            aria-label="Close (sending continues on the server)"
             className="modal-close-btn"
           >
             <X size={18} />
@@ -108,10 +132,10 @@ export default function BulkEmailModal({
             <div className="campaign-progress-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
                 <span style={{ fontWeight: 600, color: 'var(--primary-lavender)' }}>
-                  {progress.done ? 'Campaign Finished!' : 'Dispatching Campaign...'}
+                  {progress.done ? 'Finished' : `Checking mailboxes and sending… ${progress.processed} of ${progress.total}`}
                 </span>
                 <span style={{ color: 'var(--text-secondary)' }}>
-                  {progress.sent} Sent | {progress.failed} Failed of {progress.total}
+                  {progress.sent} sent · {progress.notSent} not sent
                 </span>
               </div>
               <div className="progress-bar-track">
@@ -120,6 +144,20 @@ export default function BulkEmailModal({
                   style={{ width: `${pct}%` }}
                 />
               </div>
+              {!progress.done && (
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                  Each address is checked with its mail server first, so this takes a few seconds per lead.
+                  You can close this window; sending continues on the server.
+                </div>
+              )}
+              {progress.stopped && (
+                <div role="alert" style={{ fontSize: '0.78rem', color: 'var(--danger-red)' }}>{progress.stopped}</div>
+              )}
+              {Object.keys(reasonCounts).length > 0 && (
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  {Object.entries(reasonCounts).map(([label, n]) => <li key={label}>{label}: {n}</li>)}
+                </ul>
+              )}
             </div>
           )}
 
@@ -168,10 +206,9 @@ export default function BulkEmailModal({
         <div className="modal-footer">
           <button
             onClick={onClose}
-            disabled={isSending}
             className="btn btn-secondary btn-sm"
           >
-            {progress?.done ? 'Close' : 'Cancel'}
+            {progress?.done || isSending ? 'Close' : 'Cancel'}
           </button>
 
           {!progress?.done && (

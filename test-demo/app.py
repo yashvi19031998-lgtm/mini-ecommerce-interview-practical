@@ -3,6 +3,7 @@ import sys
 import csv
 import time
 import json
+import uuid
 import threading
 import subprocess
 import pandas as pd
@@ -305,6 +306,12 @@ def send_single_lead_email():
 
 @app.route("/api/leads/bulk-email", methods=["POST"])
 def send_bulk_leads_email():
+    """Starts a bulk e-mail job in the background and returns at once with a job id.
+
+    Each mailbox is checked before sending, so a batch takes minutes; running it inside the request made
+    the browser give up after 2 minutes ("bulk e-mail does not work") while mails were still going out.
+    Poll GET /api/leads/bulk-email/<job_id> for progress. Send "wait": true to run it inline (scripts/tests).
+    """
     data = _json_body()
     lead_ids = data.get("lead_ids", [])
     subject_tpl = data.get("subject", "")
@@ -321,71 +328,130 @@ def send_bulk_leads_email():
     if len(lead_ids) > MAX_BULK_EMAILS:
         return jsonify({"success": False, "error": f"Send to at most {MAX_BULK_EMAILS} leads at a time."}), 400
 
-    all_leads = {l["id"]: l for l in read_leads()}
-    settings = load_settings()
-    sig = format_signature(settings)
+    with _bulk_lock:
+        running = [j for j in _bulk_jobs.values() if not j["done"]]
+        if running:
+            return jsonify({"success": False, "error": "A bulk e-mail is already being sent. Wait for it to finish.",
+                            "job_id": running[0]["job_id"]}), 409
+        job = {"job_id": uuid.uuid4().hex[:12], "total": len(lead_ids), "processed": 0, "sent": 0, "failed": 0,
+               "not_verified": 0, "skipped": 0, "done": False, "stopped_reason": "", "results": [],
+               "started_at": time.strftime("%Y-%m-%d %H:%M:%S"), "finished_at": ""}
+        _bulk_jobs[job["job_id"]] = job
+        for old in list(_bulk_jobs)[:-10]:          # keep the last 10 jobs only
+            if _bulk_jobs[old]["done"]:
+                _bulk_jobs.pop(old, None)
 
-    results = []
-    sent_count = 0
-    failed_count = 0
+    args = (job, [str(x) for x in lead_ids], subject_tpl, message_tpl, delay_ms)
+    if data.get("wait"):
+        _run_bulk_job(*args)
+        return jsonify({"success": True, **_bulk_snapshot(job)})
+    threading.Thread(target=_run_bulk_job, args=args, daemon=True).start()
+    return jsonify({"success": True, "job_id": job["job_id"], "total": job["total"]})
 
-    for idx, lid in enumerate(lead_ids):
-        lead = all_leads.get(str(lid))
-        if not lead:
-            continue
 
-        raw_emails = str(lead.get("Email", "")).split(",")
-        to_email = raw_emails[0].strip() if raw_emails else ""
+@app.route("/api/leads/bulk-email/<job_id>", methods=["GET"])
+def bulk_email_status(job_id):
+    job = _bulk_jobs.get(str(job_id))
+    if not job:
+        return jsonify({"success": False, "error": "Unknown bulk e-mail job."}), 404
+    return jsonify({"success": True, **_bulk_snapshot(job)})
 
-        if not to_email or "@" not in to_email or to_email == "N/A":
-            results.append({"id": lid, "email": to_email, "success": False, "error": "No valid email"})
-            failed_count += 1
-            continue
 
-        comp = str(lead.get("Company Name") or "")
-        # A job-post title is never used as a name in the e-mail text (see followup_sequence.outreach_names)
-        name, msg_company = followup_sequence.outreach_names(comp)
-        loc = str(lead.get("Address") or "").strip() or "your region"
+_bulk_jobs = {}
+_bulk_lock = threading.Lock()
+BULK_MAX_FAILURES_IN_ROW = 3
 
-        sub = (subject_tpl
-               .replace("{company}", msg_company)
-               .replace("{name}", name)
-               .replace("{location}", loc))
 
-        body = (message_tpl
-                .replace("{company}", msg_company)
-                .replace("{name}", name)
-                .replace("{location}", loc))
+def _bulk_snapshot(job):
+    with _bulk_lock:
+        snap = dict(job)
+        snap["results"] = list(job["results"])
+    return snap
 
-        if sig and sig.strip()[:20] not in body:
-            body = f"{body}\n\n---\n{sig.strip()}"
 
-        res = send_smtp_email(to_email, sub, body, company_name=str(comp or ""))
-        if res.get("success"):
-            sent_count += 1
-            now_str = time.strftime("%Y-%m-%d %H:%M:%S")
-            update_lead_record(lid, {
-                "Email Status": "SENT",
-                "Email Sent At": now_str,
-                "Status": "EMAIL_SENT"
-            })
-            followup_store.safe_log(lid, "email_sent", f"Email sent: {sub}", details=body,
-                                    source="bulk email", lead_name=comp, lead_email=to_email)
-            results.append({"id": lid, "email": to_email, "success": True})
+def _bulk_note(job, lid, email, ok, reason, error=""):
+    with _bulk_lock:
+        job["results"].append({"id": lid, "email": email, "success": ok, "reason": reason, "error": error})
+        job["processed"] += 1
+        if ok:
+            job["sent"] += 1
+        elif reason == "not_verified":
+            job["not_verified"] += 1
+        elif reason in ("no_email", "already_sent", "excluded", "daily_limit", "stopped"):
+            job["skipped"] += 1
         else:
-            failed_count += 1
-            results.append({"id": lid, "email": to_email, "success": False, "error": res.get("error")})
+            job["failed"] += 1
 
-        if idx < len(lead_ids) - 1 and delay_ms > 0:
-            time.sleep(delay_ms / 1000.0)
 
-    return jsonify({
-        "success": True,
-        "total": len(lead_ids),
-        "sent": sent_count,
-        "failed": failed_count,
-        "results": results
-    })
+def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms):
+    try:
+        all_leads = {str(l["id"]): l for l in read_leads()}
+        settings = load_settings()
+        sig = format_signature(settings)
+        try:
+            import run_all_scrapers as _r
+            daily_cap, sent_today = _r.MAX_EMAILS_PER_DAY, _r.emails_sent_today()
+        except Exception:
+            daily_cap, sent_today = 50, 0
+        failures_in_row = 0
+        for idx, lid in enumerate(lead_ids):
+            lead = all_leads.get(lid)
+            if not lead:
+                _bulk_note(job, lid, "", False, "no_email", "Lead not found")
+                continue
+            to_email = str(lead.get("Email", "")).split(",")[0].strip()
+            if not to_email or "@" not in to_email or to_email == "N/A":
+                _bulk_note(job, lid, to_email, False, "no_email", "No valid e-mail")
+                continue
+            if job["stopped_reason"]:
+                _bulk_note(job, lid, to_email, False, "stopped", job["stopped_reason"])
+                continue
+            if sent_today + job["sent"] >= daily_cap:
+                job["stopped_reason"] = f"Daily limit of {daily_cap} e-mails reached - the rest can go tomorrow."
+                _bulk_note(job, lid, to_email, False, "daily_limit", job["stopped_reason"])
+                continue
+
+            comp = str(lead.get("Company Name") or "")
+            # A job-post title is never used as a name in the e-mail text (see followup_sequence.outreach_names)
+            name, msg_company = followup_sequence.outreach_names(comp)
+            loc = str(lead.get("Address") or "").strip() or "your region"
+            sub = subject_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+            body = message_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+            if sig and sig.strip()[:20] not in body:
+                body = f"{body}\n\n---\n{sig.strip()}"
+
+            res = send_smtp_email(to_email, sub, body, company_name=comp)
+            if res.get("success"):
+                failures_in_row = 0
+                update_lead_record(lid, {"Email Status": "SENT", "Email Sent At": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                         "Status": "EMAIL_SENT"})
+                followup_store.safe_log(lid, "email_sent", f"Email sent: {sub}", details=body,
+                                        source="bulk email", lead_name=comp, lead_email=to_email)
+                _bulk_note(job, lid, to_email, True, "sent")
+                if idx < len(lead_ids) - 1 and delay_ms > 0:
+                    time.sleep(delay_ms / 1000.0)
+            elif res.get("verify"):
+                if res.get("invalid"):
+                    update_lead_record(lid, {"Email Status": "INVALID"})   # would bounce: never try again
+                _bulk_note(job, lid, to_email, False, "not_verified", res.get("error", ""))
+                if "port 25" in str(res.get("error", "")):
+                    job["stopped_reason"] = "This computer cannot check mailboxes (port 25 blocked), so nothing is sent."
+            elif res.get("already_sent"):
+                _bulk_note(job, lid, to_email, False, "already_sent", res.get("error", ""))
+            elif res.get("excluded"):
+                _bulk_note(job, lid, to_email, False, "excluded", res.get("error", ""))
+            else:
+                failures_in_row += 1
+                _bulk_note(job, lid, to_email, False, "error", res.get("error", "SMTP send failed"))
+                if failures_in_row >= BULK_MAX_FAILURES_IN_ROW:
+                    job["stopped_reason"] = (f"Stopped after {failures_in_row} failed sends in a row - check the Gmail "
+                                             f"login (Settings -> Send Test Verification Email).")
+    except Exception as err:  # never leave a job "running" forever
+        job["stopped_reason"] = f"Bulk e-mail stopped: {err}"
+    finally:
+        with _bulk_lock:
+            job["done"] = True
+            job["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
 @app.route("/api/scraper/status", methods=["GET"])
 def get_scraper_status():

@@ -213,10 +213,67 @@ class DoNotContactTests(ApiSafetyBase):
             self.assertEqual(single.status_code, 403)
             self.assertTrue(single.get_json()["excluded"])
             bulk = self.client.post("/api/leads/bulk-email", headers=AUTH, json={
-                "lead_ids": ["LEAD-00003"], "subject": "Hi {company}", "message": "Body", "delay_ms": 0}).get_json()
-            self.assertEqual((bulk["sent"], bulk["failed"]), (0, 1))
+                "lead_ids": ["LEAD-00003"], "subject": "Hi {company}", "message": "Body", "delay_ms": 0,
+                "wait": True}).get_json()
+            self.assertEqual((bulk["sent"], bulk["skipped"]), (0, 1))
+            self.assertEqual(bulk["results"][0]["reason"], "excluded")
             self.assertIn("blacklist", bulk["results"][0]["error"].lower())
         self.assertEqual(self.statuses()["LEAD-00003"], "NEW")   # a blocked send must not mark the lead as e-mailed
+
+
+class BulkJobTests(ApiSafetyBase):
+    """Bulk e-mail runs as a background job (a batch with mailbox checks takes minutes)."""
+
+    def test_starts_at_once_and_reports_progress_with_reasons(self):
+        import threading
+        gate = threading.Event()
+        def fake(to, sub, body, bypass_duplicate_check=False, company_name="", verify="strict"):
+            gate.wait(5)
+            if to == "ravi@acmefoods.in":
+                return {"success": True}
+            return {"success": False, "verify": "invalid", "invalid": True, "error": "does not exist"}
+        with open(self.leads, "a", encoding="utf-8-sig", newline="") as fh:
+            csv.DictWriter(fh, fieldnames=FIELDS).writerow({"lead_id": "LEAD-00005", "company_name": "Gone Ltd",
+                                                            "email": "nobody@gone.in", "status": "NEW"})
+        app_module._cached_leads_data.clear()
+        with mock.patch.object(app_module, "send_smtp_email", side_effect=fake),                 mock.patch.object(app_module, "load_settings", return_value={}),                 mock.patch.object(app_module, "format_signature", return_value=""):
+            start = self.client.post("/api/leads/bulk-email", headers=AUTH, json={
+                "lead_ids": ["LEAD-00001", "LEAD-00005", "LEAD-00002"], "subject": "Hi", "message": "Body", "delay_ms": 0})
+            self.assertEqual(start.status_code, 200)
+            job_id = start.get_json()["job_id"]
+            busy = self.client.post("/api/leads/bulk-email", headers=AUTH, json={
+                "lead_ids": ["LEAD-00001"], "subject": "Hi", "message": "Body"})
+            self.assertEqual(busy.status_code, 409)                     # one bulk job at a time
+            gate.set()
+            for _ in range(100):
+                job = self.client.get(f"/api/leads/bulk-email/{job_id}", headers=AUTH).get_json()
+                if job["done"]:
+                    break
+                import time; time.sleep(0.05)
+        self.assertTrue(job["done"])
+        self.assertEqual((job["sent"], job["not_verified"], job["skipped"]), (1, 1, 1))   # LEAD-00002 has no e-mail
+        reasons = {r["id"]: r["reason"] for r in job["results"]}
+        self.assertEqual(reasons, {"LEAD-00001": "sent", "LEAD-00005": "not_verified", "LEAD-00002": "no_email"})
+        statuses = {r["lead_id"]: r for r in csv.DictReader(open(self.leads, encoding="utf-8-sig", newline=""))}
+        self.assertEqual(statuses["LEAD-00005"]["email_status"], "INVALID")             # never tried again
+        self.assertEqual(self.client.get("/api/leads/bulk-email/nope", headers=AUTH).status_code, 404)
+
+    def test_stops_after_failed_logins(self):
+        with open(self.leads, "a", encoding="utf-8-sig", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=FIELDS)
+            for i in range(6, 11):
+                w.writerow({"lead_id": f"LEAD-{i:05d}", "company_name": f"Co {i}", "email": f"a{i}@co{i}.in", "status": "NEW"})
+        app_module._cached_leads_data.clear()
+        calls = []
+        def fake(to, *a, **k):
+            calls.append(to)
+            return {"success": False, "error": "Username and Password not accepted"}
+        with mock.patch.object(app_module, "send_smtp_email", side_effect=fake),                 mock.patch.object(app_module, "load_settings", return_value={}),                 mock.patch.object(app_module, "format_signature", return_value=""):
+            job = self.client.post("/api/leads/bulk-email", headers=AUTH, json={
+                "lead_ids": [f"LEAD-{i:05d}" for i in range(6, 11)], "subject": "Hi", "message": "Body",
+                "delay_ms": 0, "wait": True}).get_json()
+        self.assertEqual(len(calls), app_module.BULK_MAX_FAILURES_IN_ROW)
+        self.assertIn("Gmail login", job["stopped_reason"])
 
 
 class OutreachWordingTests(ApiSafetyBase):
@@ -243,7 +300,7 @@ class OutreachWordingTests(ApiSafetyBase):
                 mock.patch.object(app_module, "load_settings", return_value={}), \
                 mock.patch.object(app_module, "format_signature", return_value=""):
             r = self.client.post("/api/leads/bulk-email", headers=AUTH, json={
-                "lead_ids": ["LEAD-00001", "LEAD-00004"], "delay_ms": 0,
+                "lead_ids": ["LEAD-00001", "LEAD-00004"], "delay_ms": 0, "wait": True,
                 "subject": "Tech team for {company}", "message": "Hi {name},\nI came across {company} in {location}."})
         self.assertEqual(r.get_json()["sent"], 2)
         by_to = {s[0]: s for s in sent}

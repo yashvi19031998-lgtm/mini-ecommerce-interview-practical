@@ -82,11 +82,28 @@ export async function sendSingleEmail({ id, to, subject, message }) {
 }
 
 // 4. Dispatch Bulk Cold Outreach Email via Python Gmail SMTP
-export async function sendBulkEmail({ lead_ids, subject, message, delay_ms = 1500 }) {
-  return await apiFetch('/api/leads/bulk-email', {
+// Bulk e-mail runs as a background job on the server (every mailbox is checked first, so it takes minutes).
+// Starts the job, then polls it; onProgress(job) gets every update. Resolves with the finished job.
+export async function sendBulkEmail({ lead_ids, subject, message, delay_ms = 1500 }, onProgress = null) {
+  const start = await apiFetch('/api/leads/bulk-email', {
     method: 'POST',
     body: JSON.stringify({ lead_ids, subject, message, delay_ms })
   });
+  let job = { ...start, processed: 0, sent: 0, failed: 0, not_verified: 0, skipped: 0, done: false, results: [] };
+  if (onProgress) onProgress(job);
+  let misses = 0;
+  while (!job.done) {
+    await new Promise(r => setTimeout(r, 1500));
+    try {
+      job = await apiFetch(`/api/leads/bulk-email/${encodeURIComponent(start.job_id)}`);
+      misses = 0;
+    } catch (err) {
+      if (++misses >= 5) throw new Error(`Lost contact with the server while sending (${err.message}). Mails already sent stay sent.`);
+      continue;
+    }
+    if (onProgress) onProgress(job);
+  }
+  return job;
 }
 
 // 5. Query Real-Time Scraper Engine Status & Live Logs
