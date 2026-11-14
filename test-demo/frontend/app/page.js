@@ -205,6 +205,7 @@ function DashboardContent() {
       // Only leads the server really e-mailed are marked as sent. Before, every selected lead was shown
       // as EMAIL_SENT and the message counted all of them, even when some (or all) were refused.
       const sentIds = new Set((res.results || []).filter(r => r.success).map(r => String(r.id)));
+      const alreadySentIds = new Set((res.results || []).filter(r => r.already_sent).map(r => String(r.id)));
       const sentCount = Number.isFinite(Number(res.sent)) ? Number(res.sent) : sentIds.size;
       const failedCount = Number(res.failed) || 0;
       setLeads(prev => prev.map(l => sentIds.has(String(l.id)) ? {
@@ -316,14 +317,14 @@ function DashboardContent() {
             {/* Lead KPI cards: only on the two pages about the leads list. On tool pages (scrapers, settings,
                 bulk tools...) they pushed the tool itself below the fold. */}
             {['dashboard', 'leads'].includes(activeTab) && (
-            <StatsCards 
-              leads={leads} 
-              activeFilter={tableFilter}
-              onFilterClick={(f) => {
-                setTableFilter(f);
-                if (activeTab !== 'leads') setActiveTab('leads');
-              }}
-            />
+              <StatsCards
+                leads={leads}
+                activeFilter={tableFilter}
+                onFilterClick={(f) => {
+                  setTableFilter(f);
+                  if (activeTab !== 'leads') setActiveTab('leads');
+                }}
+              />
             )}
 
             {/* Dashboard overview */}

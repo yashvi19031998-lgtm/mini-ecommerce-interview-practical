@@ -137,6 +137,8 @@ def read_leads(source_file=None):
         df = pd.read_csv(target)
         df = df.fillna("")
         leads = df.to_dict(orient="records")
+        from email_service import get_already_sent_emails
+        already_sent_emails = get_already_sent_emails()
         seen_ids = set()
         for idx, item in enumerate(leads):
             base_id = str(item.get("lead_id") or item.get("No") or (idx + 1))
@@ -172,8 +174,12 @@ def read_leads(source_file=None):
             # Standardize Email Status (SENT vs PENDING)
             curr_email_status = str(item.get("Email Status") or item.get("email_status") or "").strip().upper()
             curr_status = str(item.get("Status", "")).strip().upper()
+            raw_em = str(item.get("Email") or item.get("email") or "").split(",")[0].strip().lower()
             if curr_email_status in ("SENT", "EMAIL_SENT") or curr_status == "EMAIL_SENT":
                 item["Email Status"] = "SENT"
+            elif raw_em and raw_em in already_sent_emails:
+                item["Email Status"] = "SENT"
+                item["Status"] = "EMAIL_SENT"
             else:
                 item["Email Status"] = "PENDING"
 
@@ -398,7 +404,18 @@ def _bulk_note(job, lid, email, ok, reason, error=""):
         elif reason in ("no_email", "already_sent", "excluded", "daily_limit", "stopped"):
             job["skipped"] += 1
         else:
+<<<<<<< HEAD
+            # If lead was already sent previously, update record so it won't be retried or shown as pending
+            if res.get("already_sent"):
+                update_lead_record(lid, {
+                    "Email Status": "SENT",
+                    "Status": "EMAIL_SENT"
+                })
+            failed_count += 1
+            results.append({"id": lid, "email": to_email, "success": False, "error": res.get("error"), "already_sent": res.get("already_sent", False)})
+=======
             job["failed"] += 1
+>>>>>>> 85e03f3f39bf42e108e96409ebe3691f593663c6
 
 
 def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms, use_ai=False):
