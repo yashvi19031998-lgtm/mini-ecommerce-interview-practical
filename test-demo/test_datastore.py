@@ -78,6 +78,12 @@ class Machine:
 
 class DatastoreSyncTests(unittest.TestCase):
     def setUp(self):
+        # These tests run on GitHub too (GITHUB_ACTIONS=true there): every machine is the owner's PC
+        # unless a test says otherwise.
+        env = mock.patch.dict(os.environ)
+        env.start()
+        self.addCleanup(env.stop)
+        os.environ.pop("GITHUB_ACTIONS", None)
         self.db = FakeDB()
         self.pc = Machine(self.db)
         self.addCleanup(shutil.rmtree, self.pc.dir, True)
