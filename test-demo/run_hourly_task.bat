@@ -1,5 +1,14 @@
 @echo off
-cd /d "e:\MyWork\mini-ecommerce-interview-practical\test-demo"
+title Sangeeta Infotech - Autonomous Lead Engine Scraper
+cd /d "%~dp0"
+
+echo ==============================================================
+echo   SANGEETA INFOTECH - LEAD ENGINE & OUTREACH SYSTEM
+echo   - Scraping active target locations & keywords
+echo   - AI qualifying leads & verifying mailboxes
+echo   - Syncing to Supabase Cloud Database
+echo ==============================================================
+echo.
 
 :: Set automation environment variables
 set AUTO_SEND_EMAIL=true
@@ -8,8 +17,14 @@ set AUTO_EMAIL_PROSPECT_SIGNALS=true
 set MAX_PENDING_EMAILS_PER_RUN=25
 set MAX_EMAILS_PER_DAY=100
 
-echo [%date% %time%] Windows Task Scheduler: Running Scraper Cycle... >> "logs\windows_task_runner.log"
+echo [%date% %time%] Starting Scraper Engine...
+echo.
 
-"C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe" run_all_scrapers.py >> "logs\windows_task_runner.log" 2>&1
+"C:\Users\Admin\AppData\Local\Python\pythoncore-3.14-64\python.exe" run_all_scrapers.py
 
-echo [%date% %time%] Windows Task Scheduler: Run Finished. >> "logs\windows_task_runner.log"
+echo.
+echo ==============================================================
+echo [%date% %time%] Scraper Engine Cycle Finished!
+echo ==============================================================
+echo.
+pause
