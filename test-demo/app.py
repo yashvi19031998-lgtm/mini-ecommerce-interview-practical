@@ -289,6 +289,7 @@ def send_single_lead_email():
     # User manually clicked Send in UI: allow manual test/send with bypass_duplicate_check=True.
     # The do-not-contact list is never bypassed: the lead's company name goes to the shield too.
     target_info = _lead_info(lead_id) or {}
+
     result = send_smtp_email(to_email, subject, message, bypass_duplicate_check=True, verify="lenient",
                              company_name=target_info.get("name", ""))
     if result.get("excluded"):
@@ -307,6 +308,18 @@ def send_single_lead_email():
         return jsonify({"success": True, "message": "Email sent successfully via Gmail SMTP!"})
     else:
         return jsonify({"success": False, "error": result.get("error", "SMTP send failed")}), 500
+
+@app.route("/api/leads/<lead_id>/ai-draft", methods=["GET", "POST"])
+def get_lead_ai_draft(lead_id):
+    lead = _lead_info(lead_id)
+    if not lead:
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+    try:
+        from ai_email_generator import generate_personalized_email
+        draft = generate_personalized_email(lead)
+        return jsonify({"success": True, **draft})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/api/leads/bulk-email", methods=["POST"])
 def send_bulk_leads_email():
@@ -345,7 +358,8 @@ def send_bulk_leads_email():
             if _bulk_jobs[old]["done"]:
                 _bulk_jobs.pop(old, None)
 
-    args = (job, [str(x) for x in lead_ids], subject_tpl, message_tpl, delay_ms)
+    use_ai = bool(data.get("use_ai", False))
+    args = (job, [str(x) for x in lead_ids], subject_tpl, message_tpl, delay_ms, use_ai)
     if data.get("wait"):
         _run_bulk_job(*args)
         return jsonify({"success": True, **_bulk_snapshot(job)})
@@ -387,7 +401,7 @@ def _bulk_note(job, lid, email, ok, reason, error=""):
             job["failed"] += 1
 
 
-def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms):
+def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms, use_ai=False):
     try:
         all_leads = {str(l["id"]): l for l in read_leads()}
         settings = load_settings()
@@ -419,8 +433,21 @@ def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms):
             # A job-post title is never used as a name in the e-mail text (see followup_sequence.outreach_names)
             name, msg_company = followup_sequence.outreach_names(comp)
             loc = str(lead.get("Address") or "").strip() or "your region"
-            sub = subject_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
-            body = message_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+
+            # Requirement-tailored AI personalized email when requested
+            if use_ai:
+                try:
+                    from ai_email_generator import generate_personalized_email
+                    draft = generate_personalized_email(lead)
+                    sub = draft["subject"]
+                    body = draft["body"]
+                except Exception:
+                    sub = subject_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+                    body = message_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+            else:
+                sub = subject_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+                body = message_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+
             if sig and sig.strip()[:20] not in body:
                 body = f"{body}\n\n---\n{sig.strip()}"
 

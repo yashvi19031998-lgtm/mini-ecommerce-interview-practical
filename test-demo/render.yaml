@@ -1,0 +1,53 @@
+services:
+  # 1. Python Flask API & Dashboard Backend
+  - type: web
+    name: sangeeta-lead-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: FLASK_HOST
+        value: 0.0.0.0
+      - key: AUTO_SEND_EMAIL
+        value: "true"
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+  # 2. CronJob 1: Multi-Source Business Scraper (Runs every 3 hours)
+  - type: cron
+    name: cron-multi-source-scraper
+    env: python
+    region: oregon
+    schedule: "0 */3 * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python cron_job_scrapers.py
+
+  # 3. CronJob 2: Dedicated AI Email Outreach (Hourly on weekdays 10:00 to 18:00)
+  - type: cron
+    name: cron-ai-email-outreach
+    env: python
+    region: oregon
+    schedule: "0 10-18 * * 1-5"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python cron_job_email_outreach.py
+
+  # 4. CronJob 3: Daily Executive Summary & Pipeline Report (Daily at 8:00 PM)
+  - type: cron
+    name: cron-daily-executive-report
+    env: python
+    region: oregon
+    schedule: "0 20 * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python cron_job_daily_report.py
+
+  # 5. CronJob 4: Freelance & Client Project Scraper (Runs every 30 minutes)
+  - type: cron
+    name: cron-freelance-scraper
+    env: python
+    region: oregon
+    schedule: "*/30 * * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python cron_job_freelance_scraper.py
+

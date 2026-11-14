@@ -25,6 +25,7 @@ export default function BulkEmailModal({
     `Would you be open to a brief 10-minute call this week to explore how we can support your tech needs?`
   );
   const [delayMs, setDelayMs] = useState(1500);
+  const [useAi, setUseAi] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [progress, setProgress] = useState(null);
 
@@ -73,7 +74,8 @@ export default function BulkEmailModal({
         lead_ids: validEmailLeads.map(l => l.id),
         subject,
         message,
-        delay_ms: delayMs
+        delay_ms: delayMs,
+        use_ai: useAi
       }, (job) => setProgress(toProgress(job)));
       if (res) setProgress(toProgress({ ...res, done: true }));
     } catch (err) {
@@ -201,6 +203,44 @@ export default function BulkEmailModal({
               disabled={isSending}
               style={{ accentColor: 'var(--primary-lavender)' }}
             />
+          </div>
+
+          {/* AI Requirement Personalization Toggle */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              padding: '10px 12px',
+              background: useAi ? 'rgba(99, 102, 241, 0.06)' : 'var(--bg-subtle, #f7f7f8)',
+              border: useAi ? '1px solid var(--primary-lavender, #6366f1)' : '1px solid var(--border-light, #e5e7eb)',
+              borderRadius: '8px',
+              marginBottom: '1rem',
+              cursor: isSending ? 'default' : 'pointer'
+            }}
+            onClick={(e) => {
+              if (e.target.tagName !== 'INPUT' && !isSending) {
+                setUseAi(!useAi);
+              }
+            }}
+          >
+            <input
+              type="checkbox"
+              id="bulk-use-ai-check"
+              checked={useAi}
+              onChange={(e) => setUseAi(e.target.checked)}
+              disabled={isSending}
+              style={{ marginTop: '2px', cursor: 'pointer', accentColor: 'var(--primary-lavender)' }}
+            />
+            <label htmlFor="bulk-use-ai-check" style={{ cursor: isSending ? 'default' : 'pointer', fontSize: '0.8rem', margin: 0 }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={14} style={{ color: 'var(--primary-lavender)' }} />
+                <span>AI Requirement Personalization (Recommended)</span>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                Auto-tailor each email copy to the target company's exact tech stack (React, Node, Python, Mobile, Ecommerce) and hiring need. Sangeeta Infotech signature is 100% guaranteed.
+              </div>
+            </label>
           </div>
 
           {/* Message Template */}

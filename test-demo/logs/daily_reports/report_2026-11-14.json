@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-14",
+  "total_leads_in_db": 993,
+  "new_leads_today": 10,
+  "total_leads_with_email": 223,
+  "total_leads_with_phone": 242,
+  "email_enrichment_rate_pct": 22.5,
+  "source_breakdown": {
+    "Reddit": 2,
+    "RSS Feed": 1,
+    "B2B Portal": 3,
+    "Freelancer.com": 4
+  },
+  "intent_breakdown": {
+    "high": 4,
+    "medium": 0,
+    "low": 6
+  },
+  "outreach_emails_sent_today": 5,
+  "sent_status_breakdown": {
+    "SENT": 5,
+    "FAILED": 0,
+    "EXCLUDED": 0
+  }
+}

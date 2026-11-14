@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { outreachNames } from '../lib/leadNames';
-import { X, Send, Mail, Building, MapPin, Sparkles } from 'lucide-react';
+import { fetchAiEmailDraft } from '../lib/api';
+import { X, Send, Mail, Building, MapPin, Sparkles, RefreshCw } from 'lucide-react';
 
 export default function SingleEmailModal({
   lead,
@@ -14,22 +15,73 @@ export default function SingleEmailModal({
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
+  // Load tailored draft on open
   useEffect(() => {
-    if (lead) {
-      // A job-post title is never written into the e-mail as a company name (lib/leadNames.js)
-      const names = outreachNames(lead['Company Name']);
-      const loc = String(lead.Address || '').trim();
-      const where = names.isCompany ? `your impressive work at ${names.company}${loc ? ` in ${loc}` : ''}` : 'your recent post';
-      setSubject(names.isCompany ? `Partnership & Dedicated Tech Team for ${names.company}` : 'Dedicated Tech Team for your project');
-      setMessage(
-        `Hi ${names.greeting},\n\n` +
-        `I noticed ${where}. At Sangeeta Infotech, we specialize in high-impact software development, scalable web architectures, and full-stack engineering.\n\n` +
-        `We would love to discuss whether our developers can help streamline your upcoming technical roadmaps on a flexible model.\n\n` +
-        `Would you have 10 minutes for a brief discovery call this week?`
-      );
+    if (!lead || !isOpen) return;
+
+    let isCancelled = false;
+
+    // 1. Initial immediate fallback draft
+    const names = outreachNames(lead['Company Name']);
+    const loc = String(lead.Address || '').trim();
+    const where = names.isCompany ? `${names.company}${loc ? ` (${loc})` : ''}` : 'your team';
+    setSubject(`Software & Technical Engineering Partnership for ${where}`);
+    setMessage(
+      `Hi ${names.greeting},\n\n` +
+      `I noticed ${where}'s growing engineering presence. Scaling development bandwidth and finding pre-vetted senior engineers often creates friction in sprint cycles.\n\n` +
+      `At Sangeeta Infotech, our senior engineers specialize in high-impact full-stack web development, modern mobile apps, and custom software systems. We partner with tech teams to provide dedicated developers who integrate seamlessly into your roadmap without hiring lag.\n\n` +
+      `Would you have 10 minutes for a brief discovery chat this week to explore how we could support your technical roadmaps?`
+    );
+
+    // 2. Fetch specific requirement-aware AI draft from backend
+    if (lead.id) {
+      setIsAiLoading(true);
+      fetchAiEmailDraft(lead.id)
+        .then((draft) => {
+          if (!isCancelled && draft && draft.subject && draft.body) {
+            setSubject(draft.subject);
+            // If draft body already has signature, strip it for the editable textarea since the box below previews it
+            let bodyText = draft.body;
+            if (bodyText.includes('\n\n---\n')) {
+              bodyText = bodyText.split('\n\n---\n')[0].trim();
+            }
+            setMessage(bodyText);
+          }
+        })
+        .catch(() => {
+          // Keep the initial clean fallback on error
+        })
+        .finally(() => {
+          if (!isCancelled) setIsAiLoading(false);
+        });
     }
-  }, [lead]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [lead, isOpen]);
+
+  const handleAiRegenerate = async () => {
+    if (!lead?.id || isAiLoading) return;
+    setIsAiLoading(true);
+    try {
+      const draft = await fetchAiEmailDraft(lead.id);
+      if (draft && draft.subject && draft.body) {
+        setSubject(draft.subject);
+        let bodyText = draft.body;
+        if (bodyText.includes('\n\n---\n')) {
+          bodyText = bodyText.split('\n\n---\n')[0].trim();
+        }
+        setMessage(bodyText);
+      }
+    } catch (e) {
+      console.warn('AI draft regeneration failed:', e);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   // Body scroll lock and Escape key listener
   useEffect(() => {
@@ -166,7 +218,41 @@ export default function SingleEmailModal({
 
           {/* Message Body */}
           <div className="form-group">
-            <label className="form-label">Email Pitch & Message Body</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label className="form-label" style={{ margin: 0 }}>Email Pitch & Message Body</label>
+              <button
+                type="button"
+                onClick={handleAiRegenerate}
+                disabled={isAiLoading || isSending}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: 'rgba(99, 102, 241, 0.08)',
+                  border: '1px solid var(--primary-lavender, #6366f1)',
+                  color: 'var(--primary-lavender, #6366f1)',
+                  borderRadius: '6px',
+                  padding: '3px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  cursor: isAiLoading ? 'wait' : 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Regenerate company and requirement-tailored draft using AI"
+              >
+                {isAiLoading ? (
+                  <>
+                    <RefreshCw size={11} className="animate-spin" />
+                    <span>Synthesizing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={11} />
+                    <span>Regenerate with AI</span>
+                  </>
+                )}
+              </button>
+            </div>
             <textarea
               className="form-input"
               rows={8}

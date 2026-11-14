@@ -95,7 +95,8 @@ def extract_contacts_from_text(text: str) -> Dict[str, str]:
     raw_emails = EMAIL_REGEX.findall(text)
     clean_emails = []
     for em in raw_emails:
-        norm = normalize_email(em)
+        em_clean = str(em).strip().rstrip('.,;:!)')
+        norm = normalize_email(em_clean)
         if norm and not any(norm.endswith(ext) for ext in ('.png', '.jpg', '.jpeg', '.gif', '.webp')):
             clean_emails.append(norm)
 
@@ -146,7 +147,8 @@ def parse_whatsapp_chat(chat_text: str) -> List[Dict[str, Any]]:
     current_msg = None
 
     for line in lines:
-        line_clean = line.strip()
+        # Strip invisible bidirectional Unicode marks (LTR, RTL, narrow spaces) commonly injected by iOS/Android WhatsApp exports
+        line_clean = line.replace('\u200e', '').replace('\u200f', '').replace('\u202a', '').replace('\u202c', '').replace('\u202f', ' ').strip()
         if not line_clean:
             continue
 
@@ -377,14 +379,20 @@ def commit_imported_leads(leads_to_commit: List[Dict[str, Any]], send_outreach_e
                         pass
 
                     try:
-                        from followup_sequence import outreach_names
-                    except ImportError:  # keep sending with the plain name if the module is missing
-                        outreach_names = lambda name: (name, name)
-                    msg_name, msg_company = outreach_names(comp_name)
-                    custom_sub = sub_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
-                    custom_msg = msg_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
-                    if sig and sig.strip()[:20] not in custom_msg:
-                        custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
+                        from ai_email_generator import generate_personalized_email
+                        draft = generate_personalized_email(lead_obj, settings=settings)
+                        custom_sub = draft["subject"]
+                        custom_msg = draft["body"]
+                    except Exception:
+                        try:
+                            from followup_sequence import outreach_names
+                        except ImportError:  # keep sending with the plain name if the module is missing
+                            outreach_names = lambda name: (name, name)
+                        msg_name, msg_company = outreach_names(comp_name)
+                        custom_sub = sub_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
+                        custom_msg = msg_tpl.replace("{company}", msg_company).replace("{name}", msg_name).replace("{location}", loc_name)
+                        if sig and sig.strip()[:20] not in custom_msg:
+                            custom_msg = f"{custom_msg}\n\n---\n{sig.strip()}"
 
                     res = send_smtp_email(raw_email, custom_sub, custom_msg, company_name=comp_name)
                     if res.get("success"):

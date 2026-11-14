@@ -25,10 +25,12 @@ async function authHeaders() {
 
 async function apiFetch(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
   const res = await fetch(url, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...defaultHeaders,
       ...(await authHeaders()),
       ...(options.headers || {})
     }
@@ -81,13 +83,20 @@ export async function sendSingleEmail({ id, to, subject, message }) {
   });
 }
 
+// 3b. Generate Requirement-Specific AI Email Draft for a Lead
+export async function fetchAiEmailDraft(leadId) {
+  return await apiFetch(`/api/leads/${encodeURIComponent(leadId)}/ai-draft`, {
+    method: 'GET'
+  });
+}
+
 // 4. Dispatch Bulk Cold Outreach Email via Python Gmail SMTP
 // Bulk e-mail runs as a background job on the server (every mailbox is checked first, so it takes minutes).
 // Starts the job, then polls it; onProgress(job) gets every update. Resolves with the finished job.
-export async function sendBulkEmail({ lead_ids, subject, message, delay_ms = 1500 }, onProgress = null) {
+export async function sendBulkEmail({ lead_ids, subject, message, delay_ms = 1500, use_ai = true }, onProgress = null) {
   const start = await apiFetch('/api/leads/bulk-email', {
     method: 'POST',
-    body: JSON.stringify({ lead_ids, subject, message, delay_ms })
+    body: JSON.stringify({ lead_ids, subject, message, delay_ms, use_ai })
   });
   let job = { ...start, processed: 0, sent: 0, failed: 0, not_verified: 0, skipped: 0, done: false, results: [] };
   if (onProgress) onProgress(job);
@@ -191,6 +200,28 @@ export async function importRawTextData(text, crawl_urls = true) {
     method: 'POST',
     body: JSON.stringify({ text, crawl_urls })
   });
+}
+
+// 14b. WhatsApp Chat Export Import (.txt / .zip / raw text)
+export async function importChatData(payload) {
+  if (typeof FormData !== 'undefined' && payload instanceof FormData) {
+    return await apiFetch('/api/import/chat', {
+      method: 'POST',
+      body: payload
+    });
+  } else if (typeof File !== 'undefined' && payload instanceof File) {
+    const fd = new FormData();
+    fd.append('file', payload);
+    return await apiFetch('/api/import/chat', {
+      method: 'POST',
+      body: fd
+    });
+  } else {
+    return await apiFetch('/api/import/chat', {
+      method: 'POST',
+      body: JSON.stringify({ text: payload })
+    });
+  }
 }
 
 // 16. Job Portal Scraper: portal catalog + Indian states for the form
