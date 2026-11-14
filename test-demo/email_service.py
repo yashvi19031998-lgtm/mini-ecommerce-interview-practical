@@ -158,7 +158,11 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
 
         server = smtplib.SMTP(smtp_host, smtp_port, timeout=12)
         server.starttls()
-        server.login(smtp_user, smtp_pass)
+        try:
+            server.login(smtp_user, smtp_pass)
+        except smtplib.SMTPResponseException as lerr:
+            err_msg = lerr.smtp_error.decode("utf-8", "ignore") if isinstance(lerr.smtp_error, bytes) else str(lerr.smtp_error)
+            return {"success": False, "error": f"SMTP Login failed ({lerr.smtp_code}): {err_msg}"}
         server.sendmail(from_email, [to_email], msg.as_string())
         server.quit()
 

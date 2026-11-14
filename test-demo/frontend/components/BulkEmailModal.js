@@ -65,10 +65,17 @@ export default function BulkEmailModal({
         delay_ms: delayMs
       });
       if (res) {
-        setProgress({ sent: Number(res.sent) || 0, failed: Number(res.failed) || 0, total: validEmailLeads.length, done: true });
+        const firstErr = (res.results || []).find(r => !r.success)?.error;
+        setProgress({
+          sent: Number(res.sent) || 0,
+          failed: Number(res.failed) || 0,
+          total: validEmailLeads.length,
+          done: true,
+          error: firstErr
+        });
       }
-    } catch {
-      setProgress(p => ({ ...p, done: true }));
+    } catch (err) {
+      setProgress(p => ({ ...p, done: true, error: err.message || 'Failed to dispatch emails' }));
     } finally {
       setIsSending(false);
     }
@@ -114,8 +121,8 @@ export default function BulkEmailModal({
           {progress && (
             <div className="campaign-progress-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--primary-lavender)' }}>
-                  {progress.done ? 'Campaign Finished!' : 'Dispatching Campaign...'}
+                <span style={{ fontWeight: 600, color: progress.error && progress.sent === 0 ? 'var(--danger-red, #dc2626)' : 'var(--primary-lavender)' }}>
+                  {progress.done ? (progress.sent > 0 ? 'Campaign Finished!' : 'Outreach Not Dispatched') : 'Dispatching Campaign...'}
                 </span>
                 <span style={{ color: 'var(--text-secondary)' }}>
                   {progress.sent} Sent | {progress.failed} Failed of {progress.total}
@@ -124,9 +131,14 @@ export default function BulkEmailModal({
               <div className="progress-bar-track">
                 <div
                   className="progress-bar-fill"
-                  style={{ width: `${pct}%` }}
+                  style={{ width: `${pct}%`, background: progress.sent === 0 && progress.done ? '#dc2626' : undefined }}
                 />
               </div>
+              {progress.error && (
+                <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#dc2626', background: '#fef2f2', padding: '6px 10px', borderRadius: '6px', border: '1px solid #fee2e2' }}>
+                  <strong>Reason:</strong> {progress.error}
+                </div>
+              )}
             </div>
           )}
 
