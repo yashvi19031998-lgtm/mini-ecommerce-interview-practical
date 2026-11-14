@@ -108,8 +108,11 @@ class Freelancer(unittest.TestCase):
         translation = {"category": {"name": "Translation & Languages"}}
         marketing = {"category": {"name": "Sales & Marketing"}}
         self.assertFalse(fl.is_worthwhile(self._project(jobs=[{"name": "Spanish", **translation}, {"name": "Translation", **translation}])))
-        self.assertFalse(fl.is_worthwhile(self._project(jobs=[{"name": "SEO", **marketing}, {"name": "Marketing", **marketing},
-                                                              {"name": "Website Optimization", **it}])))  # 1 of 3 software
+        self.assertFalse(fl.is_worthwhile(self._project(jobs=[{"name": "Telemarketing", **marketing}, {"name": "Sales", **marketing},
+                                                              {"name": "Website Optimization", **it}])))  # 1 of 3 ours
+        # digital marketing skills count as ours (SEO, social media, ads)
+        self.assertTrue(fl.is_worthwhile(self._project(jobs=[{"name": "SEO", **marketing}, {"name": "Social Media Marketing", **marketing},
+                                                             {"name": "Marketing", **marketing}])))
         self.assertTrue(fl.is_worthwhile(self._project(jobs=[{"name": "WordPress", **it}])))
         self.assertFalse(fl.is_worthwhile(self._project(jobs=[])))
 

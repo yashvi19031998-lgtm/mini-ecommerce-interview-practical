@@ -16,6 +16,7 @@ Settings (.env):
 
 import datetime
 import os
+import re
 import time
 from typing import Any, Dict, List, Optional
 
@@ -28,6 +29,7 @@ API = "https://www.freelancer.com/api/projects/0.1/projects/active/"
 DEFAULT_QUERIES = [
     "website development", "web application", "mobile app", "flutter", "react native", "react",
     "python", "laravel", "saas", "mvp", "ai automation", "chatbot", "ecommerce website",
+    "seo", "digital marketing", "social media marketing", "google ads",
 ]
 QUERIES = [q.strip() for q in os.getenv("FREELANCER_QUERIES", "").split(",") if q.strip()] or DEFAULT_QUERIES
 MIN_BUDGET_USD = float(os.getenv("FREELANCER_MIN_BUDGET_USD", "250"))
@@ -40,13 +42,23 @@ PER_QUERY = 30
 # Each skill on a project carries Freelancer's own category, so we require that at least half of
 # the project's skills are in software categories.
 SOFTWARE_CATEGORIES = {"Websites, IT & Software", "Mobile Phones & Computing", "Artificial Intelligence"}
+# Digital marketing skills are ours too (they sit in Freelancer's "Sales & Marketing" category, which also
+# holds telemarketing and sales jobs, so the skill name decides - not the category).
+DIGITAL_SKILLS = re.compile(r"\b(seo|search engine (optimi[sz]ation|marketing)|digital marketing|internet marketing|"
+                            r"social media (marketing|management)|facebook (marketing|ads)|instagram (marketing|ads)|"
+                            r"google (adwords|ads)|ppc|pay per click|youtube ads|linkedin ads|local seo)\b", re.I)
+
+
+def _our_skill(job: Dict[str, Any]) -> bool:
+    return ((job.get("category") or {}).get("name") in SOFTWARE_CATEGORIES
+            or bool(DIGITAL_SKILLS.search(str(job.get("name") or ""))))
 
 
 def has_software_skill(project: Dict[str, Any]) -> bool:
     jobs = project.get("jobs") or []
     if not jobs:
         return False
-    software = sum(1 for j in jobs if ((j.get("category") or {}).get("name")) in SOFTWARE_CATEGORIES)
+    software = sum(1 for j in jobs if _our_skill(j))
     return software * 2 >= len(jobs)
 
 

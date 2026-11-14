@@ -46,7 +46,19 @@ BUYER_INCLUDE = [
     "hiring", "mvp", "freelance developer", "outsource", "technical cofounder", "budget",
 ]
 
-FUNDING_INCLUDE = ["raises", "raised", "funding", "seed round", "pre-seed", "series a", "series b",
+# People who want digital marketing done (SEO, social media, ads)
+DIGITAL_PHRASES = [
+    '"looking for seo"', '"need seo"', '"looking for a digital marketing agency"', '"need a marketing agency"',
+    '"looking for a social media manager"', '"need someone to run" ads', '"looking for google ads"',
+    '"need help with facebook ads"', '"hire a marketing agency"', '"looking for a marketing freelancer"',
+]
+DIGITAL_INCLUDE = [
+    "looking for seo", "need seo", "seo expert", "seo help", "digital marketing", "marketing agency",
+    "social media manager", "social media marketing", "manage our social", "run ads", "run our ads",
+    "google ads", "facebook ads", "meta ads", "instagram ads", "ppc", "marketing freelancer", "hiring",
+]
+
+FUNDING_INCLUDE =["raises", "raised", "funding", "seed round", "pre-seed", "series a", "series b",
                    "secures", "bags", "investment led by"]
 
 
@@ -73,6 +85,17 @@ FEED_GROUPS = [
                                 "startups+SaaS+smallbusiness+Entrepreneur+hiring")],
         "include": BUYER_INCLUDE, "exclude": FOR_HIRE_EXCLUDE,
         "max_age_days": 7, "source_prefix": "Reddit", "lead_type": "Feed Post",
+    },
+    {
+        "name": "Reddit digital marketing buyers",
+        "urls": [
+            _reddit_search(" OR ".join(DIGITAL_PHRASES[:5])),
+            _reddit_search(" OR ".join(DIGITAL_PHRASES[5:])),
+            _reddit_search("SEO OR \"social media\" OR \"google ads\" OR \"facebook ads\" OR \"digital marketing\"",
+                           "forhire+smallbusiness+Entrepreneur+startups"),
+        ],
+        "include": DIGITAL_INCLUDE, "exclude": FOR_HIRE_EXCLUDE,
+        "max_age_days": 7, "source_prefix": "Reddit digital", "lead_type": "Feed Post",
     },
     {
         "name": "Startup funding news",

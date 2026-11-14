@@ -143,6 +143,16 @@ class ProspectMailTests(unittest.TestCase):
         self.assertIn("large brand", lq.outreach_block_reason(p("Airbnb", "from@airbnb.com")))
         self.assertIn("large brand", lq.outreach_block_reason(p("Marvel", "x@corp.aol.com")))
 
+    def test_digital_marketing_work_is_ours(self):
+        import lead_quality as lq
+        lead = {"company_name": "Bloom Bakery", "email": "owner@bloombakery.in", "ai_category": "client_project",
+                "ai_score": "8", "email_status": "NOT_SENT", "title": "[Hiring] SEO and social media manager",
+                "description": "Small bakery needs SEO, Instagram and Google Ads run every month. Remote is fine."}
+        self.assertEqual(lq.outreach_block_reason(lead), "")
+        lead["title"] = "[Hiring] voice-over artist"
+        lead["description"] = "Need a voice-over for a video"
+        self.assertNotEqual(lq.outreach_block_reason(lead), "")  # other non-IT work still out
+
     def _dispatch(self, leads, prospects_already=0, cap=2):
         sent = []
         reg = mock.Mock(leads=leads)

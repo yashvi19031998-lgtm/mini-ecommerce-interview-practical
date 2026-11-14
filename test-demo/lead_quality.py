@@ -63,14 +63,17 @@ AI_CATEGORIES = [
 SYSTEM_PROMPT = f"""You qualify sales leads for Sangeeta Infotech, a premier software agency in Ahmedabad, India \
 with 8-9+ years of senior software engineering, technical architecture, and product delivery experience. \
 The agency provides seasoned Senior Developers, Tech Leads, and full engineering teams for web apps, \
-mobile apps, custom SaaS/software, and AI integrations.
+mobile apps, custom SaaS/software, and AI integrations, and also digital marketing work: SEO, social \
+media marketing / management, Google and Meta ads, and digital marketing campaigns.
 
-A good lead is a person or company that currently NEEDS software work done or wants to hire developers, \
-so the agency could offer its services. Sellers of the same services, job seekers, job boards, \
-directories, and non-software work (e.g. video editing, data entry, social media posting) are not leads.
+A good lead is a person or company that currently NEEDS software or digital marketing work done or wants \
+to hire developers / a marketing freelancer, so the agency could offer its services. Sellers of the same \
+services, job seekers, job boards, directories, and other non-IT work (e.g. video editing, data entry, \
+voice-over, translation, sales roles) are not leads.
 
 Classify the lead into exactly one category:
-- client_project: wants a website, app, or software built or fixed
+- client_project: wants a website, app, or software built or fixed, or wants SEO / social media / ads / \
+digital marketing work done
 - hiring_developer: hiring developers / a dev team (contract or full-time)
 - service_provider: an agency or freelancer selling development services
 - job_seeker: someone looking for work
@@ -153,14 +156,18 @@ def derive_contact_channel(lead: dict) -> str:
 _DEV_ROLE = re.compile(r"\b(developers?|programmers?|engineers?|engineering|devops|sre|full[- ]?stack|front[- ]?end|"
                        r"back[- ]?end|coders?|cto|software|web ?app|website|web site|web ?dev\w*|mobile app|ios app|"
                        r"android app|app development|saas|mvp|api|wordpress|shopify|react|next\.?js|node\.?js|python|"
-                       r"django|laravel|php|flutter|react native|ai agents?|llm|machine learning|automation)\b", re.I)
+                       r"django|laravel|php|flutter|react native|ai agents?|llm|machine learning|automation|"
+                       # digital marketing work is ours too
+                       r"seo|search engine optimi[sz]ation|digital marketing|social media (marketing|manager|management)|"
+                       r"smm|google ads|meta ads|facebook ads|instagram ads|ppc|performance marketing|"
+                       r"marketing agency)\b", re.I)
 _DEV_PERSON = re.compile(r"\b(developers?|programmers?|engineers?|devops|sre|full[- ]?stack|front[- ]?end|back[- ]?end|"
                          r"coders?|cto|architects?|web ?dev\w*)\b", re.I)
 # Roles / work that are not software
 _NON_IT_ROLE = re.compile(r"\b(native \w+ speakers?|speakers?|voice[- ]?(over|actors?)|record(ing)? (short )?(lines|audio)|"
                           r"transcri\w+|translat\w+|tutors?|teachers?|content creators?|creators?|ugc|influencers?|"
                           r"video editors?|copywriters?|writers?|sales|account executive|founding ae|\bae\b|gtm|"
-                          r"go-to-market|marketing|marketers?|media (buyer|manager)|social media|seo specialist|"
+                          r"go-to-market|"
                           r"recruiters?|onboarding lead|customer (support|success|service)|virtual assistants?|"
                           r"data entry|bartenders?|drivers?|nurses?|accountants?|bookkeep\w*|photographers?|models?|"
                           r"actors?|job fairs?|career fairs?|hiring events?)\b", re.I)

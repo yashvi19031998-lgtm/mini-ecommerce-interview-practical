@@ -26,7 +26,12 @@ QUERIES = [
     'site:news.ycombinator.com "who is hiring" "remote"',
     'site:news.ycombinator.com "freelance" "developer"',
     'site:dev.to "hiring" "software engineer"',
-    'site:github.com "looking for" "developer"'
+    'site:github.com "looking for" "developer"',
+    # digital marketing buyers
+    'site:reddit.com/r/forhire "hiring" "seo"',
+    'site:reddit.com/r/forhire "hiring" "social media"',
+    'site:reddit.com/r/forhire "hiring" "digital marketing"',
+    'site:reddit.com/r/forhire "hiring" "google ads"',
 ]
 
 def run_bulk_scraper():
