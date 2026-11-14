@@ -63,7 +63,7 @@ def load_env():
 load_env()
 
 def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_duplicate_check: bool = False,
-                    company_name: str = "", verify: str = "strict") -> dict:
+                    company_name: str = "", verify: str = "strict", **kwargs) -> dict:
     """
     Sends an email using Gmail SMTP credentials.
 
@@ -84,13 +84,14 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
     from_email = os.getenv("SMTP_FROM_EMAIL", smtp_user or "info@sangeetainfotech.co.in")
 
     clean_email = str(to_email or "").strip().lower()
+    website = kwargs.get("website", "")
 
     # DO-NOT-CONTACT / EXCLUDED COMPANIES SHIELD: checked first, before the mail login is even looked at,
     # so a blocked address is always reported as blocked. If the rule itself cannot be evaluated the
     # send is refused (fail closed) - a do-not-contact list must never be skipped by an error.
     try:
         from settings_manager import is_company_excluded
-        is_ex, ex_reason = is_company_excluded(company_name=company_name, email=clean_email)
+        is_ex, ex_reason = is_company_excluded(company_name=company_name, email=clean_email, website=website)
     except Exception as shield_err:
         return {"success": False, "error": f"Do-not-contact check failed, e-mail not sent: {shield_err}"}
     if is_ex:

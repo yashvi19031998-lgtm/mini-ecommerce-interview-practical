@@ -287,9 +287,11 @@ def send_single_lead_email():
 
     # User manually clicked Send in UI: allow manual test/send with bypass_duplicate_check=True.
     # The do-not-contact list is never bypassed: the lead's company name goes to the shield too.
+    target_info = _lead_info(lead_id) or {}
     result = send_smtp_email(to_email, subject, message, bypass_duplicate_check=True, verify="lenient",
-                             company_name=(_lead_info(lead_id) or {}).get("name", ""))
+                             company_name=target_info.get("name", ""))
     if result.get("excluded"):
+        update_lead_record(lead_id, {"Email Status": "EXCLUDED_COMPANY"})
         return jsonify({"success": False, "error": result.get("error"), "excluded": True}), 403
     if result.get("success"):
         now_str = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -440,6 +442,7 @@ def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms):
             elif res.get("already_sent"):
                 _bulk_note(job, lid, to_email, False, "already_sent", res.get("error", ""))
             elif res.get("excluded"):
+                update_lead_record(lid, {"Email Status": "EXCLUDED_COMPANY"})
                 _bulk_note(job, lid, to_email, False, "excluded", res.get("error", ""))
             else:
                 failures_in_row += 1

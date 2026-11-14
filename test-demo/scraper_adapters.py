@@ -710,3 +710,302 @@ def run_telegram_scraper_adapter() -> List[Dict[str, Any]]:
         print(f"  [telegram_scraper execution notice] {e}")
 
     return leads
+
+
+# ==============================================================================
+# 13. JOB_PORTALS.PY ADAPTER (Active Client Hiring & High-Intent Tech Roles)
+# ==============================================================================
+JOB_PORTAL_ROLES = [
+    'React Developer', 'Python Developer', 'Full Stack Developer',
+    'Node.js Developer', 'Mobile App Developer', 'Software Engineer',
+    'PHP Laravel Developer', 'Frontend Developer', 'Backend Developer',
+    'WordPress Developer', 'DevOps Engineer', 'UI UX Designer'
+]
+
+def run_job_portals_adapter() -> List[Dict[str, Any]]:
+    """Runs job_portals search across Remotive, Internshala, Foundit, and Shine."""
+    leads = []
+    try:
+        import job_portals
+        roles = random.sample(JOB_PORTAL_ROLES, min(2, len(JOB_PORTAL_ROLES)))
+        available_portals = ['remotive', 'internshala', 'foundit', 'shine']
+        state = random.choice(['Gujarat', 'All India'])
+
+        res = job_portals.search_jobs(titles=roles, state=state, portal_ids=available_portals)
+        jobs = res.get("jobs", []) if isinstance(res, dict) else (res if isinstance(res, list) else [])
+        for j in jobs:
+            raw = job_portals.job_to_raw_lead(j)
+            if raw and raw.get("company_name"):
+                raw["intent_score"] = "8"
+                leads.append(raw)
+    except Exception as e:
+        print(f"  [job_portals adapter notice] {e}")
+
+    return leads
+
+
+# ==============================================================================
+# 14. CORPORATE_REGISTRIES.PY ADAPTER (MCA & ZaubaCorp Active Companies)
+# ==============================================================================
+CORP_KEYWORDS = [
+    'software', 'infotech', 'technologies', 'digital', 'solutions',
+    'systems', 'innovations', 'consultancy', 'tech', 'data'
+]
+
+def run_corporate_registry_adapter() -> List[Dict[str, Any]]:
+    """Runs corporate_registries search for newly incorporated Indian IT businesses."""
+    leads = []
+    try:
+        import corporate_registries
+        kws = random.sample(CORP_KEYWORDS, min(2, len(CORP_KEYWORDS)))
+        res = corporate_registries.search({
+            "mode": "company",
+            "keywords": kws,
+            "state": "Gujarat",
+            "pages": 1
+        })
+        results = res.get("results", []) if isinstance(res, dict) else []
+        for r in results:
+            raw = corporate_registries.result_to_raw_lead(r)
+            if raw and raw.get("company_name"):
+                raw["intent_score"] = "7"
+                leads.append(raw)
+    except Exception as e:
+        print(f"  [corporate_registries adapter notice] {e}")
+
+    return leads
+
+
+# ==============================================================================
+# 15. CRM_SOURCES.PY ADAPTER (GoodFirms B2B Tech Agency Harvester)
+# ==============================================================================
+def run_crm_sources_adapter() -> List[Dict[str, Any]]:
+    """Runs crm_sources directory discovery via GoodFirms."""
+    leads = []
+    try:
+        import crm_sources
+        res = crm_sources.search(
+            keywords=['software development', 'web development'],
+            titles=['director', 'founder', 'ceo'],
+            state='Gujarat',
+            city='Ahmedabad',
+            source_ids=['goodfirms']
+        )
+        results = res.get("results", []) if isinstance(res, dict) else []
+        for r in results:
+            raw = crm_sources.result_to_raw_lead(r)
+            if raw and raw.get("company_name"):
+                raw["intent_score"] = "7"
+                leads.append(raw)
+    except Exception as e:
+        print(f"  [crm_sources adapter notice] {e}")
+
+    return leads
+
+
+# ==============================================================================
+# 16. ECOMMERCE_SOURCES.PY ADAPTER (Shopify & WooCommerce Online Stores)
+# ==============================================================================
+ECOMMERCE_NICHES = [
+    'apparel', 'fashion', 'clothing', 'cosmetics', 'jewellery',
+    'electronics', 'furniture', 'footwear', 'organic food'
+]
+
+def run_ecommerce_sources_adapter() -> List[Dict[str, Any]]:
+    """Runs ecommerce_sources search for active D2C stores needing tech/dev services."""
+    leads = []
+    try:
+        import ecommerce_sources
+        kws = random.sample(ECOMMERCE_NICHES, min(2, len(ECOMMERCE_NICHES)))
+        res = ecommerce_sources.search({
+            "sources": ["shopify", "woocommerce"],
+            "keywords": kws,
+            "state": "All India",
+            "engine": "auto"
+        })
+        results = res.get("results", []) if isinstance(res, dict) else []
+        for r in results:
+            raw = ecommerce_sources.result_to_raw_lead(r)
+            if raw and raw.get("company_name"):
+                raw["intent_score"] = "7"
+                leads.append(raw)
+    except Exception as e:
+        print(f"  [ecommerce_sources adapter notice] {e}")
+
+    return leads
+
+
+# ==============================================================================
+# 17. QUORA_SCRAPER ADAPTER (Buyer Intent & Tech Recommendations Harvester)
+# ==============================================================================
+QUORA_INTENT_QUERIES = [
+    'quora software development company Ahmedabad',
+    'quora web development company Gujarat',
+    'quora custom software development company India',
+    'quora hire python react developers Ahmedabad',
+    'quora mobile app development agency Gujarat',
+    'quora IT consulting services Ahmedabad',
+    'quora looking for software company India',
+    'quora top web development companies Surat',
+    'quora hire dedicated developers startup India'
+]
+
+def run_quora_scraper_adapter() -> List[Dict[str, Any]]:
+    """Harvests software client inquiries and agency recommendations from Quora search dorks."""
+    leads = []
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        import scraper
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        }
+        seen_urls = set()
+        chosen = random.sample(QUORA_INTENT_QUERIES, min(2, len(QUORA_INTENT_QUERIES)))
+
+        for q in chosen:
+            try:
+                r = requests.post('https://html.duckduckgo.com/html/', data={'q': q}, headers=headers, timeout=10)
+                soup = BeautifulSoup(r.text, 'html.parser')
+                results = soup.find_all('div', class_='result__body')
+
+                for res in results[:5]:
+                    title_tag = res.find('a', class_='result__url')
+                    snippet_tag = res.find('a', class_='result__snippet')
+                    if not title_tag:
+                        continue
+                    href = title_tag.get('href', '')
+                    if 'uddg=' in href:
+                        m = re.search(r'uddg=([^&]+)', href)
+                        if m:
+                            href = urllib.parse.unquote(m.group(1))
+
+                    if not href or href in seen_urls:
+                        continue
+                    seen_urls.add(href)
+
+                    raw_title = title_tag.get_text(strip=True)
+                    snippet = snippet_tag.get_text(strip=True) if snippet_tag else ""
+
+                    if 'quora.com' in href:
+                        clean_title = re.sub(r'https?://(?:www\.)?quora\.com/', '', href)
+                        clean_title = clean_title.replace('-', ' ').split('?')[0].strip()
+                        emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}', snippet)
+                        phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', snippet)
+                        leads.append({
+                            "company_name": clean_title[:80] if clean_title else "Quora Tech Inquiry",
+                            "website": "",
+                            "source": f"Quora Discussions ({q})",
+                            "source_url": href,
+                            "email": ", ".join(set(emails)) if emails else "",
+                            "mobile_number": phones[0].strip() if phones else "",
+                            "description": f"{raw_title} | {snippet}"[:MAX_DESCRIPTION_CHARS],
+                            "lead_type": "Quora Buyer Discussion",
+                            "intent_score": "7",
+                            "location": "Ahmedabad / Gujarat"
+                        })
+                    else:
+                        # Deep crawl recommended company site
+                        lead_record, _ = scraper.crawl_and_evaluate(href, raw_title, q)
+                        if lead_record:
+                            leads.append({
+                                "company_name": lead_record.get("Company Name") or raw_title[:80],
+                                "website": lead_record.get("Website URL") or href,
+                                "email": lead_record.get("Email", ""),
+                                "mobile_number": lead_record.get("Mobile Number", ""),
+                                "location": lead_record.get("Address") or lead_record.get("Location") or "Gujarat, India",
+                                "source": f"Quora Recommendations ({q})",
+                                "source_url": href,
+                                "lead_type": lead_record.get("Lead Type", "Software Company"),
+                                "intent_score": str(lead_record.get("Lead Score", 8)),
+                                "description": snippet[:MAX_DESCRIPTION_CHARS]
+                            })
+                        else:
+                            emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}', snippet)
+                            phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', snippet)
+                            leads.append({
+                                "company_name": raw_title[:80],
+                                "website": href,
+                                "email": ", ".join(set(emails)) if emails else "",
+                                "mobile_number": phones[0].strip() if phones else "",
+                                "location": "Gujarat, India",
+                                "source": f"Quora Search Dorks ({q})",
+                                "source_url": href,
+                                "lead_type": "Recommended Tech Company",
+                                "intent_score": "7",
+                                "description": snippet[:MAX_DESCRIPTION_CHARS]
+                            })
+                time.sleep(1.0)
+            except Exception as e:
+                print(f"  [quora adapter notice on '{q}'] {e}")
+    except Exception as e:
+        print(f"  [quora adapter execution notice] {e}")
+
+    return leads
+
+
+# ==============================================================================
+# 18. YELLOWPAGES_SCRAPER ADAPTER (Indian Yellow Pages & B2B Directory)
+# ==============================================================================
+YELLOWPAGES_LOCATIONS = ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gujarat", "India"]
+
+def run_yellowpages_adapter() -> List[Dict[str, Any]]:
+    """Harvests software & IT companies from Indian Yellow Pages directories."""
+    leads = []
+    if not DDGS:
+        return leads
+
+    loc = random.choice(YELLOWPAGES_LOCATIONS)
+    seen_urls = set()
+    yp_queries = [
+        f'site:indianyellowpages.com "software development" {loc}',
+        f'site:indianyellowpages.com "web development" {loc}',
+        f'yellowpages "software development company" {loc}',
+        f'yellowpages "IT services" {loc}',
+        f'site:yellowpages-india.in software {loc}'
+    ]
+    chosen = random.sample(yp_queries, min(2, len(yp_queries)))
+
+    try:
+        with DDGS() as ddgs:
+            for q in chosen:
+                try:
+                    hits = list(ddgs.text(q, max_results=5)) or []
+                    for h in hits:
+                        url = h.get("href") or h.get("url", "")
+                        title = h.get("title", "")
+                        body = h.get("body", "")
+
+                        if not url or url in seen_urls:
+                            continue
+                        seen_urls.add(url)
+
+                        clean_title = re.sub(r"\s*[-|]\s*IndianYellowPages.*", "", title, flags=re.I).strip()
+                        clean_title = re.sub(r"\s*[-|]\s*Yellow Pages.*", "", clean_title, flags=re.I).strip()
+                        clean_title = re.sub(r"\s*in\s+(Ahmedabad|Gujarat|Surat|India).*", "", clean_title, flags=re.I).strip()
+                        if not clean_title or len(clean_title) < 3:
+                            clean_title = title[:80]
+
+                        emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}', body)
+                        phones = re.findall(r'(\+?\d[\d\s\-\(\)]{8,15}\d)', body)
+
+                        leads.append({
+                            "company_name": clean_title[:80],
+                            "website": url if not any(x in url for x in ("yellowpages", "google", "bing")) else "",
+                            "source": f"Yellow Pages ({loc})",
+                            "source_url": url,
+                            "email": ", ".join(set(emails)) if emails else "",
+                            "mobile_number": phones[0].strip() if phones else "",
+                            "description": f"{title} | {body}"[:MAX_DESCRIPTION_CHARS],
+                            "lead_type": "B2B Directory Listing",
+                            "intent_score": "7",
+                            "location": f"{loc}, Gujarat" if loc != "India" else "India"
+                        })
+                    time.sleep(1.0)
+                except Exception as e:
+                    print(f"  [yellowpages adapter notice on '{q}'] {e}")
+    except Exception as e:
+        print(f"  [yellowpages adapter execution notice] {e}")
+
+    return leads

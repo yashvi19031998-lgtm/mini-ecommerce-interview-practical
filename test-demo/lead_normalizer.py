@@ -424,6 +424,16 @@ def normalize_lead_record(raw: Dict[str, Any], default_source: str = "Unknown") 
     lead_id = clean_text(raw.get("lead_id") or raw.get("Lead ID") or "")
     email_status = clean_text(raw.get("email_status") or raw.get("Email Status") or "NOT_SENT")
     email_sent_at = clean_text(raw.get("email_sent_at") or raw.get("Email Sent At") or "")
+
+    # Strict Do-Not-Contact blacklist check: if lead matches excluded company rules (e.g. 8dots), permanently mark EXCLUDED_COMPANY
+    try:
+        from settings_manager import is_company_excluded
+        is_ex, _ = is_company_excluded(company_name=company, email=email, website=website)
+        if is_ex:
+            email_status = "EXCLUDED_COMPANY"
+    except Exception:
+        pass
+
     posted_at = normalize_datetime(
         raw.get("posted_at") or raw.get("Posted Date") or raw.get("published") or raw.get("Date") or ""
     )

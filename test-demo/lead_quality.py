@@ -193,10 +193,14 @@ def outreach_block_reason(lead: dict) -> str:
     except ValueError:
         score = 0
     email = str(lead.get("email") or "").split(",")[0].strip()
-    if lead.get("ai_category") not in BUYER_CATEGORIES:
+    buyer_cats = set(BUYER_CATEGORIES)
+    if os.getenv("AUTO_EMAIL_PROSPECT_SIGNALS", "false").lower() in ("true", "1", "yes"):
+        buyer_cats.add("prospect_signal")
+    if lead.get("ai_category") not in buyer_cats:
         return f"not a buyer ({lead.get('ai_category') or 'not qualified yet'})"
-    if score < MIN_AI_SCORE_FOR_AUTO_EMAIL:
-        return f"score {score} below {MIN_AI_SCORE_FOR_AUTO_EMAIL}"
+    min_score = int(os.getenv("MIN_AI_SCORE_FOR_AUTO_EMAIL", str(MIN_AI_SCORE_FOR_AUTO_EMAIL)))
+    if score < min_score:
+        return f"score {score} below {min_score}"
     if not email:
         return "no e-mail address"
     if is_stale(lead):

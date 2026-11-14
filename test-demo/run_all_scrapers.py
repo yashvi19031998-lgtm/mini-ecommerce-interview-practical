@@ -220,6 +220,42 @@ SCRAPERS_CONFIG = [
         "category": "Freelance Marketplaces"
     },
     {
+        "name": "job_portals.py (Job Openings & Tech Hiring - Remotive, Internshala, Foundit, Shine)",
+        "func": scraper_adapters.run_job_portals_adapter,
+        "enabled": True,
+        "category": "Job Portals"
+    },
+    {
+        "name": "corporate_registries.py (MCA & ZaubaCorp Registered IT Companies)",
+        "func": scraper_adapters.run_corporate_registry_adapter,
+        "enabled": True,
+        "category": "Corporate Registries"
+    },
+    {
+        "name": "crm_sources.py (GoodFirms B2B Tech Directory)",
+        "func": scraper_adapters.run_crm_sources_adapter,
+        "enabled": True,
+        "category": "B2B Directory"
+    },
+    {
+        "name": "ecommerce_sources.py (Shopify & WooCommerce E-commerce Stores)",
+        "func": scraper_adapters.run_ecommerce_sources_adapter,
+        "enabled": True,
+        "category": "E-Commerce"
+    },
+    {
+        "name": "quora_scraper (Quora Buyer Intent & Tech Recommendation Harvester)",
+        "func": scraper_adapters.run_quora_scraper_adapter,
+        "enabled": True,
+        "category": "Quora Intent"
+    },
+    {
+        "name": "yellowpages_scraper.py (Indian Yellow Pages B2B Tech Directory)",
+        "func": scraper_adapters.run_yellowpages_adapter,
+        "enabled": True,
+        "category": "B2B Directory"
+    },
+    {
         "name": "apollo_enricher.py (Apollo.io Verified B2B Prospect Harvester)",
         "func": run_apollo_prospect_adapter,
         "enabled": bool(os.getenv("APOLLO_SEARCH_KEYWORDS", "").strip() and os.getenv("APOLLO_API_KEY", "").strip()),
@@ -423,8 +459,10 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
                 print(f"       -> [AUTO-MAIL-PENDING] [EXCLUDED-COMPANY BLOCKED] Skipping {raw_email} ({comp_name}): {ex_reason}")
                 lead_obj["email_status"] = "EXCLUDED_COMPANY"
                 continue
-        except Exception:
-            pass
+        except Exception as shield_err:
+            print(f"       -> [AUTO-MAIL-PENDING] [EXCLUDED-COMPANY CHECK ERROR] Refusing send to {raw_email}: {shield_err}")
+            lead_obj["email_status"] = "EXCLUDED_COMPANY"
+            continue
 
         try:
             from followup_sequence import outreach_names
@@ -540,8 +578,54 @@ def run_followup_step(registry: MasterLeadRegistry) -> None:
         print(f"[FATAL] Failed to save reply statuses to '{MASTER_CSV}'!")
 
 
-def run_all_scrapers():
-    """Main orchestration workflow."""
+def run_email_steps(registry: MasterLeadRegistry) -> int:
+    """Gmail reply/bounce check first (a fresh bounce pauses auto-mail), then the intro e-mails to
+    AI-qualified leads, then due follow-ups (only when FOLLOWUP_AUTO_SEND=true). Returns intro mails sent."""
+    try:
+        run_followup_step(registry)
+    except Exception as e:  # never let follow-ups stop the intro e-mails
+        print(f"[WARN] Follow-up step notice: {e}")
+    if not (AUTO_SEND_EMAIL and send_smtp_email):
+        print("\n[*] Intro e-mails: auto-send is OFF (Settings / AUTO_SEND_EMAIL).")
+        return 0
+    registry.load_master()  # the follow-up step may have saved reply statuses
+    per_run = MAX_PENDING_EMAILS_PER_RUN or "none - every qualified lead"
+    print(f"\n[*] Emailing AI-qualified leads (per-run limit: {per_run}; daily limit: {MAX_EMAILS_PER_DAY})...")
+    sent = dispatch_pending_outreach_emails(registry, max_batch=MAX_PENDING_EMAILS_PER_RUN)
+    print(f"[*] Outreach emails sent this run: {sent}")
+    if not registry.save_master_safely():
+        print(f"[FATAL] Failed to save email statuses to '{MASTER_CSV}'!")
+    return sent
+
+
+def sync_database():
+    if AUTO_SYNC_SUPABASE and sync_to_supabase:
+        print("\n[*] Syncing all data with the database...")
+        try:
+            sync_to_supabase.sync(csv_filepath=MASTER_CSV)
+        except Exception as e:
+            print(f"[WARN] Database sync notice: {e}")
+
+
+def run_outreach_only():
+    """--email-only: no scraping. Used by the GitHub 'Outreach Mail' workflow at office hours."""
+    if not acquire_run_lock():
+        print("[ERROR] Another instance of run_all_scrapers.py is already running. Exiting.")
+        sys.exit(1)
+    try:
+        print("=" * 65)
+        print(f"       OUTREACH MAIL RUN  {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 65)
+        registry = MasterLeadRegistry(MASTER_CSV)
+        print(f"[*] Loaded {len(registry.leads)} leads.")
+        run_email_steps(registry)
+        sync_database()
+    finally:
+        release_run_lock()
+
+
+def run_all_scrapers(send_email: bool = True):
+    """Main orchestration workflow. send_email=False (--no-email): scrape, enrich and score only."""
     if not acquire_run_lock():
         print("[ERROR] Another instance of run_all_scrapers.py is already running. Exiting.")
         sys.exit(1)
@@ -689,30 +773,14 @@ def run_all_scrapers():
         except Exception as e:
             print(f"[WARN] Lead quality step notice: {e}")
 
-    # Step 5: Outreach to qualified leads only (reload: steps 4a/4b rewrote the CSV)
-    if AUTO_SEND_EMAIL and send_smtp_email:
-        registry.load_master()
-        per_run = MAX_PENDING_EMAILS_PER_RUN or "none - every qualified lead"
-        print(f"\n[*] Step 5: Emailing AI-qualified leads (per-run limit: {per_run}; daily limit: {MAX_EMAILS_PER_DAY})...")
-        pending_sent = dispatch_pending_outreach_emails(registry, max_batch=MAX_PENDING_EMAILS_PER_RUN)
-        print(f"[*] Outreach emails sent this run: {pending_sent}")
-        if not registry.save_master_safely():
-            print(f"[FATAL] Failed to save email statuses to '{MASTER_CSV}'!")
+    # Step 5: e-mail (skipped with --no-email: on GitHub the "Outreach Mail" workflow does it at office hours)
+    if send_email:
+        registry.load_master()  # steps 4a/4b rewrote the CSV
+        run_email_steps(registry)
+    else:
+        print("\n[*] Step 5: E-mail skipped in this run (--no-email). The outreach mail job sends them.")
 
-    # Step 5a: Follow-ups - Gmail reply check, then (only if FOLLOWUP_AUTO_SEND=true) due sequence emails
-    try:
-        run_followup_step(registry)
-    except Exception as e:  # never let follow-ups break the scraper run
-        print(f"[WARN] Follow-up step notice: {e}")
-
-    # Step 5b: Direct Sync to Supabase Database
-    if AUTO_SYNC_SUPABASE and sync_to_supabase:
-        print("\n[*] Step 5: Syncing all leads directly to Supabase Database...")
-        try:
-            sync_to_supabase.sync(csv_filepath=MASTER_CSV)
-            print("[*] [OK] Supabase cloud database sync complete!")
-        except Exception as e:
-            print(f"[WARN] Supabase sync notice: {e}")
+    sync_database()
 
     final_lead_count = len(registry.leads)
     overall_end = datetime.datetime.now()
@@ -744,8 +812,14 @@ def run_all_scrapers():
 
 
 if __name__ == "__main__":
+    # (no flag)      scrape + e-mail, as before (PC scheduler)
+    # --no-email     scrape, enrich and score only (GitHub "1-Hour Auto Lead Scraper")
+    # --email-only   Gmail reply check + intro e-mails + follow-ups, no scraping (GitHub "Outreach Mail")
     try:
-        run_all_scrapers()
+        if "--email-only" in sys.argv:
+            run_outreach_only()
+        else:
+            run_all_scrapers(send_email="--no-email" not in sys.argv)
     except Exception as e:
         print(f"[FATAL UNHANDLED ERROR] {e}")
         release_run_lock()

@@ -2,18 +2,20 @@ name: 1-Hour Auto Lead Scraper
 
 on:
   schedule:
-    # Once per hour, at an off-peak minute (GitHub delays jobs scheduled at :00)
+    # Irregular minutes to decrease GitHub queue delay; concurrency group prevents duplicate runs
     - cron: '23 * * * *'
+    - cron: '53 * * * *'
   workflow_dispatch: # Manual run from the GitHub Actions tab
 
 # Lead data lives in the Supabase database (one table, see test-demo/docs/database.md), not in git.
 permissions:
   contents: read
 
-# Never run two scrapes at once: they would work on the same data.
+# This job only finds leads; e-mail goes out from outreach_mail.yml at office hours.
+# Same group as outreach_mail.yml: the two never run at once (both read and write the same data).
 # A run that starts while another is going waits for it instead of being dropped.
 concurrency:
-  group: lead-scraper
+  group: lead-data
   cancel-in-progress: false
 
 jobs:
@@ -64,12 +66,12 @@ jobs:
       - name: Load data from the database
         run: python datastore.py sync --required
 
-      # If the code is broken, stop here - before any scraping or emailing happens.
+      # If the code is broken, stop here - before any scraping happens.
       - name: Run tests
         id: tests
-        run: python -m unittest test_lead_system test_quality_and_auth test_feedly test_accuracy test_html_cache test_sources test_website_signals test_apollo test_job_portals test_followups test_followup_phase2 test_followup_extras test_crm_sources test_api_keys test_search_cache test_search_engine test_supabase_sync test_maps_sources test_global_directories test_realestate_sources test_ecommerce_sources test_adlibrary_sources test_whatsapp_sources test_social_sources test_indian_directories test_corporate_registries test_bulk_contacts test_web_crawler test_file_uploads test_website_analyzer test_domain_tools test_lead_cleanup test_lead_enrichment test_api_safety test_auto_scheduler_and_settings test_reports_engine test_email_limits test_email_safety test_gemini_option test_chatbots test_followup_untouched test_datastore
+        run: python -m unittest test_lead_system test_quality_and_auth test_feedly test_accuracy test_html_cache test_sources test_website_signals test_apollo test_job_portals test_followups test_followup_phase2 test_followup_extras test_crm_sources test_api_keys test_search_cache test_search_engine test_supabase_sync test_maps_sources test_global_directories test_realestate_sources test_ecommerce_sources test_adlibrary_sources test_whatsapp_sources test_social_sources test_indian_directories test_corporate_registries test_bulk_contacts test_web_crawler test_file_uploads test_website_analyzer test_domain_tools test_lead_cleanup test_lead_enrichment test_api_safety test_auto_scheduler_and_settings test_reports_engine test_email_limits test_email_safety test_gemini_option test_chatbots test_followup_untouched test_datastore test_outreach_split
 
-      - name: Run all scrapers, AI qualification and alerts
+      - name: Run all scrapers, AI qualification and alerts (no e-mail)
         env:
           # --- secrets (Settings -> Secrets and variables -> Actions -> Secrets) ---
           APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
@@ -83,33 +85,17 @@ jobs:
           FEEDLY_ACCESS_TOKEN: ${{ secrets.FEEDLY_ACCESS_TOKEN }}
           FEEDLY_STREAM_IDS: ${{ secrets.FEEDLY_STREAM_IDS }}
           FEEDLY_FEEDS: ${{ secrets.FEEDLY_FEEDS }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          SMTP_FROM_EMAIL: ${{ secrets.SMTP_FROM_EMAIL }}
-          # Gmail reply check (defaults to SMTP_USER / SMTP_PASS when not set)
-          IMAP_USER: ${{ secrets.IMAP_USER }}
-          IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
           # --- settings (Settings -> Secrets and variables -> Actions -> Variables) ---
-          # Auto-email is ON by default in 1-hour auto scraper (can be overridden via repo vars)
-          AUTO_SEND_EMAIL: ${{ vars.AUTO_SEND_EMAIL || 'true' }}
-          MAX_PENDING_EMAILS_PER_RUN: ${{ vars.MAX_PENDING_EMAILS_PER_RUN || '0' }}
-          MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '50' }}
-          MIN_AI_SCORE_FOR_AUTO_EMAIL: ${{ vars.MIN_AI_SCORE_FOR_AUTO_EMAIL || '7' }}
+          # (e-mail settings live in outreach_mail.yml)
           MIN_AI_SCORE_FOR_SLACK: ${{ vars.MIN_AI_SCORE_FOR_SLACK || '7' }}
           AI_QUALIFY_LIMIT: ${{ vars.AI_QUALIFY_LIMIT || '40' }}
           STALE_AFTER_DAYS: ${{ vars.STALE_AFTER_DAYS || '14' }}
           IDEAL_CLIENT_PROFILE: ${{ vars.IDEAL_CLIENT_PROFILE }}
-          # Follow-up sequence: OFF unless the variable FOLLOWUP_AUTO_SEND = true
-          FOLLOWUP_AUTO_SEND: ${{ vars.FOLLOWUP_AUTO_SEND || 'false' }}
-          FOLLOWUP_SEQUENCE_DAYS: ${{ vars.FOLLOWUP_SEQUENCE_DAYS || '3,7,14' }}
-          FOLLOWUP_MAX_PER_RUN: ${{ vars.FOLLOWUP_MAX_PER_RUN || '10' }}
           FEEDLY_KEYWORDS: ${{ vars.FEEDLY_KEYWORDS || 'senior developer,tech lead,8+ years,9+ years,lead engineer,full stack architect,staff engineer,next.js,react,python,flutter,budget' }}
           FREELANCER_QUERIES: ${{ vars.FREELANCER_QUERIES || 'senior developer,tech lead,full stack architect,nextjs react,python ai,flutter senior' }}
           APOLLO_SEARCH_KEYWORDS: ${{ vars.APOLLO_SEARCH_KEYWORDS || '"Senior Developer" OR "Tech Lead" OR "Lead Engineer" OR "Software Architect" OR "8+ years" OR "Next.js" OR "Full Stack"' }}
           APOLLO_ENRICH_LIMIT_PER_RUN: ${{ vars.APOLLO_ENRICH_LIMIT_PER_RUN || '15' }}
-        run: python run_all_scrapers.py
+        run: python run_all_scrapers.py --no-email
 
       - name: Save HTML pages for the next run
         # Save even if a scraper failed part-way, so pages already downloaded aren't fetched again
