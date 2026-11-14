@@ -65,6 +65,36 @@ STATE_FILES = [
 
 sync_lock = threading.Lock()
 
+# The one table (same SQL as docs/database.md). RLS on with no policies: only the service_role key can use it.
+SETUP_SQL = """
+create table if not exists public.app_data (
+  kind       text        not null,
+  key        text        not null,
+  data       jsonb       not null,
+  hash       text        not null,
+  pos        integer     not null default 0,
+  updated_at timestamptz not null default now(),
+  primary key (kind, key)
+);
+alter table public.app_data enable row level security;
+create index if not exists app_data_kind_updated on public.app_data (kind, updated_at desc);
+notify pgrst, 'reload schema';
+"""
+
+
+def setup_table():
+    """Create the table using SUPABASE_DB_URL (Supabase -> Connect -> connection string, with the DB password)."""
+    db_url = os.getenv("SUPABASE_DB_URL", "").strip()
+    if not db_url:
+        raise DatastoreError("SUPABASE_DB_URL is not set in .env - or run the SQL in docs/database.md by hand")
+    try:
+        import psycopg
+    except ImportError:
+        raise DatastoreError("install the driver first: pip install \"psycopg[binary]\"")
+    with psycopg.connect(db_url, connect_timeout=20) as conn:
+        conn.execute(SETUP_SQL)
+        conn.commit()
+
 
 class _ProcessLock:
     """Only one process (app, scraper run, CLI) syncs at a time. A lock older than 10 minutes is stale."""
@@ -475,6 +505,14 @@ def start_background_sync(lock=None, every_sec=120):
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "sync"
+    if cmd == "setup":
+        try:
+            setup_table()
+        except Exception as e:
+            print(f"[DB] setup FAILED: {e}")
+            sys.exit(1)
+        print("[DB] table public.app_data is ready")
+        sys.exit(0)
     if cmd == "status":
         print(json.dumps(last_status(), indent=1))
         sys.exit(0)
