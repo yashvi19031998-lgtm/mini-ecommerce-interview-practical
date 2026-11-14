@@ -667,8 +667,29 @@ def run_outreach_only():
         release_run_lock()
 
 
-def run_all_scrapers(send_email: bool = True):
-    """Main orchestration workflow. send_email=False (--no-email): scrape, enrich and score only."""
+# --group freelance: only the sources where people post freelance / contract work they want done
+# (the "Freelance Scraper" page in the app runs this). Matched on the start of the scraper name.
+SCRAPER_GROUPS = {
+    "freelance": (
+        "freelancer_api_scraper.py", "direct_feed_csv.py", "direct_feed_testing_2.py", "instant_lead_generator.py",
+        "freelance_reddit_scraper.py", "reddit_rss_scraper.py", "intent_feeds.py", "hn_hiring_scraper.py",
+        "ddgs_bulk_scraper.py", "telegram_scraper.py",
+    ),
+}
+
+
+def scrapers_for(group=None):
+    if not group:
+        return SCRAPERS_CONFIG
+    if group not in SCRAPER_GROUPS:
+        raise ValueError(f"unknown scraper group '{group}' (known: {', '.join(SCRAPER_GROUPS)})")
+    return [c for c in SCRAPERS_CONFIG if c["name"].startswith(SCRAPER_GROUPS[group])]
+
+
+def run_all_scrapers(send_email: bool = True, group: str = None):
+    """Main orchestration workflow. send_email=False (--no-email): scrape, enrich and score only.
+    group: run only that group of scrapers (SCRAPER_GROUPS) and skip the slow website / Apollo enrichment."""
+    configs = scrapers_for(group)
     if not acquire_run_lock():
         print("[ERROR] Another instance of run_all_scrapers.py is already running. Exiting.")
         sys.exit(1)
@@ -690,7 +711,9 @@ def run_all_scrapers(send_email: bool = True):
     print(f"[*] Step 1: Loaded existing master database with {initial_lead_count} unique leads.\n")
 
     # Metrics
-    scrapers_configured = len(SCRAPERS_CONFIG)
+    scrapers_configured = len(configs)
+    if group:
+        print(f"[*] Scraper group: {group} ({scrapers_configured} sources)\n")
     scrapers_executed = 0
     scrapers_successful = 0
     scrapers_failed = 0
@@ -704,7 +727,7 @@ def run_all_scrapers(send_email: bool = True):
     print("[*] Step 2: Executing all configured scrapers independently...\n")
 
     # Step 2: Run all scrapers independently
-    for idx, config in enumerate(SCRAPERS_CONFIG, start=1):
+    for idx, config in enumerate(configs, start=1):
         name = config["name"]
         func = config["func"]
         enabled = config["enabled"]
@@ -790,8 +813,10 @@ def run_all_scrapers(send_email: bool = True):
     else:
         print(f"[FATAL] Failed to write to '{MASTER_CSV}'!")
 
-    # Step 4a: Deep Website Contact Enrichment
+    # Step 4a: Deep Website Contact Enrichment (a group run skips it: posts rarely have a website, and it is slow)
     try:
+        if group:
+            raise RuntimeError(f"skipped in the '{group}' run")
         import website_contact_extractor
         print("\n[*] Step 4a: Running Deep Website Contact Extractor on leads with missing email/phone...")
         enriched_leads_count = website_contact_extractor.run_website_enrichment(master_csv_path=MASTER_CSV)
@@ -801,7 +826,7 @@ def run_all_scrapers(send_email: bool = True):
 
     # Step 4a.2: Apollo.io Decision Maker & Contact Enrichment
     try:
-        if os.getenv("APOLLO_API_KEY", "").strip():
+        if os.getenv("APOLLO_API_KEY", "").strip() and not group:
             print("\n[*] Step 4a.2: Running Apollo.io Decision Maker Contact Enrichment...")
             apollo_count = apollo_enricher.run_apollo_enrichment(master_csv_path=MASTER_CSV)
             total_leads_updated += apollo_count
@@ -850,19 +875,27 @@ def run_all_scrapers(send_email: bool = True):
     print(f"Master file:                      {MASTER_CSV}")
     print(f"Run log file:                     {RUNS_LOG_CSV}")
     print("=" * 65 + "\n")
+    # one machine-readable line for the app's scraper pages
+    print(f"RUN_RESULT new={total_new_leads_added} collected={total_raw_collected} "
+          f"updated={total_leads_updated} failed={scrapers_failed} seconds={duration:.0f}")
 
     release_run_lock()
 
 
+def _arg(flag):
+    return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv[:-1] else None
+
+
 if __name__ == "__main__":
-    # (no flag)      scrape + e-mail, as before (PC scheduler)
-    # --no-email     scrape, enrich and score only (GitHub "1-Hour Auto Lead Scraper")
-    # --email-only   Gmail reply check + intro e-mails + follow-ups, no scraping (GitHub "Outreach Mail")
+    # (no flag)          scrape + e-mail, as before (PC scheduler)
+    # --no-email         scrape, enrich and score only (GitHub "1-Hour Auto Lead Scraper")
+    # --email-only       Gmail reply check + intro e-mails + follow-ups, no scraping (GitHub "Outreach Mail")
+    # --group freelance  only the freelance / contract-work sources ("Freelance Scraper" page)
     try:
         if "--email-only" in sys.argv:
             run_outreach_only()
         else:
-            run_all_scrapers(send_email="--no-email" not in sys.argv)
+            run_all_scrapers(send_email="--no-email" not in sys.argv, group=_arg("--group"))
     except Exception as e:
         print(f"[FATAL UNHANDLED ERROR] {e}")
         release_run_lock()

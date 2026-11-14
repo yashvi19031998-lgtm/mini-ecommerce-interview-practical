@@ -127,6 +127,11 @@ export async function startScraper(mode = 'quick') {
   });
 }
 
+// 6b. Freelance Scraper page: full run status (running, mode of the run the logs belong to, logs)
+export async function fetchScraperRun() {
+  return await apiFetch('/api/scraper/status');
+}
+
 // 7. Terminate Background Scraper
 export async function stopScraper() {
   return await apiFetch('/api/scraper/stop', {

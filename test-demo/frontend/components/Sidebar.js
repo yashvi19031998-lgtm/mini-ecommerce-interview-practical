@@ -6,7 +6,7 @@ import {
   Send, RefreshCw, Play, Download, LogOut, ChevronDown, ChevronRight, Zap,
   LayoutDashboard, Briefcase, History, Building2, Pickaxe, SearchCode, MapPin, Share2, Megaphone,
   ShoppingCart, Globe, MessageCircle, House, FileSearch, Network, Factory, Phone, Wrench, Ship, Store,
-  Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Network as NetworkIcon, Link2, TextSearch, ListTree, FolderUp, Wrench as WrenchIcon, Gauge, Globe as GlobeIcon, CalendarClock, MailSearch, Sparkles, CheckSquare, HeartPulse, Eraser, Wand2, BarChart3
+  Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Network as NetworkIcon, Link2, TextSearch, ListTree, FolderUp, Wrench as WrenchIcon, Gauge, Globe as GlobeIcon, CalendarClock, MailSearch, Sparkles, CheckSquare, HeartPulse, Eraser, Wand2, BarChart3, Laptop
 } from 'lucide-react';
 import { REPORT_SECTIONS } from './Reports';
 
@@ -103,6 +103,11 @@ export default function Sidebar({
       label: 'Reports',
       icon: BarChart3,
       children: REPORT_ITEMS
+    },
+    {
+      id: 'freelance',
+      label: 'Freelance Scraper',
+      icon: Laptop
     },
     {
       id: 'mining',

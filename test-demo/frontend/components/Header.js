@@ -26,6 +26,7 @@ export default function Header({
     dashboard: { root: 'LeadsGen AI', leaf: 'Dashboard' },
     reports: { root: 'LeadsGen AI', leaf: 'Reports' },
     ...Object.fromEntries(REPORT_SECTIONS.map(s => [`rp-${s.id}`, { root: 'Reports', leaf: s.label }])),
+    freelance: { root: 'LeadsGen AI', leaf: 'Freelance Scraper' },
     jobportal: { root: 'Scraping / Mining', leaf: 'Job Portals' },
     searchengines: { root: 'Scraping / Mining', leaf: 'Search Engines' },
     'mining-maps': { root: 'Scraping / Mining', leaf: 'Google Maps' },

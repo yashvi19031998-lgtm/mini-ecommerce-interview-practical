@@ -34,6 +34,7 @@ import SettingsView from '../components/SettingsView';
 import Dashboard from '../components/Dashboard';
 import Reports from '../components/Reports';
 import JobPortalScraper from '../components/JobPortalScraper';
+import FreelanceScraper from '../components/FreelanceScraper';
 import AutoScheduler from '../components/AutoScheduler';
 import FollowUpHistory from '../components/FollowUpHistory';
 import CrmSources from '../components/CrmSources';
@@ -412,6 +413,15 @@ function DashboardContent() {
             {/* FollowUp History */}
             {activeTab === 'followups' && (
               <FollowUpHistory leads={leads} showToast={showToast} />
+            )}
+
+            {/* Freelance Scraper: freelance / contract-work sources only */}
+            {activeTab === 'freelance' && (
+              <FreelanceScraper
+                showToast={showToast}
+                onLeadsSaved={() => loadLeads(true)}
+                onOpenReplyToday={() => setActiveTab('rp-reply-today')}
+              />
             )}
 
             {/* Job Portal Scraper */}

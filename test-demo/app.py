@@ -89,6 +89,7 @@ LEADS_CSV = MASTER_PATH if os.path.exists(MASTER_PATH) else os.path.join(BASE_DI
 # Global state for background scraper process
 scraper_process = None
 scraper_logs = []
+scraper_mode = ""  # mode of the last / current run: quick, all or freelance
 scraper_lock = threading.Lock()
 # One lock for every writer of the leads file (status changes, saves, cleanup, enrichment): the file is
 # read, changed and rewritten whole, so two writers at once would silently drop one of the changes.
@@ -465,6 +466,7 @@ def get_scraper_status():
         logs_slice = scraper_logs[-100:]
     return jsonify({
         "running": is_running,
+        "mode": scraper_mode,  # which kind of run the logs belong to (quick / all / freelance)
         "logs": logs_slice
     })
 
@@ -475,20 +477,36 @@ def start_scraper():
         return jsonify({"success": False, "error": "Scraper is already running!"}), 400
 
     data = _json_body()
-    mode = data.get("mode", "quick")  # "quick" -> scraper.py, "all" -> run_all_scrapers.py
-    script_to_run = "run_all_scrapers.py" if mode == "all" else "scraper.py"
+    # "quick" -> scraper.py, "all" -> run_all_scrapers.py,
+    # "freelance" -> only the freelance / contract-work sources, AI-scored, never e-mails (Freelance Scraper page)
+    mode = data.get("mode", "quick")
+    commands = {"quick": ["scraper.py"], "all": ["run_all_scrapers.py"],
+                "freelance": ["run_all_scrapers.py", "--group", "freelance", "--no-email"]}
+    if mode not in commands:
+        return jsonify({"success": False, "error": f"mode must be one of: {', '.join(commands)}"}), 400
+    command = commands[mode]
+    script_to_run = command[0]
+    labels = {"quick": "Live Search Scraper", "all": "All Harvesters (Includes Maps & Telegram)",
+              "freelance": "Freelance sources only"}
+    global scraper_mode
+    scraper_mode = mode
 
     def run_worker():
         global scraper_process, scraper_logs
         with scraper_lock:
-            scraper_logs = [f"[{time.strftime('%H:%M:%S')}] Launching {script_to_run} ({'All 12 Harvesters (Includes Maps & Telegram)' if mode == 'all' else 'Live Search Scraper'})..."]
-        
+            scraper_logs = [f"[{time.strftime('%H:%M:%S')}] Launching {script_to_run} ({labels[mode]})..."]
+
+        # UTF-8 both ways: on Windows the pipe defaults to cp1252, so a lead title with an emoji or Hindi text
+        # used to crash this log reader (and the child's print) - the run then never showed its result.
         proc = subprocess.Popen(
-            [sys.executable, script_to_run],
+            [sys.executable, *command],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            bufsize=1
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"},
         )
         scraper_process = proc
 
@@ -506,7 +524,7 @@ def start_scraper():
             scraper_logs.append(f"[{time.strftime('%H:%M:%S')}] Finalizing Supabase Database Sync...")
         
         try:
-            target_csv = "all_leads_master.csv" if mode == "all" else "leads_new.csv"
+            target_csv = "leads_new.csv" if mode == "quick" else "all_leads_master.csv"
             synced = sync_to_supabase.sync(csv_filepath=target_csv, lock=leads_write_lock)
             with scraper_lock:
                 scraper_logs.append(f"[{time.strftime('%H:%M:%S')}] " + ("Saved to the database." if synced else "Database sync skipped (see Settings)."))
