@@ -74,36 +74,10 @@ export default function BulkEmailModal({
         lead_ids: validEmailLeads.map(l => l.id),
         subject,
         message,
-<<<<<<< HEAD
-        delay_ms: delayMs
-      });
-      if (res) {
-        const errors = (res.results || []).filter(r => !r.success);
-        const dupCount = errors.filter(r => r.already_sent || (r.error && r.error.includes('already received'))).length;
-        const otherErr = errors.find(r => !r.already_sent && (!r.error || !r.error.includes('already received')))?.error;
-        let summaryMsg = '';
-        if (dupCount > 0 && Number(res.sent) === 0 && !otherErr) {
-          summaryMsg = `${dupCount} lead(s) skipped: already contacted in a previous campaign (Anti-spam shield protected).`;
-        } else if (otherErr) {
-          summaryMsg = otherErr;
-        } else if (errors.length > 0) {
-          summaryMsg = errors[0].error || 'Some leads were skipped.';
-        }
-        setProgress({
-          sent: Number(res.sent) || 0,
-          failed: Number(res.failed) || 0,
-          total: validEmailLeads.length,
-          done: true,
-          error: summaryMsg,
-          isDuplicateNotice: dupCount > 0 && !otherErr
-        });
-      }
-=======
         delay_ms: delayMs,
         use_ai: useAi
       }, (job) => setProgress(toProgress(job)));
       if (res) setProgress(toProgress({ ...res, done: true }));
->>>>>>> 85e03f3f39bf42e108e96409ebe3691f593663c6
     } catch (err) {
       setProgress(p => ({ ...(p || {}), done: true, stopped: err.message || 'Failed to dispatch emails' }));
     } finally {
@@ -168,13 +142,6 @@ export default function BulkEmailModal({
           {progress && (
             <div className="campaign-progress-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
-<<<<<<< HEAD
-                <span style={{ fontWeight: 600, color: progress.error && progress.sent === 0 && !progress.isDuplicateNotice ? 'var(--danger-red, #dc2626)' : (progress.isDuplicateNotice ? '#b45309' : 'var(--primary-lavender)') }}>
-                  {progress.done ? (progress.sent > 0 ? 'Campaign Finished!' : (progress.isDuplicateNotice ? 'Already Contacted' : 'Outreach Not Dispatched')) : 'Dispatching Campaign...'}
-                </span>
-                <span style={{ color: 'var(--text-secondary)' }}>
-                  {progress.sent} Sent | {progress.failed} Skipped of {progress.total}
-=======
                 <span style={{ fontWeight: 600, color: progress.done && progress.sent === 0 ? 'var(--danger-red, #dc2626)' : 'var(--primary-lavender)' }}>
                   {progress.done
                     ? (progress.sent > 0 ? 'Finished' : 'Finished - nothing was sent')
@@ -182,33 +149,18 @@ export default function BulkEmailModal({
                 </span>
                 <span style={{ color: 'var(--text-secondary)' }}>
                   {progress.sent} sent · {progress.notSent} not sent
->>>>>>> 85e03f3f39bf42e108e96409ebe3691f593663c6
                 </span>
               </div>
               <div className="progress-bar-track">
                 <div
                   className="progress-bar-fill"
-                  style={{ width: `${pct}%`, background: progress.sent === 0 && progress.done ? (progress.isDuplicateNotice ? '#f59e0b' : '#dc2626') : undefined }}
+                  style={{ width: `${pct}%`, background: progress.sent === 0 && progress.done ? '#dc2626' : undefined }}
                 />
               </div>
-<<<<<<< HEAD
-              {progress.error && (
-                <div style={{
-                  marginTop: '8px',
-                  fontSize: '0.78rem',
-                  color: progress.isDuplicateNotice ? '#92400e' : '#dc2626',
-                  background: progress.isDuplicateNotice ? '#fef3c7' : '#fef2f2',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  border: `1px solid ${progress.isDuplicateNotice ? '#fde68a' : '#fee2e2'}`
-                }}>
-                  <strong>Status:</strong> {progress.error}
-=======
               {!progress.done && (
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                   Each address is checked with its mail server first, so this takes a few seconds per lead.
                   You can close this window; sending continues on the server.
->>>>>>> 85e03f3f39bf42e108e96409ebe3691f593663c6
                 </div>
               )}
               {(progress.stopped || (progress.done && progress.sent === 0 && firstError)) && (

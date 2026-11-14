@@ -404,18 +404,7 @@ def _bulk_note(job, lid, email, ok, reason, error=""):
         elif reason in ("no_email", "already_sent", "excluded", "daily_limit", "stopped"):
             job["skipped"] += 1
         else:
-<<<<<<< HEAD
-            # If lead was already sent previously, update record so it won't be retried or shown as pending
-            if res.get("already_sent"):
-                update_lead_record(lid, {
-                    "Email Status": "SENT",
-                    "Status": "EMAIL_SENT"
-                })
-            failed_count += 1
-            results.append({"id": lid, "email": to_email, "success": False, "error": res.get("error"), "already_sent": res.get("already_sent", False)})
-=======
             job["failed"] += 1
->>>>>>> 85e03f3f39bf42e108e96409ebe3691f593663c6
 
 
 def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms, use_ai=False):
@@ -485,6 +474,7 @@ def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms, use_ai=Fals
                 if "port 25" in str(res.get("error", "")):
                     job["stopped_reason"] = "This computer cannot check mailboxes (port 25 blocked), so nothing is sent."
             elif res.get("already_sent"):
+                update_lead_record(lid, {"Email Status": "SENT", "Status": "EMAIL_SENT"})
                 _bulk_note(job, lid, to_email, False, "already_sent", res.get("error", ""))
             elif res.get("excluded"):
                 update_lead_record(lid, {"Email Status": "EXCLUDED_COMPANY"})

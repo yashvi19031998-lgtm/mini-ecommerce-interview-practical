@@ -208,16 +208,34 @@ function DashboardContent() {
       const alreadySentIds = new Set((res.results || []).filter(r => r.already_sent).map(r => String(r.id)));
       const sentCount = Number.isFinite(Number(res.sent)) ? Number(res.sent) : sentIds.size;
       const failedCount = Number(res.failed) || 0;
-      setLeads(prev => prev.map(l => sentIds.has(String(l.id)) ? {
-        ...l,
-        Status: 'EMAIL_SENT',
-        'Email Status': 'SENT',
-        'Email Sent At': new Date().toISOString().replace('T', ' ').substring(0, 19)
-      } : l));
+      setLeads(prev => prev.map(l => {
+        const lid = String(l.id);
+        if (sentIds.has(lid)) {
+          return {
+            ...l,
+            Status: 'EMAIL_SENT',
+            'Email Status': 'SENT',
+            'Email Sent At': new Date().toISOString().replace('T', ' ').substring(0, 19)
+          };
+        }
+        if (alreadySentIds.has(lid)) {
+          return {
+            ...l,
+            Status: 'EMAIL_SENT',
+            'Email Status': 'SENT'
+          };
+        }
+        return l;
+      }));
       const notSent = (Number(res.not_verified) || 0) + (Number(res.skipped) || 0) + failedCount;
       const firstError = res.stopped_reason || (res.results || []).find(r => !r.success)?.error;
+      const allAlreadySent = alreadySentIds.size > 0 && sentCount === 0 && (res.results || []).every(r => r.already_sent || !r.email);
       if (sentCount === 0) {
-        showToast(`No e-mails were sent. ${firstError || 'All selected leads were skipped.'}`, 'error');
+        if (allAlreadySent) {
+          showToast(`Selected leads were already contacted previously (Spam-prevention protected).`, 'info');
+        } else {
+          showToast(`No e-mails were sent. ${firstError || 'All selected leads were skipped.'}`, 'error');
+        }
       } else if (notSent > 0) {
         showToast(`${sentCount} e-mail${sentCount === 1 ? '' : 's'} sent, ${notSent} not sent (see the list in the pop-up).`, 'info');
       } else {
