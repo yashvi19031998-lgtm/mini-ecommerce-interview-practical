@@ -160,9 +160,27 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
         server.starttls()
         try:
             server.login(smtp_user, smtp_pass)
-        except smtplib.SMTPResponseException as lerr:
-            err_msg = lerr.smtp_error.decode("utf-8", "ignore") if isinstance(lerr.smtp_error, bytes) else str(lerr.smtp_error)
-            return {"success": False, "error": f"SMTP Login failed ({lerr.smtp_code}): {err_msg}"}
+        except (smtplib.SMTPResponseException, smtplib.SMTPServerDisconnected, smtplib.SMTPAuthenticationError, Exception) as lerr:
+            # Check detailed diagnosis if Gmail rejected with 534 WebLoginRequired
+            err_text = str(lerr)
+            try:
+                import base64
+                diag_server = smtplib.SMTP(smtp_host, smtp_port, timeout=8)
+                diag_server.starttls()
+                auth_str = base64.b64encode(f"\0{smtp_user}\0{smtp_pass}".encode("utf-8")).decode("utf-8")
+                code, resp = diag_server.docmd("AUTH", "PLAIN " + auth_str)
+                resp_text = resp.decode("utf-8", "ignore") if isinstance(resp, bytes) else str(resp)
+                diag_server.close()
+                if code == 534 or "WebLoginRequired" in resp_text or "5.7.9" in resp_text:
+                    return {
+                        "success": False,
+                        "error": "Gmail Blocked SMTP (534 WebLoginRequired). Visit https://accounts.google.com/DisplayUnlockCaptcha in browser, click Continue, then retry."
+                    }
+                elif code >= 400:
+                    return {"success": False, "error": f"SMTP Auth Failed ({code}): {resp_text.strip()}"}
+            except Exception:
+                pass
+            return {"success": False, "error": f"SMTP Connection/Login error: {err_text}"}
         server.sendmail(from_email, [to_email], msg.as_string())
         server.quit()
 
