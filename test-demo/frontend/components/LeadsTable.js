@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { downloadLeadsCsv } from '../lib/api';
 import { 
   Search, ExternalLink, Mail, MessageSquare, 
-  ChevronLeft, ChevronRight, Download, Globe, MapPin, Phone, Copy, Check,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Globe, MapPin, Phone, Copy, Check,
   Sparkles, Award, DollarSign, ArrowUpRight, Flame, Zap, Filter
 } from 'lucide-react';
 import AILeadDossierModal from './AILeadDossierModal';
@@ -534,31 +534,109 @@ export default function LeadsTable({
 
       {/* 5. Pagination Footer */}
       <div className="theme-pagination-footer">
-        <div className="theme-page-info">
-          Showing {paginatedLeads.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, filteredLeads.length)} of {filteredLeads.length} leads
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <div className="theme-page-info">
+            Showing {paginatedLeads.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, filteredLeads.length)} of {filteredLeads.length} leads
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <span>Per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              style={{
+                padding: '3px 8px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-med)',
+                background: '#fff',
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                cursor: 'pointer'
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
 
-        <div className="theme-page-controls">
+        <div className="theme-page-controls" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="theme-page-btn"
+            title="First Page"
+          >
+            <ChevronsLeft size={15} />
+          </button>
+
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className="theme-page-btn"
+            title="Previous Page"
           >
-            <ChevronLeft size={16} />
-            <span>Prev</span>
+            <ChevronLeft size={15} />
           </button>
 
-          <span className="theme-page-indicator">
-            Page {currentPage} of {totalPages}
-          </span>
+          {/* Direct page buttons */}
+          {(() => {
+            const pages = [];
+            let start = Math.max(1, currentPage - 2);
+            let end = Math.min(totalPages, start + 4);
+            if (end - start < 4) {
+              start = Math.max(1, end - 4);
+            }
+            if (start > 1) {
+              pages.push(
+                <button key={1} onClick={() => setCurrentPage(1)} className="theme-page-num-btn">1</button>
+              );
+              if (start > 2) {
+                pages.push(<span key="dots-start" style={{ padding: '0 4px', color: 'var(--text-muted)' }}>…</span>);
+              }
+            }
+            for (let i = start; i <= end; i++) {
+              pages.push(
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i)}
+                  className={`theme-page-num-btn ${currentPage === i ? 'active' : ''}`}
+                >
+                  {i}
+                </button>
+              );
+            }
+            if (end < totalPages) {
+              if (end < totalPages - 1) {
+                pages.push(<span key="dots-end" style={{ padding: '0 4px', color: 'var(--text-muted)' }}>…</span>);
+              }
+              pages.push(
+                <button key={totalPages} onClick={() => setCurrentPage(totalPages)} className="theme-page-num-btn">{totalPages}</button>
+              );
+            }
+            return pages;
+          })()}
 
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             className="theme-page-btn"
+            title="Next Page"
           >
-            <span>Next</span>
-            <ChevronRight size={16} />
+            <ChevronRight size={15} />
+          </button>
+
+          <button
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+            className="theme-page-btn"
+            title="Last Page"
+          >
+            <ChevronsRight size={15} />
           </button>
         </div>
       </div>
