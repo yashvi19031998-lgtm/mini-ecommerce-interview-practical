@@ -2113,6 +2113,7 @@ def lead_care_enrichment_save():
 
 # REPORTS (reports_engine.py)
 import reports_engine
+import daily_leads_report
 
 def _report_context():
     """Helper to load data files using BASE_DIR without writing anything."""
@@ -2185,6 +2186,27 @@ def report_pipeline_endpoint():
     try:
         leads, _, _, acts = _report_context()
         res = reports_engine.pipeline(leads, acts, _report_filters())
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/daily-leads", methods=["GET"])
+def report_daily_leads_endpoint():
+    """Per day: leads found, mailed, pending, no e-mail, blocked. ?band=all|high|medium|low|unscored + report filters"""
+    try:
+        leads, _, sent, _ = _report_context()
+        res = daily_leads_report.daily_leads(leads, sent, _report_filters(), band=request.args.get("band", "all"))
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/daily-leads/list", methods=["GET"])
+def report_daily_leads_list_endpoint():
+    """The leads behind one number: ?day=YYYY-MM-DD&state=found|mailed|pending|no_email|blocked&band=..."""
+    try:
+        leads, _, sent, _ = _report_context()
+        res = daily_leads_report.daily_leads_list(leads, sent, request.args.get("day", ""), request.args.get("state", "found"),
+                                              _report_filters(), band=request.args.get("band", "all"))
         return jsonify({"success": True, **res})
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400

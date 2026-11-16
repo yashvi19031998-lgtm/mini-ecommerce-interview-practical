@@ -696,6 +696,18 @@ export async function fetchReportPipeline(filters = {}) {
   return await apiFetch(`/api/reports/pipeline${toReportQueryString(filters)}`);
 }
 
+// Daily leads & mail: per day found / mailed / pending, with a score band (all|high|medium|low|unscored)
+export async function fetchReportDailyLeads(filters = {}, band = 'all') {
+  const q = toReportQueryString(filters);
+  return await apiFetch(`/api/reports/daily-leads${q}${q ? '&' : '?'}band=${encodeURIComponent(band)}`);
+}
+
+export async function fetchReportDailyLeadsList(filters = {}, { day, state = 'found', band = 'all' } = {}) {
+  const q = toReportQueryString(filters);
+  const extra = new URLSearchParams({ day, state, band }).toString();
+  return await apiFetch(`/api/reports/daily-leads/list${q}${q ? '&' : '?'}${extra}`);
+}
+
 export async function fetchReportOutreach(filters = {}) {
   return await apiFetch(`/api/reports/outreach${toReportQueryString(filters)}`);
 }

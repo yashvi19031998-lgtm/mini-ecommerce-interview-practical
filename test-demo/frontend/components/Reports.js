@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Filter,
   UserPlus,
-  MessageSquareReply
+  MessageSquareReply,
+  CalendarRange
 } from 'lucide-react';
 import { UntouchedPanel } from './FollowUpHistory';
 import ReplyToday from './ReplyToday';
@@ -39,10 +40,12 @@ import PipelineTab from './reports/PipelineTab';
 import OutreachTab from './reports/OutreachTab';
 import DataHealthTab from './reports/DataHealthTab';
 import DailyLogTab from './reports/DailyLogTab';
+import DailyLeadsTab from './reports/DailyLeadsTab';
 
 // Report sections. Shown as the Reports submenu in the sidebar (Sidebar.js imports this list).
 export const REPORT_SECTIONS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'daily-leads', label: 'Daily Leads & Mail', icon: CalendarRange },
   { id: 'reply-today', label: 'Reply Today', icon: MessageSquareReply, noFilters: true },
   { id: 'not-contacted', label: 'New Leads - Not Contacted', icon: UserPlus, noFilters: true },
   { id: 'followups', label: 'Follow-up Watchlist', icon: BellRing },
@@ -432,7 +435,9 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper, s
           />
         )}
 
-        {activeTab === 'reply-today' && <ReplyToday onNotice={(_, msg) => setError(msg)} />}
+        {activeTab === 'daily-leads' && <DailyLeadsTab filters={filters} onNotice={(_, msg) => setError(msg)} />}
+
+        {activeTab === 'reply-today' &&<ReplyToday onNotice={(_, msg) => setError(msg)} />}
 
         {activeTab === 'not-contacted' && (
           <UntouchedPanel onOpen={onOpenFollowups ? () => onOpenFollowups() : null} onNotice={(_, msg) => setError(msg)} />
