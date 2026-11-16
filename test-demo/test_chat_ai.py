@@ -65,6 +65,11 @@ def _block(**kw):
     return SimpleNamespace(**kw)
 
 
+class Plain(unittest.TestCase):
+    def test_markdown_removed(self):
+        self.assertEqual(chat_ai._plain("Tamara **300** leads\n## Head\n1. **A** x"), "Tamara 300 leads\nHead\n1. A x")
+
+
 class ClaudeLoop(unittest.TestCase):
     def test_tool_loop_and_table(self):
         sent_payloads = []

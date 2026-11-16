@@ -30,6 +30,7 @@ Rules:
 - Reply in the same language and script as the question: English, Gujarati, or Gujarati written in English
   letters ("Aaje ketla leads aavya?" -> answer in that style). Be short: a direct answer first, then at most a
   few lines. Do not paste long lists - the app shows the rows of the last find_leads call as a table.
+- Plain text only: no markdown (no **, #, tables); a short numbered list is fine.
 - Score bands: high 7-10, medium 4-6, low 0-3. "Pending" = has an e-mail but no mail sent yet."""
 
 # ------------------------------------------------------------------ data helpers
@@ -319,6 +320,13 @@ def _strip(out):
     return {k: v for k, v in out.items() if k != "_row"} if isinstance(out, dict) else out
 
 
+def _plain(text):
+    """The chat bubble shows plain text: drop markdown emphasis / headings the model may still add."""
+    text = re.sub(r"\*\*(.+?)\*\*", lambda m: m.group(1), text)
+    text = re.sub(r"(?m)^#{1,6}\s*", "", text)
+    return text.strip()
+
+
 def _table(rows):
     if not rows:
         return None
@@ -372,7 +380,7 @@ def ask_claude(question, ctx, history=None, client=None):
         uses = [b for b in resp.content if b.type == "tool_use"]
         if resp.stop_reason != "tool_use" or not uses:
             text = "".join(b.text for b in resp.content if b.type == "text").strip()
-            return {"reply": text or "-", "table": _table(last_rows), "engine": "claude"}
+            return {"reply": _plain(text) or "-", "table": _table(last_rows), "engine": "claude"}
         messages.append({"role": "assistant", "content": resp.content})
         results = []
         for u in uses:
@@ -418,7 +426,7 @@ def ask_gemini(question, ctx, history=None, post=None):
             text = "".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
             if not text:
                 raise RuntimeError("Gemini returned no answer")
-            return {"reply": text, "table": _table(last_rows), "engine": "gemini"}
+            return {"reply": _plain(text), "table": _table(last_rows), "engine": "gemini"}
         contents.append({"role": "model", "parts": parts})
         answers = []
         for c in calls:
