@@ -3,6 +3,7 @@ import smtplib
 import csv
 import datetime
 import html
+import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -148,10 +149,24 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
         part_text = MIMEText(message_body, "plain", "utf-8")
         msg.attach(part_text)
 
-        # HTML formatting
+        # HTML formatting with bold highlights & key label styling
+        escaped_body = html.escape(message_body)
+        # 1. Convert markdown **bold** to styled <strong>
+        html_styled = re.sub(
+            r'\*\*(.+?)\*\*',
+            r'<strong style="color: #0f172a; font-weight: 700;">\1</strong>',
+            escaped_body
+        )
+        # 2. Bold key metadata labels (e.g. Email:, Phone:, Website:, Location:, Rate:)
+        html_styled = re.sub(
+            r'(?m)^([^\w\s\n]*\s*(?:Email|Phone|Phone/WhatsApp|WhatsApp|Website|Location|Address|Starting Rate|Rate)):(\s*)',
+            r'<strong style="color: #0f172a; font-weight: 700;">\1:</strong>\2',
+            html_styled
+        )
+
         html_content = f"""<html>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #222; max-width: 650px; margin: 0 auto; padding: 20px;">
-  <div style="font-size: 14px; white-space: pre-wrap;">{html.escape(message_body)}</div>
+  <div style="font-size: 14px; white-space: pre-wrap;">{html_styled}</div>
 </body>
 </html>"""
         part_html = MIMEText(html_content, "html", "utf-8")

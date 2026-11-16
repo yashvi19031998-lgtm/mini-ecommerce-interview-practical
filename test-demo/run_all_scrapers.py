@@ -70,10 +70,10 @@ PROSPECT_SOURCE = "auto outreach (prospect)"
 # Short intro for prospects, used when the AI e-mail writer is not available.
 PROSPECT_SUBJECT = "Software help for {company}"
 PROSPECT_MESSAGE = ("Hi {name},\n\n"
-                    "I came across {company} and wanted to introduce Sangeeta Infotech, a software team from "
-                    "Ahmedabad. We build and look after websites, web apps, mobile apps and online stores, and we "
-                    "also work as an extra development team when in-house capacity is short.\n\n"
-                    "If anything like that is on your list for the coming months, would a short call be useful? "
+                    "I came across **{company}** and wanted to introduce **Sangeeta Infotech**, a software engineering team from "
+                    "Ahmedabad. We build and maintain high-performance web apps, mobile apps, and custom software systems, "
+                    "with dedicated developers starting from just **₹450/- INR / hour**.\n\n"
+                    "If scaling your engineering capacity is on your list for the coming months, would a brief **10-minute call** be useful? "
                     "If not, just let me know and I will not write again.")
 
 

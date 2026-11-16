@@ -3,6 +3,7 @@
     python -m unittest test_quality_and_auth -v
 """
 import csv
+import datetime
 import json
 import os
 import tempfile
@@ -78,9 +79,10 @@ class QualityPipeline(unittest.TestCase):
     def test_run_cleans_and_qualifies_with_mocked_claude(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "m.csv")
+            today_str = datetime.date.today().strftime("%Y-%m-%d")
             self._write_master(path, [
                 {"lead_id": "LEAD-00001", "company_name": "Acme", "email": "info@acme.in",
-                 "description": "Need a React web app for our clinic", "first_seen_at": "2026-11-01 10:00:00"},
+                 "description": "Need a React web app for our clinic", "first_seen_at": f"{today_str} 10:00:00"},
                 {"lead_id": "LEAD-00002", "company_name": "Post a Job - Indeed",
                  "source_url": "https://www.bing.com/aclick?ld=x&u=y"},
             ])
@@ -131,9 +133,10 @@ class QualityPipeline(unittest.TestCase):
 
 class SlackAlerts(unittest.TestCase):
     def _hot(self, **kw):
+        today_str = datetime.date.today().strftime("%Y-%m-%d")
         base = {"lead_id": "LEAD-00001", "company_name": "Acme <Clinic> & Co", "ai_category": "client_project",
                 "ai_score": "8", "ai_summary": "Needs app", "ai_requirement": "React app",
-                "source_url": "https://www.reddit.com/r/forhire/abc", "first_seen_at": "2026-11-01"}
+                "source_url": "https://www.reddit.com/r/forhire/abc", "first_seen_at": today_str}
         base.update(kw)
         return base
 

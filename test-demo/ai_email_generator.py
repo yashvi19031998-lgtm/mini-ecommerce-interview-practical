@@ -21,12 +21,13 @@ from typing import Dict, Any, Tuple, Optional
 from settings_manager import load_settings, format_signature, DEFAULT_SETTINGS
 
 DEFAULT_SIGNATURE = """Warm regards,
-Business Development Team | Client Solutions Specialist
-Sangeeta Infotech — Engineering Intelligent Web & Mobile Solutions
-📧 Email: info@sangeetainfotech.co.in
-📞 Phone/WhatsApp: +91 9106060400
-🌐 Website: https://sangeetainfotech.co.in
-📍 Location: Ahmedabad, Gujarat, India"""
+**Business Development Team** | Client Solutions Specialist
+**Sangeeta Infotech** — Engineering Intelligent Web & Mobile Solutions
+💡 Dedicated Developers Starting from **₹450/- INR / hour**
+📧 **Email:** info@sangeetainfotech.co.in
+📞 **Phone/WhatsApp:** +91 9106060400
+🌐 **Website:** https://sangeetainfotech.co.in
+📍 **Location:** Ahmedabad, Gujarat, India"""
 
 
 def clean_company_and_role(title: str, comp_hint: str = "") -> Tuple[str, str]:
@@ -151,13 +152,13 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Dedicated {tech_mention} Talent for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s current focus on {requirement}. "
+            f"I noticed **{company}**'s current focus on **{requirement}**. "
             f"Scaling engineering capacity and screening vetted developers often slows down product release cycles.\n\n"
-            f"At Sangeeta Infotech, our senior engineers specialize in high-velocity {primary_tech} development, "
+            f"At **Sangeeta Infotech**, our senior engineers specialize in high-velocity **{primary_tech}** development, "
             f"modern web architectures, and seamless API integrations. We partner with technology teams to provide "
-            f"pre-vetted, dedicated developers who integrate directly into your sprint workflows from day one—without "
-            f"recruitment delays or hiring overhead.\n\n"
-            f"Would you be open to a brief 10-minute introductory call this week to see if our developers could "
+            f"pre-vetted, dedicated developers starting from just **₹450/- INR / hour** who integrate directly into your sprint "
+            f"workflows from day one—without recruitment delays or hiring overhead.\n\n"
+            f"Would you be open to a brief **10-minute introductory call** this week to see if our developers could "
             f"support your current roadmap?"
         )
 
@@ -166,11 +167,12 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Web Performance & Custom Engineering for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s online storefront. In modern e-commerce, site speed, seamless checkout flows, "
+            f"I came across **{company}**'s online storefront. In modern e-commerce, site speed, seamless checkout flows, "
             f"and custom backend automations directly influence customer conversion and retention.\n\n"
-            f"At Sangeeta Infotech, we help growing digital brands enhance their web infrastructure—from custom "
-            f"features and API integrations to performance optimization and mobile-responsive improvements.\n\n"
-            f"Would you be open to a brief 10-minute chat to explore how we can support {company}'s technical roadmap?"
+            f"At **Sangeeta Infotech**, we help growing digital brands enhance their web infrastructure—from custom "
+            f"features and API integrations to performance optimization and mobile-responsive improvements. Our dedicated "
+            f"engineering services start from just **₹450/- INR / hour** with sprint-based flexible delivery.\n\n"
+            f"Would you be open to a brief **10-minute discovery call** to explore how we can support **{company}**'s technical roadmap?"
         )
 
     # Category 3: General Software / Business System Project
@@ -178,13 +180,13 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Custom Software & Web Engineering for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s business presence in {loc or 'India'}. "
+            f"I came across **{company}**'s business presence in {loc or 'India'}. "
             f"As companies expand, having robust, dependable web applications and scalable software systems is critical "
             f"for operational velocity.\n\n"
-            f"At Sangeeta Infotech, we specialize in end-to-end custom software development, modern web portals, and mobile apps. "
-            f"Our team works closely with founders and business leaders to design, build, and maintain high-performance digital solutions "
-            f"tailored to their unique workflows.\n\n"
-            f"Would you be open to a quick 10-minute discovery call this week to explore potential collaboration?"
+            f"At **Sangeeta Infotech**, we specialize in end-to-end custom software development, modern web portals, and mobile apps. "
+            f"Our dedicated developers are available starting from just **₹450/- INR / hour**, designing and maintaining "
+            f"high-performance digital solutions tailored to your unique workflows without agency overhead.\n\n"
+            f"Would you be open to a quick **10-minute discovery call** this week to explore potential collaboration?"
         )
 
     return subject, body
@@ -206,11 +208,12 @@ Draft a concise, warm, highly personalized cold outreach email to:
 
 Rules:
 1. Subject line: 4-8 words, specific to their requirement and company.
-2. Opening: Greet naturally (e.g. 'Hi Team {company}', or person's name if provided). Directly acknowledge their specific requirement or tech stack in the very first sentence. NO generic 'I hope this finds you well' or 'I came across your company'.
-3. Value proposition: Explain specifically how Sangeeta Infotech's senior software engineers accelerate delivery for this exact requirement.
-4. Soft CTA: Ask for a 10-minute discovery call this week.
-5. Tone: Human, crisp, zero corporate fluff. 70-110 words total.
-6. DO NOT include the sender signature at the end (signature is appended automatically).
+2. Opening: Greet naturally ('Hi Team {company}'). Directly acknowledge their specific requirement or tech stack in the very first sentence. NO generic fluff.
+3. Pricing & Value Proposition: Highlight that Sangeeta Infotech provides dedicated software engineers starting from just **₹450/- INR / hour** (cost-effective, vetted senior developers who integrate directly into sprints).
+4. Bold Key Terms: Use markdown bold (**keyword**) on essential highlights: the prospect's **company name**, their specific **tech/need**, our starting rate (**₹450/- INR / hour**), and the **call-to-action**.
+5. Soft CTA: Ask for a brief **10-minute discovery call** this week.
+6. Tone: Human, crisp, zero corporate fluff. 70-110 words total.
+7. DO NOT include the sender signature at the end (signature is appended automatically).
 
 Respond ONLY with valid JSON in this exact structure:
 {{"subject": "...", "body": "..."}}"""
@@ -235,8 +238,9 @@ def generate_with_gemini(lead_data: Dict[str, Any], company: str, requirement: s
     """Generates a personalized outreach email via Google Gemini API."""
     try:
         import requests
-        gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={api_key}"
+        # Support GEMINI_MODEL env or fallback sequence
+        primary_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        models_to_try = [primary_model] if primary_model != "gemini-2.5-flash" else ["gemini-2.5-flash", "gemini-1.5-flash"]
         prompt = f"""You are an elite B2B sales outreach copywriter for Sangeeta Infotech (a software engineering agency in Ahmedabad, India).
 Draft a concise, warm, highly personalized cold outreach email to:
 - Company: {company}
@@ -247,24 +251,33 @@ Draft a concise, warm, highly personalized cold outreach email to:
 
 Rules:
 1. Subject: 4-8 words, tailored to {company} and their specific need.
-2. Body: Greet warmly ('Hi Team {company}'), directly mention their requirement, explain how Sangeeta Infotech's senior engineers solve it, and ask for a 10-minute discovery call.
-3. 70-110 words total. Zero spam cliches. Do not include signature.
+2. Opening: Greet warmly ('Hi Team {company}'), directly mention their requirement or tech stack in the very first sentence.
+3. Pricing & Value Proposition: Highlight that Sangeeta Infotech provides dedicated software engineers starting from just **₹450/- INR / hour** (cost-effective, vetted senior developers who integrate directly into sprints).
+4. Bold Key Terms: Use markdown bold (**keyword**) on essential highlights: the prospect's **company name**, their specific **tech/need**, our starting rate (**₹450/- INR / hour**), and the **call-to-action**.
+5. CTA: Ask for a brief **10-minute discovery call** this week.
+6. Length: 70-110 words total. Zero spam cliches. Do not include signature.
 
 Respond ONLY with valid JSON: {{"subject": "...", "body": "..."}}"""
 
-        body = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 450}
-        }
-        res = requests.post(url, json=body, timeout=25)
-        if res.status_code == 200:
-            data = res.json()
-            candidates = data.get("candidates", [])
-            if candidates:
-                raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                parsed = json.loads(raw_text[raw_text.find("{"):raw_text.rfind("}")+1])
-                if parsed.get("subject") and parsed.get("body"):
-                    return parsed["subject"].strip(), parsed["body"].strip()
+        for gemini_model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={api_key}"
+            body = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.3, "maxOutputTokens": 450}
+            }
+            res = requests.post(url, json=body, timeout=25)
+            if res.status_code == 200:
+                data = res.json()
+                candidates = data.get("candidates", [])
+                if candidates:
+                    raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    parsed = json.loads(raw_text[raw_text.find("{"):raw_text.rfind("}")+1])
+                    if parsed.get("subject") and parsed.get("body"):
+                        return parsed["subject"].strip(), parsed["body"].strip()
+            elif res.status_code == 404:
+                continue  # try next model
+            else:
+                print(f"[AI Email Generator] Gemini API error ({res.status_code}): {res.text[:150]}")
     except Exception as e:
         print(f"[AI Email Generator] Gemini API notice: {e}")
     return None

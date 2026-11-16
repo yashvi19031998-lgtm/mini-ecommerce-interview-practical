@@ -138,5 +138,20 @@ class TestAiEmailGenerator(unittest.TestCase):
         self.assertNotIn('Hi React Developer', body)
         self.assertIn('Acme', body)
 
+    def test_bold_highlights_and_450_rate_presence(self):
+        # Verify 450 INR rate and bold formatting in both body and signature
+        lead = {
+            'Company Name': 'CloudPeak Software',
+            'Description': 'Looking for Python and Django engineer to build enterprise API backend'
+        }
+        draft = generate_personalized_email(lead)
+        body = draft["body"]
+        self.assertIn('₹450', body)
+        self.assertIn('**₹450/- INR / hour**', body)
+        self.assertIn('**CloudPeak Software**', body)
+        self.assertIn('**Email:**', body)
+        self.assertIn('**Sangeeta Infotech**', body)
+
+
 if __name__ == '__main__':
     unittest.main()
