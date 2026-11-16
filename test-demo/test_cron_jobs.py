@@ -43,8 +43,10 @@ class TestCronJobs(unittest.TestCase):
     def test_cron_job_daily_report_generation_and_dispatch(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_report_dir = os.path.join(tmp_dir, "daily_reports")
+            import datetime
+            today_str = datetime.date.today().strftime("%Y-%m-%d")
             mock_metrics = {
-                "date": "2026-11-14",
+                "date": today_str,
                 "total_leads_in_db": 500,
                 "new_leads_today": 25,
                 "total_leads_with_email": 350,
@@ -72,8 +74,33 @@ class TestCronJobs(unittest.TestCase):
                 self.assertIn("25", args[2])
 
                 # Verify snapshot file was written
-                report_file = os.path.join(temp_report_dir, "report_2026-11-14.json")
+                report_file = os.path.join(temp_report_dir, f"report_{today_str}.json")
                 self.assertTrue(os.path.exists(report_file))
+
+    def test_master_cron_runner_build_jobs(self):
+        import master_cron_runner
+        jobs = master_cron_runner.build_jobs(run_now=False)
+        self.assertEqual(len(jobs), 4)
+        names = [j.name for j in jobs]
+        self.assertIn("General Multi-Source Scraper", names)
+        self.assertIn("Freelance & Project Scraper", names)
+        self.assertIn("AI Cold Email Outreach", names)
+        self.assertIn("Daily Summary Report", names)
+
+    def test_master_cron_runner_job_execution(self):
+        import master_cron_runner
+        job = master_cron_runner.ScheduledJob(
+            name="Test Outreach Job",
+            script_name="cron_job_email_outreach.py",
+            interval_sec=3600,
+            description="Test description"
+        )
+        with mock.patch("master_cron_runner.subprocess.run") as mock_sub:
+            mock_sub.return_value = mock.MagicMock(returncode=0)
+            success = job.execute()
+            self.assertTrue(success)
+            self.assertEqual(job.last_status, "SUCCESS")
+            self.assertIsNotNone(job.last_run)
 
 
 if __name__ == "__main__":
