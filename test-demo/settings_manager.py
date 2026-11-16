@@ -48,6 +48,7 @@ DEFAULT_SETTINGS = {
         "Remote / Worldwide", "United States", "United Kingdom", "Canada", "Australia", "UAE"
     ],
     "auto_send_email": True,
+    "auto_email_prospect_signals": True,
     "min_lead_score": 4,
     "signatureTemplate": (
         "Warm regards,\n"

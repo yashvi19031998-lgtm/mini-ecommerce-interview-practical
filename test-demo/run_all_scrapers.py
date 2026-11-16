@@ -661,6 +661,36 @@ def run_outreach_only():
         print("=" * 65)
         registry = MasterLeadRegistry(MASTER_CSV)
         print(f"[*] Loaded {len(registry.leads)} leads.")
+
+        # 1. Qualify any unscored leads so they become eligible for outreach
+        if lead_quality:
+            try:
+                unscored_count = sum(1 for l in registry.leads if not l.get("ai_qualified_at"))
+                if unscored_count:
+                    print(f"[*] Qualifying {unscored_count} unscored leads with AI/NLP...")
+                    lead_quality.qualify_leads(registry)
+                    registry.save_master_safely()
+            except Exception as qe:
+                print(f"[WARN] Lead qualification notice: {qe}")
+
+        # 2. Reset any previous 'FAILED' statuses on valid leads so old ideal leads can be tried
+        reset_count = 0
+        for l in registry.leads:
+            if str(l.get("email_status", "")).upper() == "FAILED":
+                l["email_status"] = "NOT_SENT"
+                reset_count += 1
+        if reset_count:
+            print(f"[*] Re-queued {reset_count} previously unreached/failed leads for outreach attempt.")
+            registry.save_master_safely()
+
+        # 3. Allow older ideal leads and prospect signals during outreach run
+        settings = load_settings() if load_settings else {}
+        if settings.get("auto_email_prospect_signals", True):
+            os.environ["AUTO_EMAIL_PROSPECT_SIGNALS"] = "true"
+        os.environ["STALE_AFTER_DAYS"] = os.getenv("STALE_AFTER_DAYS", "180")
+        min_score = str(settings.get("min_lead_score", 4))
+        os.environ["MIN_AI_SCORE_FOR_AUTO_EMAIL"] = min_score
+
         run_email_steps(registry)
         sync_database()
     finally:
