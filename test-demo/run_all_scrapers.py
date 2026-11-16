@@ -330,14 +330,42 @@ def log_scraper_run(run_id: str, start_time: str, end_time: str, scraper_name: s
         print(f"[WARN] Failed to write run log: {e}")
 
 
+def _is_pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        import ctypes
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid)
+        if handle == 0:
+            return False
+        ctypes.windll.kernel32.CloseHandle(handle)
+        return True
+    except Exception:
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+
+
 def acquire_run_lock() -> bool:
     """Creates a lock file to prevent overlapping simultaneous runs."""
     if os.path.exists(LOCK_FILE):
         try:
-            # Check if stale (older than 15 minutes)
+            # Check if recorded PID is dead or if stale (older than 15 minutes)
             mtime = os.path.getmtime(LOCK_FILE)
-            if time.time() - mtime > 900:
-                os.remove(LOCK_FILE)
+            pid = 0
+            try:
+                with open(LOCK_FILE, "r") as f:
+                    pid = int(f.read().strip())
+            except Exception:
+                pass
+            if (pid and not _is_pid_alive(pid)) or (time.time() - mtime > 900):
+                try:
+                    os.remove(LOCK_FILE)
+                except OSError:
+                    pass
             else:
                 return False
         except Exception:
@@ -517,7 +545,9 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
 
         kind = "prospect" if prospect else "buyer"
         print(f"       -> [AUTO-MAIL-PENDING] Dispatching outreach ({kind}) to {raw_email} ({comp_name})...")
-        mail_res = send_smtp_email(raw_email, custom_sub, custom_msg, company_name=comp_name)
+        outreach_verify = os.getenv("EMAIL_VERIFY_MODE", "strict").strip().lower()
+        verify_arg = None if outreach_verify in ("dns_only", "dns", "off", "none", "bypass") else ("lenient" if outreach_verify == "lenient" else "strict")
+        mail_res = send_smtp_email(raw_email, custom_sub, custom_msg, company_name=comp_name, verify=verify_arg)
         if mail_res.get("success"):
             lead_obj["email_status"] = "SENT"
             lead_obj["email_sent_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -688,6 +718,8 @@ def run_outreach_only():
         if settings.get("auto_email_prospect_signals", True):
             os.environ["AUTO_EMAIL_PROSPECT_SIGNALS"] = "true"
         os.environ["STALE_AFTER_DAYS"] = os.getenv("STALE_AFTER_DAYS", "180")
+        if "EMAIL_VERIFY_MODE" not in os.environ:
+            os.environ["EMAIL_VERIFY_MODE"] = "dns_only"
         min_score = str(settings.get("min_lead_score", 4))
         os.environ["MIN_AI_SCORE_FOR_AUTO_EMAIL"] = min_score
 

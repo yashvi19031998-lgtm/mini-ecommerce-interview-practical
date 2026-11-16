@@ -156,7 +156,7 @@ def _mx_hosts(domain: str):
 
 def _rcpt(mx: str, addresses, sender: str):
     """Asks the receiving server whether each address exists: MAIL FROM + RCPT TO, then QUIT.
-    No DATA is sent, so this never delivers a message. Returns {address: smtp code} or raises."""
+    No DATA is sent, so this never delivers a message. Returns {address: (code, msg)} or {address: code} or raises."""
     s = smtplib.SMTP(mx, 25, timeout=VERIFY_TIMEOUT, local_hostname=(sender.split("@")[-1] or None))
     try:
         s.ehlo_or_helo_if_needed()
@@ -166,10 +166,10 @@ def _rcpt(mx: str, addresses, sender: str):
                 s.ehlo()
             except (smtplib.SMTPException, OSError):
                 pass
-        code, _ = s.mail(sender)
+        code, msg = s.mail(sender)
         if code >= 400:
-            raise smtplib.SMTPResponseException(code, b"sender refused")
-        return {a: s.rcpt(a)[0] for a in addresses}
+            raise smtplib.SMTPResponseException(code, msg)
+        return {a: s.rcpt(a) for a in addresses}
     finally:
         try:
             s.quit()
@@ -216,9 +216,25 @@ def verify_mailbox(email: str, sender: str = "") -> tuple:
             last_error = f"{type(err).__name__}: {str(err)[:80]}"
             continue
         if probe in codes:
+            probe_val = codes[probe]
+            probe_code = probe_val[0] if isinstance(probe_val, tuple) else probe_val
             with _lock:
-                _domain_catch_all[domain] = 200 <= codes[probe] < 300
-        code = codes[e]
+                _domain_catch_all[domain] = 200 <= probe_code < 300
+        val = codes[e]
+        if isinstance(val, tuple):
+            code, resp_bytes = val
+            resp_str = str(resp_bytes).lower()
+        else:
+            code = val
+            resp_str = ""
+
+        if any(w in resp_str for w in (
+            "spamhaus", "pbl", "xbl", "css", "zen", "rbl", "dnsbl", "blacklist",
+            "dynamic", "residential", "policy", "relay", "reputation", "client host",
+            "blocked", "denied", "service unavailable", "sorbs", "barracuda", "unauthenticated"
+        )):
+            return UNKNOWN, f"mail server policy rejected local IP check ({code})"
+
         if 500 <= code < 600:
             return INVALID, f"mail server says the mailbox does not exist ({code})"
         if 400 <= code < 500:
