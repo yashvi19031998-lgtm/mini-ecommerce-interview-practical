@@ -723,6 +723,6 @@ export async function fetchReportActivity(day) {
 
 
 // In-app chat assistant (chat_assistant.py): read-only answers about leads, e-mails, scrapers
-export async function askAssistant(message) {
-  return await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify({ message }) });
+export async function askAssistant(message, history = []) {
+  return await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify({ message, history }) });
 }

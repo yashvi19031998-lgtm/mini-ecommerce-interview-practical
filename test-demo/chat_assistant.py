@@ -369,7 +369,10 @@ def _gemini_answer(msg: str, ctx: Dict[str, Any], post=None) -> Optional[Dict[st
 
 
 # ---------------------------------------------------------------------------
-def answer(message: Any, load_context: Callable[[], Dict[str, Any]], gemini_post=None) -> Dict[str, Any]:
+def answer(message: Any, load_context: Callable[[], Dict[str, Any]], gemini_post=None, history=None,
+           claude_client=None, ai_post=None) -> Dict[str, Any]:
+    """AI first (chat_ai: any question, answered from look-up tools) when a Claude or Gemini key is set;
+    the keyword rules below when there is no key or the AI call fails."""
     msg = " ".join(str(message or "").split())
     if not msg:
         raise ValueError("Type a question.")
@@ -377,7 +380,19 @@ def answer(message: Any, load_context: Callable[[], Dict[str, Any]], gemini_post
         raise ValueError(f"Keep the question under {MAX_MESSAGE} characters.")
     ctx = load_context()
     lang = _lang(msg)
+    ai_error = ""
+    try:
+        import chat_ai
+        res = chat_ai.ask(msg, ctx, history=history, claude_client=claude_client, gemini_post=ai_post or gemini_post)
+        if res:
+            res.setdefault("suggestions", [])
+            res.setdefault("table", None)
+            return res
+    except Exception as e:  # noqa: BLE001 - fall back to the rules, and say why
+        ai_error = str(e)[:200]
     res = _rules_answer(msg, ctx)
+    if res is not None and ai_error:
+        res["note"] = f"AI not available ({ai_error}) - quick answer from the built-in rules."
     if res is not None:
         res.setdefault("engine", "rules")
     else:
@@ -386,6 +401,9 @@ def answer(message: Any, load_context: Callable[[], Dict[str, Any]], gemini_post
             res = {"reply": _t(lang,
                    "I didn't understand that yet. I can answer questions like these:",
                    "Aa savaal hu haju samjto nathi. Aava savalo puchho:"), "engine": "rules"}
+            if not ai_error:  # no AI key at all: say how to get answers to any question
+                res["note"] = _t(lang, "Add GEMINI_API_KEY (free) or ANTHROPIC_API_KEY to .env so the assistant can answer any question.",
+                                 ".env ma GEMINI_API_KEY (free) ke ANTHROPIC_API_KEY umero, to koi pan savaal no jawab malshe.")
             res["suggestions"] = SUGGESTIONS_GU if lang == "gu" else SUGGESTIONS_EN
     res.setdefault("suggestions", [])
     res.setdefault("table", None)

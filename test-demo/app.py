@@ -2265,7 +2265,8 @@ def _chat_context():
 def chat_endpoint():
     data = _json_body()
     try:
-        res = chat_assistant.answer(data.get("message"), _chat_context)
+        history = data.get("history") if isinstance(data.get("history"), list) else None
+        res = chat_assistant.answer(data.get("message"), _chat_context, history=history)
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
     return jsonify({"success": True, **res})

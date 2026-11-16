@@ -47,7 +47,7 @@ def ctx():
 
 class Assistant(unittest.TestCase):
     def ask(self, q):
-        with mock.patch.dict(os.environ, {"GEMINI_API_KEY": ""}):
+        with mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", "ANTHROPIC_API_KEY": "", "ANTHROPIC_AUTH_TOKEN": ""}):
             return ca.answer(q, ctx)
 
     def test_language_detection(self):
@@ -87,7 +87,7 @@ class Assistant(unittest.TestCase):
         def post(url, json=None, headers=None, timeout=None):
             captured["body"] = json
             return mock.Mock(status_code=200, json=lambda: {"candidates": [{"content": {"parts": [{"text": "Two leads today."}]}}]})
-        with mock.patch.dict(os.environ, {"GEMINI_API_KEY": "k"}):
+        with mock.patch.dict(os.environ, {"GEMINI_API_KEY": "k", "ANTHROPIC_API_KEY": "", "ANTHROPIC_AUTH_TOKEN": ""}):
             r = ca.answer("compare this week with last week please", ctx, gemini_post=post)
         self.assertEqual((r["engine"], r["reply"]), ("gemini", "Two leads today."))
         sent_text = captured["body"]["contents"][0]["parts"][0]["text"]
@@ -109,7 +109,7 @@ class WebsiteBot(unittest.TestCase):
         wb.message_limiter.hits.clear()
         wb.lead_limiter.hits.clear()
         self.saved = []
-        p = mock.patch.dict(os.environ, {"GEMINI_API_KEY": ""})
+        p = mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", "ANTHROPIC_API_KEY": "", "ANTHROPIC_AUTH_TOKEN": ""})
         p.start()
         self.addCleanup(p.stop)
 
@@ -184,7 +184,7 @@ class PublicRoutes(unittest.TestCase):
                   mock.patch.object(app_module, "load_settings", return_value=SETTINGS),
                   mock.patch.object(app_module.followup_store, "safe_log", lambda *a, **k: None),
                   mock.patch.object(app_module, "send_smtp_email", return_value={"success": True}),
-                  mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", "WIDGET_ALLOWED_ORIGINS": "https://sgi.in"})):
+                  mock.patch.dict(os.environ, {"GEMINI_API_KEY": "", "ANTHROPIC_API_KEY": "", "ANTHROPIC_AUTH_TOKEN": "", "WIDGET_ALLOWED_ORIGINS": "https://sgi.in"})):
             p.start()
             self.addCleanup(p.stop)
         self.client = app_module.app.test_client()

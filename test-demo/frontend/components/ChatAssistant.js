@@ -68,9 +68,11 @@ export default function ChatAssistant() {
     setMessages(prev => [...prev, { role: 'user', text: q }]);
     setBusy(true);
     try {
-      const res = await askAssistant(q);
+      // last few turns, so follow-ups like "only the ones with an e-mail" are understood
+      const history = messages.filter(m => !m.error).slice(-6).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', text: m.text }));
+      const res = await askAssistant(q, history);
       setMessages(prev => [...prev, {
-        role: 'bot', text: res.reply, table: res.table, suggestions: res.suggestions || [], engine: res.engine
+        role: 'bot', text: res.reply, table: res.table, suggestions: res.suggestions || [], engine: res.engine, note: res.note
       }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'bot', text: err.message || 'Could not get an answer. Is the backend running?', error: true }]);
@@ -113,6 +115,8 @@ export default function ChatAssistant() {
                   </div>
                 )}
                 {m.role === 'bot' && m.engine === 'gemini' && <div className="ca-note">Answered by Gemini AI from your data</div>}
+                {m.role === 'bot' && m.engine === 'claude' && <div className="ca-note">Answered by Claude AI from your data</div>}
+                {m.role === 'bot' && m.note && <div className="ca-note">{m.note}</div>}
               </div>
             ))}
             {busy && <div className="ca-msg ca-bot"><div className="ca-bubble ca-typing"><Loader2 size={14} className="animate-spin" /> Thinking…</div></div>}
