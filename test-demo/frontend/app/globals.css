@@ -3338,3 +3338,10 @@ main input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; flex-s
 .rt-post { flex: 1 1 280px; min-width: 0; }
 .rt-reply { flex: 1 1 360px; min-width: 0; }
 .rt-reply textarea { width: 100%; box-sizing: border-box; }
+
+/* ---- Sidebar menu sections (Today / Find Leads / Contacts / Insights / Tools) ---- */
+.theme-nav-block { display: flex; flex-direction: column; gap: 2px; }
+.theme-nav-block + .theme-nav-block { margin-top: 10px; }
+.theme-nav-heading { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); padding: 4px 12px 4px; }
+.theme-sidebar.collapsed .theme-nav-block + .theme-nav-block { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border-light); }
+.theme-sidebar-footer .theme-footer-brand-name { color: var(--text-primary); font-weight: 600; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
