@@ -75,6 +75,28 @@ PLACEHOLDER_EMAIL_LOCALS = {
     "you", "your", "yourname", "youremail", "your.name", "name", "email", "user",
     "username", "someone", "example", "test", "john.doe", "johndoe", "firstname.lastname",
 }
+# Top-level domains an address may end with: any 2-letter country code, or one of these. Page code and
+# text produce look-alikes such as "care@scale.throug", "queries@scale.the" or "core@2.11.8" (not addresses).
+VALID_LONG_TLDS = {
+    "com", "net", "org", "info", "biz", "edu", "gov", "mil", "int", "io", "ai", "app", "dev", "tech", "online", "site",
+    "store", "shop", "xyz", "pro", "agency", "studio", "solutions", "digital", "design", "media", "marketing", "group",
+    "global", "world", "company", "services", "consulting", "software", "systems", "network", "cloud", "email", "website",
+    "web", "page", "live", "life", "today", "news", "blog", "club", "health", "care", "clinic", "dental", "education",
+    "academy", "school", "university", "travel", "tours", "realty", "estate", "properties", "homes", "house", "build",
+    "construction", "finance", "capital", "money", "fund", "ventures", "partners", "legal", "law", "events", "photo",
+    "photography", "art", "fashion", "beauty", "fitness", "restaurant", "cafe", "food", "kitchen", "farm", "eco",
+    "energy", "solar", "auto", "cars", "works", "tools", "space", "center", "city", "land", "one", "plus", "team",
+    "zone", "link", "click", "ltd", "llc", "inc", "co", "asia", "africa", "london", "nyc", "berlin", "dubai", "bharat",
+    "mobi", "name", "tel", "jobs", "careers", "insure", "health", "vip", "fyi", "ninja", "rocks", "guru", "expert",
+    "codes", "technology", "engineering", "labs", "industries", "enterprises", "management", "support", "systems",
+}
+
+
+def has_valid_tld(email: str) -> bool:
+    tld = str(email or "").rsplit(".", 1)[-1].lower()
+    return tld.isalpha() and (len(tld) == 2 or tld in VALID_LONG_TLDS)
+
+
 PLACEHOLDER_EMAIL_DOMAINS = {
     "company.com", "yourcompany.com", "yourdomain.com", "mydomain.com", "example.org",
     "example.net", "email.com", "website.com", "yoursite.com", "mysite.com",
@@ -185,7 +207,7 @@ def normalize_email(email_str: Optional[str]) -> str:
             continue
         if len(parts) == 2 and (parts[0] in PLACEHOLDER_EMAIL_LOCALS or parts[1] in PLACEHOLDER_EMAIL_DOMAINS):
             continue
-        if email_regex.match(cand):
+        if email_regex.match(cand) and has_valid_tld(cand):
             valid_emails.add(cand)
 
     return ", ".join(sorted(valid_emails))

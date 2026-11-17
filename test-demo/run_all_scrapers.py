@@ -361,7 +361,10 @@ def acquire_run_lock() -> bool:
                     pid = int(f.read().strip())
             except Exception:
                 pass
-            if (pid and not _is_pid_alive(pid)) or (time.time() - mtime > 900):
+            # Free the lock when its process is gone. A live process keeps it (a full scrape takes 20+ minutes);
+            # only a lock older than 3 hours is treated as left behind.
+            alive = bool(pid) and _is_pid_alive(pid)
+            if (not alive and (pid or time.time() - mtime > 900)) or (time.time() - mtime > 3 * 3600):
                 try:
                     os.remove(LOCK_FILE)
                 except OSError:

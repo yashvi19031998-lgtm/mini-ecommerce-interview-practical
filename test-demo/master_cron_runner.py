@@ -19,7 +19,9 @@ Features:
 import os
 import sys
 import time
+import json
 import argparse
+import threading
 import subprocess
 import datetime
 from typing import Dict, Any, Optional
@@ -32,9 +34,127 @@ PYTHON_EXE = sys.executable or "python"
 
 # Default intervals (in seconds)
 INTERVAL_SCRAPER = int(os.getenv("INTERVAL_SCRAPER_SECONDS", 3600))        # 60 mins
-INTERVAL_FREELANCE = int(os.getenv("INTERVAL_FREELANCE_SECONDS", 1800))    # 30 mins
+INTERVAL_FREELANCE = int(os.getenv("INTERVAL_FREELANCE_SECONDS", 7200))    # 2 hours (Reddit blocks faster polling)
 INTERVAL_OUTREACH = int(os.getenv("INTERVAL_OUTREACH_SECONDS", 3600))      # 60 mins
 REPORT_HOUR = int(os.getenv("DAILY_REPORT_HOUR", 20))                      # 20:00 (8:00 PM)
+
+# A job that runs longer than this is stopped, so one hung scraper (e.g. a stuck browser) never blocks the rest.
+JOB_TIMEOUTS = {
+    "cron_job_scrapers.py": int(os.getenv("TIMEOUT_SCRAPER_SECONDS", 2700)),        # 45 min
+    "cron_job_freelance_scraper.py": int(os.getenv("TIMEOUT_FREELANCE_SECONDS", 1200)),
+    "cron_job_email_outreach.py": int(os.getenv("TIMEOUT_OUTREACH_SECONDS", 2400)),
+    "cron_job_daily_report.py": int(os.getenv("TIMEOUT_REPORT_SECONDS", 600)),
+}
+# Outreach e-mail only on these days / hours (local time): people read mail at work, night mail looks like spam.
+OUTREACH_DAYS = {int(d) for d in os.getenv("OUTREACH_DAYS", "0,1,2,3,4,5").split(",") if d.strip().isdigit()}  # Mon=0
+OUTREACH_HOURS = os.getenv("OUTREACH_HOURS", "10-19")                                                          # from-to
+LOG_DIR = os.path.join(BASE_DIR, "logs", "cron")
+STATUS_FILE = os.path.join(BASE_DIR, "logs", "cron_status.json")
+CHILD_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"}
+
+
+def _log_line(path: str, text: str) -> None:
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(text + "\n")
+    except OSError:
+        pass
+
+
+def sync_database(required: bool) -> bool:
+    """Pull the latest data (leads, sent-mail log) from the database before a job. False when it failed."""
+    try:
+        proc = subprocess.run([PYTHON_EXE, os.path.join(BASE_DIR, "datastore.py"), "sync"] + (["--required"] if required else []),
+                              cwd=BASE_DIR, env=CHILD_ENV, capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", timeout=300)
+        return proc.returncode == 0
+    except Exception:
+        return False
+
+
+def _hours():
+    try:
+        lo, hi = (int(x) for x in OUTREACH_HOURS.split("-")[:2])
+        return lo, hi
+    except ValueError:
+        return 10, 19
+
+
+def in_outreach_window(now: Optional[datetime.datetime] = None) -> bool:
+    now = now or datetime.datetime.now()
+    lo, hi = _hours()
+    return now.weekday() in OUTREACH_DAYS and lo <= now.hour < hi
+
+
+def next_outreach_window(now: Optional[datetime.datetime] = None) -> datetime.datetime:
+    now = now or datetime.datetime.now()
+    t = now.replace(minute=0, second=0, microsecond=0)
+    for _ in range(24 * 8):
+        t += datetime.timedelta(hours=1)
+        if in_outreach_window(t):
+            return t
+    return now + datetime.timedelta(hours=1)
+
+
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """Stop a job and everything it started (browsers, helper processes)."""
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True, timeout=30)
+        else:
+            proc.kill()
+    except Exception:
+        pass
+
+
+def run_logged(cmd: list, log_path: str, timeout: int) -> int:
+    """Runs a job, shows its output live and keeps it in log_path. Exit code; 124 = stopped at its time limit."""
+    _log_line(log_path, f"\n===== {datetime.datetime.now():%Y-%m-%d %H:%M:%S} START {os.path.basename(cmd[-1])}")
+    proc = subprocess.Popen(cmd, cwd=BASE_DIR, env=CHILD_ENV, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, encoding="utf-8", errors="replace", bufsize=1)
+
+    def pump():
+        for line in proc.stdout:
+            line = line.rstrip("\n")
+            try:
+                print(line, flush=True)
+            except UnicodeEncodeError:
+                print(line.encode("ascii", "replace").decode(), flush=True)
+            _log_line(log_path, line)
+
+    reader = threading.Thread(target=pump, daemon=True)
+    reader.start()
+    try:
+        code = proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        _kill_tree(proc)
+        code = 124
+        _log_line(log_path, f"[CRON] stopped after {timeout}s (time limit)")
+        print(f"[CRON] {os.path.basename(cmd[-1])} stopped after {timeout}s (time limit)")
+    reader.join(timeout=10)
+    _log_line(log_path, f"===== {datetime.datetime.now():%Y-%m-%d %H:%M:%S} END exit={code}")
+    return code
+
+
+_ALL_JOBS: list = []
+
+
+def write_status(jobs: list) -> None:
+    """logs/cron_status.json: what each job did last and when it runs next."""
+    try:
+        os.makedirs(os.path.dirname(STATUS_FILE), exist_ok=True)
+        data = {"updated_at": f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}", "pid": os.getpid(), "jobs": [
+            {"name": j.name, "script": j.script_name,
+             "last_run": f"{j.last_run:%Y-%m-%d %H:%M:%S}" if j.last_run else "",
+             "last_status": j.last_status, "last_duration_s": round(j.last_duration, 1),
+             "next_run": f"{j.next_run:%Y-%m-%d %H:%M:%S}"} for j in jobs]}
+        tmp = STATUS_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=1)
+        os.replace(tmp, STATUS_FILE)
+    except OSError:
+        pass
 
 
 class ScheduledJob:
@@ -83,23 +203,40 @@ class ScheduledJob:
         print("=" * 70)
 
         success = False
+        is_outreach = self.script_name == "cron_job_email_outreach.py"
+        log_path = os.path.join(LOG_DIR, f"{os.path.splitext(self.script_name)[0]}_{start_ts:%Y-%m-%d}.log")
+        if is_outreach and not in_outreach_window(start_ts):
+            self.last_status = "WAITING (outside office hours)"
+            self.next_run = next_outreach_window(start_ts)
+            print(f"[*] Outreach e-mail waits for office hours; next try {self.next_run:%Y-%m-%d %H:%M}")
+            write_status(_ALL_JOBS)
+            return False
         try:
-            # Execute script in isolated subprocess with live stdout
-            proc = subprocess.run([PYTHON_EXE, self.script_path], cwd=BASE_DIR, check=False)
-            self.last_duration = (datetime.datetime.now() - start_ts).total_seconds()
-            if proc.returncode == 0:
-                self.last_status = "SUCCESS"
-                success = True
-                print(f"\n[*] ✅ {self.name} completed successfully in {self.last_duration:.1f}s")
+            # Latest leads and sent-mail log first: otherwise a lead found elsewhere is added again, or a lead
+            # e-mailed from GitHub / the app gets a second mail. For outreach the sync is required.
+            if not sync_database(required=is_outreach) and is_outreach:
+                self.last_status = "SKIPPED (database sync failed - no mail sent)"
+                print("[!] Database sync failed - outreach skipped so nobody gets a second mail. Tried again next round.")
             else:
-                self.last_status = f"ERROR (exit code {proc.returncode})"
-                print(f"\n[!] ⚠️ {self.name} finished with error code: {proc.returncode}")
+                code = run_logged([PYTHON_EXE, self.script_path], log_path, JOB_TIMEOUTS.get(self.script_name, 3600))
+                self.last_duration = (datetime.datetime.now() - start_ts).total_seconds()
+                if code == 0:
+                    self.last_status = "SUCCESS"
+                    success = True
+                    print(f"\n[*] ✅ {self.name} completed successfully in {self.last_duration:.1f}s")
+                elif code == 124:
+                    self.last_status = "STOPPED (time limit)"
+                    print(f"\n[!] ⚠️ {self.name} was stopped at its time limit - see {log_path}")
+                else:
+                    self.last_status = f"ERROR (exit code {code})"
+                    print(f"\n[!] ⚠️ {self.name} finished with error code: {code} - see {log_path}")
         except Exception as e:
             self.last_duration = (datetime.datetime.now() - start_ts).total_seconds()
             self.last_status = f"FAILED: {e}"
             print(f"\n[!] ❌ Exception executing {self.name}: {e}")
 
         self.next_run = self.calculate_next_run(initial=False)
+        write_status(_ALL_JOBS)
         print(f"[*] Next run scheduled at: {self.next_run.strftime('%Y-%m-%d %H:%M:%S')}")
         print("=" * 70 + "\n")
         return success
@@ -162,6 +299,8 @@ def build_jobs(run_now: bool = False) -> list:
 
 
 def run_continuous_loop(jobs: list):
+    _ALL_JOBS[:] = jobs
+    write_status(jobs)
     print_banner(jobs)
     last_banner_time = time.time()
 
@@ -185,6 +324,9 @@ def run_continuous_loop(jobs: list):
             print("  🛑 Master Cron Engine stopped by user (Ctrl + C). Exiting cleanly.")
             print("█" * 70 + "\n")
             break
+        except Exception as e:  # the engine itself must keep running
+            print(f"[CRON] loop error: {e} - continuing in 30s")
+            time.sleep(30)
 
 
 def main():
@@ -209,6 +351,7 @@ def main():
 
     jobs = build_jobs(run_now=args.run_now)
 
+    _ALL_JOBS[:] = jobs
     if args.once:
         print("[*] Running all 4 jobs once (--once mode)...")
         for j in jobs:

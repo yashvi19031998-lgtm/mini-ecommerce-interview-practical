@@ -87,7 +87,7 @@ class TestWhatsAppImport(unittest.TestCase):
             temp_master = os.path.join(tmp_dir, "test_master.csv")
             candidate_leads = [{
                 "company_name": "CloudWorks",
-                "email": "contact@cloudworks.example",
+                "email": "contact@cloudworks.in",
                 "mobile_number": "+91 9876543210",
                 "description": "Needs AWS cloud architect",
                 "location": "Ahmedabad"
@@ -112,14 +112,14 @@ class TestWhatsAppImport(unittest.TestCase):
                 with open(temp_master, "r", encoding="utf-8-sig") as f:
                     content = f.read()
                     self.assertIn("CloudWorks", content)
-                    self.assertIn("contact@cloudworks.example", content)
+                    self.assertIn("contact@cloudworks.in", content)
 
     def test_commit_imported_leads_with_email_when_requested(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_master = os.path.join(tmp_dir, "test_master.csv")
             candidate_leads = [{
                 "company_name": "Alpha Devs",
-                "email": "team@alphadevs.example",
+                "email": "team@alphadevs.in",
                 "mobile_number": "+91 9123456780",
                 "description": "Hiring React frontend developer",
                 "location": "Mumbai"
@@ -139,7 +139,7 @@ class TestWhatsAppImport(unittest.TestCase):
                 self.assertEqual(result["emails_sent"], 1)
                 mock_smtp.assert_called_once()
                 args, kwargs = mock_smtp.call_args
-                self.assertEqual(args[0], "team@alphadevs.example")
+                self.assertEqual(args[0], "team@alphadevs.in")
                 # Subject and body must contain personalized info and signature
                 self.assertIn("Alpha Devs", args[1])
                 self.assertIn("Sangeeta Infotech", args[2])

@@ -42,7 +42,7 @@ class DispatchLimitTests(unittest.TestCase):
 
     def run_with(self, n_leads, result=None, **kw):
         reg = SimpleNamespace(leads=[lead(i) for i in range(1, n_leads + 1)])
-        def fake_send(to, sub, body, bypass_duplicate_check=False, company_name=""):
+        def fake_send(to, sub, body, bypass_duplicate_check=False, company_name="", **kwargs):  # verify= etc.
             self.calls.append(to)
             return result(to) if result else {"success": True}
         with mock.patch.object(runner, "send_smtp_email", side_effect=fake_send):

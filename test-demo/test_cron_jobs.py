@@ -95,8 +95,10 @@ class TestCronJobs(unittest.TestCase):
             interval_sec=3600,
             description="Test description"
         )
-        with mock.patch("master_cron_runner.subprocess.run") as mock_sub:
-            mock_sub.return_value = mock.MagicMock(returncode=0)
+        with mock.patch("master_cron_runner.in_outreach_window", return_value=True), \
+                mock.patch("master_cron_runner.sync_database", return_value=True), \
+                mock.patch("master_cron_runner.write_status"), \
+                mock.patch("master_cron_runner.run_logged", return_value=0):
             success = job.execute()
             self.assertTrue(success)
             self.assertEqual(job.last_status, "SUCCESS")

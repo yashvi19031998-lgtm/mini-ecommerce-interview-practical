@@ -1,14 +1,17 @@
 @echo off
-title SANGEETA INFOTECH — 4-IN-1 AUTONOMOUS MASTER CRON ENGINE
+chcp 65001 >nul
+title SANGEETA INFOTECH - 4-IN-1 AUTONOMOUS MASTER CRON ENGINE
 cd /d "%~dp0"
 cls
+rem In echo lines "&" and ">" must be written as "^&" and "^>", otherwise cmd runs / redirects them.
 echo ======================================================================
-echo   SANGEETA INFOTECH — AUTONOMOUS 4-IN-1 MASTER CRON ENGINE
+echo   SANGEETA INFOTECH - AUTONOMOUS 4-IN-1 MASTER CRON ENGINE
 echo ======================================================================
-echo   [1] Multi-Source Business Scraper  -> Runs Hourly
-echo   [2] AI Concept-Wise Email Outreach -> Runs Hourly & Updates DB
-echo   [3] Freelance & Project Scraper    -> Runs Every 30 Mins
-echo   [4] Daily Summary Report           -> Runs Nightly at 8:00 PM
+echo   [1] Multi-Source Business Scraper  -^> every hour
+echo   [2] Freelance ^& Project Scraper    -^> every 2 hours
+echo   [3] AI Email Outreach              -^> every hour, Mon-Sat 10:00-19:00 only
+echo   [4] Daily Summary Report           -^> every day at 20:00
+echo   Logs: logs\cron\   Status: logs\cron_status.json
 echo ======================================================================
 echo.
 
