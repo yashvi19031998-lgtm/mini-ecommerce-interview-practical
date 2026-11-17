@@ -8,7 +8,7 @@ import {
   ShoppingCart, Globe, MessageCircle, House, Network, Factory, Phone, Wrench, Ship, Store,
   Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Link2, TextSearch, ListTree,
   FolderUp, Gauge, CalendarClock, MailSearch, Sparkles, CheckSquare, Eraser, Wand2, BarChart3, Laptop,
-  MessageSquareReply, CalendarRange, Layers, Wrench as ToolsIcon
+  MessageSquareReply, CalendarRange, ListChecks, Layers, Wrench as ToolsIcon
 } from 'lucide-react';
 import { REPORT_SECTIONS } from './Reports';
 
@@ -81,7 +81,7 @@ export const UTILITY_ITEMS = [
 ];
 
 // Report pages pulled up into "Today" are left out of the Reports group so nothing shows twice.
-const TODAY_REPORTS = ['rp-reply-today', 'rp-daily-leads'];
+const TODAY_REPORTS = ['rp-lead-status', 'rp-reply-today', 'rp-daily-leads'];
 const withSection = (items, section) => items.map(i => ({ ...i, section }));
 
 /**
@@ -99,6 +99,7 @@ function buildMenu({ totalLeads, isScraperRunning }) {
       title: 'Today',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'rp-lead-status', label: 'Lead Status', icon: ListChecks },
         { id: 'rp-reply-today', label: 'Reply Today', icon: MessageSquareReply },
         { id: 'leads', label: 'All Leads', icon: Database, badge: totalLeads > 0 ? totalLeads.toLocaleString() : null },
         { id: 'followups', label: 'Follow-ups', icon: History },

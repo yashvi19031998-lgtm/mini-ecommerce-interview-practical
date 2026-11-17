@@ -15,7 +15,8 @@ import {
   Filter,
   UserPlus,
   MessageSquareReply,
-  CalendarRange
+  CalendarRange,
+  ListChecks
 } from 'lucide-react';
 import { UntouchedPanel } from './FollowUpHistory';
 import ReplyToday from './ReplyToday';
@@ -41,9 +42,11 @@ import OutreachTab from './reports/OutreachTab';
 import DataHealthTab from './reports/DataHealthTab';
 import DailyLogTab from './reports/DailyLogTab';
 import DailyLeadsTab from './reports/DailyLeadsTab';
+import LeadStatusTab from './reports/LeadStatusTab';
 
 // Report sections. Shown as the Reports submenu in the sidebar (Sidebar.js imports this list).
 export const REPORT_SECTIONS = [
+  { id: 'lead-status', label: 'Lead Status', icon: ListChecks, noFilters: true },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'daily-leads', label: 'Daily Leads & Mail', icon: CalendarRange },
   { id: 'reply-today', label: 'Reply Today', icon: MessageSquareReply, noFilters: true },
@@ -435,6 +438,7 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper, s
           />
         )}
 
+        {activeTab === 'lead-status' && <LeadStatusTab onNotice={(type, msg) => (type === 'error' ? setError(msg) : null)} />}
         {activeTab === 'daily-leads' && <DailyLeadsTab filters={filters} onNotice={(_, msg) => setError(msg)} />}
 
         {activeTab === 'reply-today' &&<ReplyToday onNotice={(_, msg) => setError(msg)} />}

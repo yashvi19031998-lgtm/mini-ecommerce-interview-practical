@@ -31,7 +31,7 @@ FIELDS = [
 ]
 
 # Types a user can log by hand, and types the system writes itself
-MANUAL_TYPES = {"call", "meeting", "note", "whatsapp", "email"}
+MANUAL_TYPES = {"call", "meeting", "note", "whatsapp", "email", "message"}  # message = reply on their post (Reddit, Freelancer...)
 # email_sent / status_change: written by the app. reply / bounce / opted_out: Gmail reply check
 # (reply_checker.py). sequence_stopped: follow-up sequence ended by hand.
 SYSTEM_TYPES = {"email_sent", "status_change", "reply", "bounce", "opted_out", "sequence_stopped"}

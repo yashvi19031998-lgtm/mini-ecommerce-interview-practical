@@ -2114,6 +2114,7 @@ def lead_care_enrichment_save():
 # REPORTS (reports_engine.py)
 import reports_engine
 import daily_leads_report
+import lead_status
 
 def _report_context():
     """Helper to load data files using BASE_DIR without writing anything."""
@@ -2210,6 +2211,50 @@ def report_daily_leads_list_endpoint():
         return jsonify({"success": True, **res})
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/lead-status", methods=["GET"])
+def report_lead_status_endpoint():
+    """How many leads are in each stage (Mail pending, Call / WhatsApp pending, Message pending, Replied...).
+    ?band=all|high|medium|low|unscored&source=&q="""
+    try:
+        leads, _, sent, acts = _report_context()
+        res = lead_status.summary(leads, sent, acts, band=request.args.get("band", "all"),
+                                  source=request.args.get("source", ""), q=request.args.get("q", "")[:100])
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/lead-status/list", methods=["GET"])
+def report_lead_status_list_endpoint():
+    """The leads in one stage with their e-mail / phone / WhatsApp / post link. ?stage=&band=&source=&q="""
+    try:
+        leads, _, sent, acts = _report_context()
+        res = lead_status.stage_list(leads, sent, acts, request.args.get("stage", ""),
+                                     band=request.args.get("band", "all"), source=request.args.get("source", ""),
+                                     q=request.args.get("q", "")[:100], limit=request.args.get("limit", 300, type=int))
+        return jsonify({"success": True, **res})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/reports/lead-status/done", methods=["POST"])
+def report_lead_status_done_endpoint():
+    """Log that you contacted a lead by hand. {lead_id, action: called|whatsapp|messaged|mailed, note?}"""
+    data = _json_body()
+    lead = _lead_info(data.get("lead_id"))
+    if not lead:
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+    action = str(data.get("action") or "").strip().lower()
+    if action not in lead_status.DONE_TYPES:
+        return jsonify({"success": False, "error": f"action must be one of: {', '.join(lead_status.DONE_TYPES)}"}), 400
+    a_type, summary_text = lead_status.DONE_TYPES[action]
+    note = str(data.get("note") or "").strip()[:200]
+    try:
+        activity = followup_store.add_activity(lead["id"], a_type, summary_text + (f" - {note}" if note else ""),
+                                               source="lead-status", lead_name=lead.get("name", ""),
+                                               lead_email=lead.get("email", ""))
+    except followup_store.FollowupError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "activity": activity})
 
 @app.route("/api/reports/outreach", methods=["GET"])
 def report_outreach_endpoint():

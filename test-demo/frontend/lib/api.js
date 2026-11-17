@@ -726,3 +726,21 @@ export async function fetchReportActivity(day) {
 export async function askAssistant(message, history = []) {
   return await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify({ message, history }) });
 }
+
+// Lead Status: what to do next for every lead (lead_status.py)
+const leadStatusQuery = ({ band = 'all', source = '', q = '' } = {}, extra = {}) =>
+  new URLSearchParams({ band, source, q, ...extra }).toString();
+
+export async function fetchLeadStatus(opts = {}) {
+  return await apiFetch(`/api/reports/lead-status?${leadStatusQuery(opts)}`);
+}
+
+export async function fetchLeadStatusList(stage, opts = {}) {
+  return await apiFetch(`/api/reports/lead-status/list?${leadStatusQuery(opts, { stage })}`);
+}
+
+export async function markLeadContacted(leadId, action, note = '') {
+  return await apiFetch('/api/reports/lead-status/done', {
+    method: 'POST', body: JSON.stringify({ lead_id: leadId, action, note })
+  });
+}
