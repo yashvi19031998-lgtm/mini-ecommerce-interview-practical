@@ -32,20 +32,16 @@ except ImportError:
 # 1. SCRAPER.PY ADAPTER (Dynamic Search Discovery & Deep Website Crawler)
 # ==============================================================================
 DYNAMIC_SEARCH_QUERIES = [
-    'software development company Ahmedabad',
-    'web development agency Gujarat',
-    'IT consulting services Ahmedabad',
-    'hire dedicated software developers Ahmedabad',
-    'custom software solutions Surat',
-    'mobile app development company Pune',
-    'looking for software development company India',
-    'need full stack development agency remote',
-    'Python AI machine learning development company India',
-    'React Node.js development agency Ahmedabad',
-    'Shopify ecommerce web development agency Gujarat',
-    'Laravel PHP software development company India',
-    'MVP development agency for startups remote',
-    'IT services and software company Vadodara'
+    'looking for software development agency US UK India',
+    'need custom web development company Mumbai Bangalore Delhi',
+    'hire dedicated React Python developers remote',
+    'looking for mobile app development agency Dubai USA',
+    'startup MVP software development agency remote',
+    'ecommerce web development company Australia Canada',
+    'need full stack development team remote',
+    'custom CRM portal developer company India',
+    'looking for Flutter mobile app developers',
+    'hire remote dedicated developers startup'
 ]
 
 def run_scraper_adapter() -> List[Dict[str, Any]]:
@@ -141,9 +137,13 @@ def run_lead_generation_master_adapter() -> List[Dict[str, Any]]:
     if getattr(lgm, "PLAYWRIGHT_AVAILABLE", False):
         try:
             jd_scraper = lgm.PlaywrightJustdialScraper(temp_store)
+            jd_queries = ["Real-Estate-Developers", "Logistics-Services", "Manufacturers", "Hospitals", "Exporters", "Builders"]
+            jd_locations = ["Mumbai", "Delhi", "Bengaluru", "Pune", "Hyderabad", "Ahmedabad", "Surat", "Jaipur", "Indore", "Chennai"]
+            sel_query = random.choice(jd_queries)
+            sel_loc = random.choice(jd_locations)
             jd_scraper.scrape(
-                search_query="Software-Developers",
-                location="Ahmedabad",
+                search_query=sel_query,
+                location=sel_loc,
                 max_results=8,
                 headless=True
             )
@@ -152,7 +152,7 @@ def run_lead_generation_master_adapter() -> List[Dict[str, Any]]:
                     "company_name": item.get("Business Name/Title"),
                     "source": item.get("Source"),
                     "lead_type": item.get("Category"),
-                    "location": item.get("City", "Ahmedabad"),
+                    "location": item.get("City", sel_loc),
                     "mobile_number": item.get("Phone"),
                     "email": item.get("Email"),
                     "website": item.get("Website"),
@@ -440,7 +440,16 @@ def run_ddgs_bulk_scraper_adapter() -> List[Dict[str, Any]]:
 # ==============================================================================
 # 7. B2B_PORTAL_SCRAPER.PY ADAPTER (IndiaMART / TradeIndia with Location Rotation)
 # ==============================================================================
-B2B_LOCATIONS = ["Ahmedabad", "Surat", "Pune", "Mumbai", "Bengaluru", "Vadodara", "Jaipur"]
+B2B_LOCATIONS = [
+    # Top Tier-1 Tech & Business Metros
+    "Mumbai", "Bengaluru", "Delhi NCR", "Hyderabad", "Pune", "Chennai", "Kolkata", "Gurgaon", "Noida",
+    # Gujarat Commercial & Industrial Centers
+    "Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar",
+    # Emerging High-Growth Indian Hubs
+    "Jaipur", "Chandigarh", "Indore", "Coimbatore", "Kochi", "Lucknow",
+    # Global Tech Outsourcing Markets
+    "United States", "United Kingdom", "Canada", "Australia", "Dubai UAE", "Remote Worldwide"
+]
 
 def run_b2b_portal_scraper_adapter() -> List[Dict[str, Any]]:
     """Runs B2B portal search with rotated locations and robust extraction."""
@@ -454,7 +463,7 @@ def run_b2b_portal_scraper_adapter() -> List[Dict[str, Any]]:
 
         with DDGS() as ddgs:
             for portal in ["IndiaMART", "TradeIndia"]:
-                query = f'site:{portal.lower()}.com "software development company" {loc}'
+                query = f'site:{portal.lower()}.com ("custom software" OR "web portal" OR "mobile app" OR "software development") {loc}'
                 try:
                     results = list(ddgs.text(query, max_results=4))
                     if results:
@@ -804,11 +813,12 @@ def run_crm_sources_adapter() -> List[Dict[str, Any]]:
     leads = []
     try:
         import crm_sources
+        sel_city = random.choice(["Mumbai", "Bengaluru", "Delhi", "Pune", "Hyderabad", "Ahmedabad", "Surat", "Jaipur", "Indore", "Chennai"])
         res = crm_sources.search(
-            keywords=['software development', 'web development'],
+            keywords=['custom software', 'web development', 'mobile app'],
             titles=['director', 'founder', 'ceo'],
-            state='Gujarat',
-            city='Ahmedabad',
+            state='',
+            city=sel_city,
             source_ids=['goodfirms']
         )
         results = res.get("results", []) if isinstance(res, dict) else []
@@ -859,15 +869,15 @@ def run_ecommerce_sources_adapter() -> List[Dict[str, Any]]:
 # 17. QUORA_SCRAPER ADAPTER (Buyer Intent & Tech Recommendations Harvester)
 # ==============================================================================
 QUORA_INTENT_QUERIES = [
-    'quora software development company Ahmedabad',
-    'quora web development company Gujarat',
-    'quora custom software development company India',
-    'quora hire python react developers Ahmedabad',
-    'quora mobile app development agency Gujarat',
-    'quora IT consulting services Ahmedabad',
-    'quora looking for software company India',
-    'quora top web development companies Surat',
-    'quora hire dedicated developers startup India'
+    'quora looking for software development company India US',
+    'quora best web development company Mumbai Bangalore',
+    'quora need custom software development company',
+    'quora hire python react developers remote',
+    'quora mobile app development agency India Dubai',
+    'quora hire dedicated developers startup',
+    'quora looking for software agency startup MVP',
+    'quora top web development companies India US',
+    'quora hire freelance software developers team'
 ]
 
 def run_quora_scraper_adapter() -> List[Dict[str, Any]]:
@@ -968,7 +978,10 @@ def run_quora_scraper_adapter() -> List[Dict[str, Any]]:
 # ==============================================================================
 # 18. YELLOWPAGES_SCRAPER ADAPTER (Indian Yellow Pages & B2B Directory)
 # ==============================================================================
-YELLOWPAGES_LOCATIONS = ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gujarat", "India"]
+YELLOWPAGES_LOCATIONS = [
+    "Mumbai", "Delhi", "Bengaluru", "Hyderabad", "Pune", "Chennai", "Kolkata",
+    "Ahmedabad", "Surat", "Vadodara", "Rajkot", "Jaipur", "Indore", "Chandigarh", "India"
+]
 
 def run_yellowpages_adapter() -> List[Dict[str, Any]]:
     """Harvests software & IT companies from Indian Yellow Pages directories."""
