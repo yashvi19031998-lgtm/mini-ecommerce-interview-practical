@@ -16,7 +16,8 @@ import {
   UserPlus,
   MessageSquareReply,
   CalendarRange,
-  ListChecks
+  ListChecks,
+  ClipboardList
 } from 'lucide-react';
 import { UntouchedPanel } from './FollowUpHistory';
 import ReplyToday from './ReplyToday';
@@ -43,26 +44,28 @@ import DataHealthTab from './reports/DataHealthTab';
 import DailyLogTab from './reports/DailyLogTab';
 import DailyLeadsTab from './reports/DailyLeadsTab';
 import LeadStatusTab from './reports/LeadStatusTab';
+import SummaryTab from './reports/SummaryTab';
 
 // Report sections. Shown as the Reports submenu in the sidebar (Sidebar.js imports this list).
 export const REPORT_SECTIONS = [
   { id: 'lead-status', label: 'Lead Status', icon: ListChecks, noFilters: true },
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'daily-leads', label: 'Leads & mail by day', icon: CalendarRange },
+  { id: 'summary', label: 'Summary', icon: ClipboardList, hint: 'What happened to your leads, by period, client type and source.', noFilters: true },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, hint: 'Key numbers against the previous period.' },
+  { id: 'daily-leads', label: 'Leads & mail by day', icon: CalendarRange, hint: 'Leads found and mails sent, day by day.' },
   { id: 'reply-today', label: 'Reply Today', icon: MessageSquareReply, noFilters: true },
   { id: 'not-contacted', label: 'New Leads - Not Contacted', icon: UserPlus, noFilters: true },
   { id: 'followups', label: 'Follow-up Watchlist', icon: BellRing },
-  { id: 'scrapers', label: 'Scrapers', icon: Cpu },
-  { id: 'sources', label: 'Sources', icon: Globe },
-  { id: 'pipeline', label: 'Pipeline', icon: TrendingUp },
-  { id: 'outreach', label: 'Outreach', icon: Send },
-  { id: 'data-health', label: 'Missing details', icon: ShieldAlert, noFilters: true },
-  { id: 'daily-log', label: 'Activity log', icon: Calendar, noFilters: true },
+  { id: 'scrapers', label: 'Scrapers', icon: Cpu, hint: 'How each lead finder ran.' },
+  { id: 'sources', label: 'Sources', icon: Globe, hint: 'Which sources bring good leads.' },
+  { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, hint: 'How many leads are at each outcome.' },
+  { id: 'outreach', label: 'Outreach', icon: Send, hint: 'Mails sent, replies and bounces.' },
+  { id: 'data-health', label: 'Missing details', icon: ShieldAlert, hint: 'Leads missing an e-mail, phone or website.', noFilters: true },
+  { id: 'daily-log', label: 'Activity log', icon: Calendar, hint: 'Everything that happened on one day.', noFilters: true },
 ];
 const TABS = REPORT_SECTIONS;
 
 // section / onSectionChange: when given (sidebar submenu), the sidebar picks the section and the tab bar is hidden.
-export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper, section = null, onSectionChange = null }) {
+export default function Reports({ onOpenLeads, onOpenLeadsFiltered = null, onOpenFollowups, onOpenScraper, section = null, onSectionChange = null }) {
   // Load saved active tab or default to 'overview'
   const [ownTab, setActiveTab] = useState(() => {
     try {
@@ -268,13 +271,11 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper, s
       {/* Page Title & Subtitle */}
       <div className="rp-page-header">
         <div className="rp-page-header-text">
-          <h1 className="rp-page-title">{section ? `Reports - ${current.label}` : 'Executive Reports & Analytics'}</h1>
-          <p className="rp-page-subtitle">
-            Lead generation pipeline health, scraper reliability, outreach performance, and follow-up tracking.
-          </p>
+          <h1 className="rp-page-title">{section ? current.label : 'Reports'}</h1>
+          <p className="rp-page-subtitle">{current.hint || 'Numbers about your leads, outreach and lead finders.'}</p>
         </div>
         <div className="rp-page-header-actions">
-          <button
+          {activeTab !== 'summary' && <button
             type="button"
             className="rp-btn rp-btn-secondary"
             onClick={() => loadActiveTabData(true)}
@@ -283,7 +284,7 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper, s
           >
             <RotateCw size={14} className={refreshing ? 'rp-spin' : ''} />
             <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -438,6 +439,7 @@ export default function Reports({ onOpenLeads, onOpenFollowups, onOpenScraper, s
           />
         )}
 
+        {activeTab === 'summary' && <SummaryTab onOpenLeads={onOpenLeadsFiltered} onNotice={(type, msg) => (type === 'error' ? setError(msg) : null)} />}
         {activeTab === 'lead-status' && <LeadStatusTab onNotice={(type, msg) => (type === 'error' ? setError(msg) : null)} />}
         {activeTab === 'daily-leads' && <DailyLeadsTab filters={filters} onNotice={(_, msg) => setError(msg)} />}
 

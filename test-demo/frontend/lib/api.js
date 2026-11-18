@@ -754,3 +754,12 @@ export async function fetchToday(perLane = 5) {
 export async function fetchPhoneKit(leadId, ai = true) {
   return await apiFetch(`/api/leads/${encodeURIComponent(leadId)}/phone-kit`, { method: 'POST', body: JSON.stringify({ ai }) });
 }
+
+// Reports > Summary (report_summary.py)
+export async function apiFetchReportOverview(filters = {}) {
+  const q = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString();
+  return await apiFetch(`/api/reports/overview${q ? `?${q}` : ''}`);
+}
+export async function apiFetchReportInsight(filters = {}) {
+  return await apiFetch('/api/reports/overview/insight', { method: 'POST', body: JSON.stringify(filters) });
+}

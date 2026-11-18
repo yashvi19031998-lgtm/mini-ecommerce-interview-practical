@@ -274,3 +274,67 @@
 .lp-script dl { margin: 0; }
 .lp-script dt { font-weight: 600; margin-top: 6px; }
 .lp-script dd { margin: 2px 0 0; color: var(--text-secondary); }
+
+/* ---------- Reports > Summary (components/reports/SummaryTab.js) ---------- */
+.sm { display: flex; flex-direction: column; gap: 1rem; font-variant-numeric: tabular-nums; }
+.sm-filters { display: flex; flex-direction: column; gap: 10px; background: var(--bg-white); border: 1px solid var(--border-light); border-radius: var(--radius-card); padding: 14px; }
+.sm-presets { flex-wrap: wrap; align-self: flex-start; }
+.sm-dates { display: flex; gap: 10px; flex-wrap: wrap; }
+.sm-dates input { height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--border-med); font: inherit; font-size: 13px; }
+.sm-filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.sm-actions { display: flex; gap: 6px; margin-left: auto; }
+.sm-body { display: flex; flex-direction: column; gap: 1rem; transition: opacity .2s; }
+.sm-body.is-loading { opacity: .55; }
+.sm-period { margin: 0; font-size: 13px; color: var(--text-muted); }
+.sm-card { background: var(--bg-white); border: 1px solid var(--border-light); border-radius: var(--radius-card); padding: 16px 18px; break-inside: avoid; }
+.sm-h { margin: 0 0 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+.sm-story-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.sm-points { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; line-height: 1.5; color: var(--text-primary); }
+.sm-ai { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--primary-blue-subtle); }
+.sm-ai-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--primary-blue); margin-bottom: 6px; }
+.sm-ai p { margin: 4px 0; font-size: 14px; line-height: 1.5; color: var(--text-primary); }
+.sm-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 1rem; }
+.sm-funnel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.sm-funnel-top { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; color: var(--text-secondary); }
+.sm-funnel-top strong { margin-left: auto; font-size: 16px; color: var(--text-primary); }
+.sm-funnel-top small { width: 40px; text-align: right; color: var(--text-muted); font-weight: 600; }
+.sm-funnel-bar { height: 10px; border-radius: 999px; background: var(--bg-subtle-2); margin-top: 4px; overflow: hidden; }
+.sm-funnel-bar span { display: block; height: 100%; border-radius: 4px; background: #2a78d6; }
+.sm-work { margin: 0 0 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sm-work div { padding: 10px 12px; border-radius: 12px; background: var(--bg-subtle); }
+.sm-work dt { font-size: 12.5px; color: var(--text-secondary); }
+.sm-work dd { margin: 2px 0 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--text-primary); }
+.sm-chart { position: relative; }
+.sm-legend { display: flex; gap: 16px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 10px; }
+.sm-legend i, .sm-tip i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.sm-plot { position: relative; display: flex; align-items: stretch; gap: 2px; height: 200px; padding-top: 16px; border-bottom: 1px solid var(--border-med); }
+.sm-ymax { position: absolute; top: 0; left: 0; font-size: 11px; color: var(--text-muted); }
+.sm-col { position: relative; flex: 1; min-width: 4px; display: flex; flex-direction: column; justify-content: flex-end; outline: none; }
+.sm-col.on, .sm-col:focus-visible { background: rgba(42, 120, 214, .06); border-radius: 4px; }
+.sm-bars { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
+.sm-bars span { width: 42%; max-width: 14px; border-radius: 4px 4px 0 0; min-height: 0; }
+.sm-x { position: absolute; bottom: -20px; left: 0; font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
+.sm-tip { position: absolute; bottom: 70%; left: 50%; z-index: 3; min-width: 140px; padding: 8px 10px; border-radius: 10px; background: var(--text-primary); color: #fff; font-size: 12px; display: flex; flex-direction: column; gap: 3px; pointer-events: none; box-shadow: 0 4px 12px rgba(0, 0, 0, .15); }
+.sm-tip.left { left: auto; right: 50%; }
+.sm-chart { padding-bottom: 22px; }
+.sm-empty { margin: 0; color: var(--text-muted); font-size: 13px; }
+.sm-table-wrap { overflow-x: auto; }
+.sm-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.sm-table th { text-align: right; font-size: 11.5px; font-weight: 700; color: var(--text-muted); padding: 8px 10px; border-bottom: 1px solid var(--border-light); white-space: nowrap; }
+.sm-table th:first-child, .sm-table td:first-child { text-align: left; }
+.sm-table td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--border-light); color: var(--text-primary); white-space: nowrap; }
+.sm-table td small { color: var(--text-muted); font-size: 11.5px; margin-left: 4px; }
+.sm-table tr:last-child td { border-bottom: 0; }
+.sm-link { border: 0; background: none; padding: 0; font: inherit; color: var(--primary-blue); cursor: pointer; font-weight: 600; }
+.sm-steps { display: flex; flex-wrap: wrap; gap: 8px; }
+.sm-step { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border-light); background: var(--bg-subtle); font: inherit; cursor: pointer; min-width: 130px; }
+.sm-step strong { font-size: 18px; color: var(--text-primary); }
+.sm-step span { font-size: 12.5px; color: var(--text-secondary); }
+.sm-step:hover { border-color: var(--primary-blue); }
+@media (max-width: 900px) { .sm-grid { grid-template-columns: 1fr; } .sm-actions { margin-left: 0; } }
+
+@media print {
+  .theme-sidebar, .theme-header, .sm-filters, .rp-page-header-actions, .ca-launcher, .ca-panel, .toast-container, .sm-story-head .btn { display: none !important; }
+  .theme-main-pane, .theme-scrollable-content, .theme-content-padding { margin: 0 !important; padding: 0 !important; overflow: visible !important; height: auto !important; }
+  .sm-card { border-color: #ccc; }
+}

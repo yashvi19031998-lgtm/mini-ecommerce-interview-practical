@@ -2217,6 +2217,33 @@ def report_daily_leads_list_endpoint():
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
 
+def _summary_filters(src):
+    return {k: (src.get(k) or "") for k in ("preset", "date_from", "date_to", "client_type", "band", "source")}
+
+
+@app.route("/api/reports/overview", methods=["GET"])
+def report_overview_endpoint():
+    """Reports > Summary: funnel, work done, by day / source / client type, highlights.
+    ?preset=today|7d|30d|90d|month|last_month|all or date_from/date_to, client_type, band, source"""
+    import report_summary
+    try:
+        leads, _, sent, acts = _report_context()
+        return jsonify({"success": True, **report_summary.build(leads, sent, acts, _summary_filters(request.args))})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/reports/overview/insight", methods=["POST"])
+def report_overview_insight_endpoint():
+    """AI analysis of the same report (numbers only). Falls back to the rule-based highlights."""
+    import report_summary
+    try:
+        leads, _, sent, acts = _report_context()
+        rep = report_summary.build(leads, sent, acts, _summary_filters(request.get_json(silent=True) or {}))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, **report_summary.insight(rep)})
+
 @app.route("/api/reports/lead-status", methods=["GET"])
 def report_lead_status_endpoint():
     """How many leads are in each stage (Mail pending, Call / WhatsApp pending, Message pending, Replied...).

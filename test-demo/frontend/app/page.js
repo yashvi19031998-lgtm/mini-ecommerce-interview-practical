@@ -400,7 +400,8 @@ function DashboardContent() {
             {/* Reports module */}
             {(activeTab === 'reports' || activeTab.startsWith('rp-')) && (
               <Reports
-                section={activeTab.startsWith('rp-') ? activeTab.slice(3) : 'overview'}
+                section={activeTab.startsWith('rp-') ? activeTab.slice(3) : 'summary'}
+                onOpenLeadsFiltered={openLeads}
                 onSectionChange={(id) => setActiveTab(`rp-${id}`)}
                 onOpenLeads={() => setActiveTab('leads')}
                 onOpenFollowups={() => setActiveTab('followups')}
