@@ -2506,7 +2506,7 @@ def widget_demo():
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)
-    print("SANGEETA INFOTECH - ALL-IN-ONE LEAD & OUTREACH HUB")
+    print("TEST-DEMO - ALL-IN-ONE LEAD & OUTREACH HUB")
     print(f">> URL: http://127.0.0.1:{port}  (bound to {BIND_HOST})")
     print("=" * 60 + "\n")
     # All data lives in the database (one table): load it now, then keep both sides in step every 2 minutes

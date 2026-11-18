@@ -1,5 +1,5 @@
 @echo off
-title Sangeeta Infotech - Lead & Outreach Hub
+title test-demo - Lead & Outreach Hub
 cd /d "%~dp0"
 echo ==============================================================
 echo   STARTING FULL SYSTEM (PYTHON BACKEND + NEXT.JS FRONTEND)

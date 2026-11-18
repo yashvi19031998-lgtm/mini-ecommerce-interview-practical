@@ -1,9 +1,9 @@
 @echo off
-title Sangeeta Infotech - Autonomous Lead Engine Scraper
+title test-demo - Autonomous Lead Engine Scraper
 cd /d "%~dp0"
 
 echo ==============================================================
-echo   SANGEETA INFOTECH - LEAD ENGINE & OUTREACH SYSTEM
+echo   TEST-DEMO - LEAD ENGINE & OUTREACH SYSTEM
 echo   - Scraping active target locations & keywords
 echo   - AI qualifying leads & verifying mailboxes
 echo   - Syncing to Supabase Cloud Database

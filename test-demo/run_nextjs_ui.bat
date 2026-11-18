@@ -1,5 +1,5 @@
 @echo off
-title Sangeeta Infotech - Next.js Lead & Outreach UI
+title test-demo - Next.js Lead & Outreach UI
 cd /d "%~dp0frontend"
 echo ==============================================================
 echo   STARTING NEXT.JS LEAD & OUTREACH HUB

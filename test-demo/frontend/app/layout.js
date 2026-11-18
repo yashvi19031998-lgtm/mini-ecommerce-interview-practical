@@ -2,7 +2,7 @@ import "./globals.css";
 import "./work.css";
 
 export const metadata = {
-  title: "LeadsGen AI — Autonomous B2B Prospecting & Intelligence Engine",
+  title: "test-demo",
   description: "AI-Powered B2B Lead Generation, Seniority-Fit Matching, Deal Size Intelligence, and Autonomous Multi-Channel Outreach.",
 };
 

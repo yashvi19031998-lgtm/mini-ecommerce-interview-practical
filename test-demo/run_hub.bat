@@ -1,8 +1,8 @@
 @echo off
-title Sangeeta Infotech - Lead and Outreach Hub
+title test-demo - Lead and Outreach Hub
 cd /d "%~dp0"
 echo ==============================================================
-echo   STARTING SANGEETA INFOTECH LEAD & OUTREACH HUB
+echo   STARTING TEST-DEMO LEAD & OUTREACH HUB
 echo   Opening: http://127.0.0.1:5000 (Ultra Fast Local Mode)
 echo ==============================================================
 REM Legacy Flask UI has no login screen, so auth is turned off here.

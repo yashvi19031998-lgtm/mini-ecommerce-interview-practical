@@ -245,7 +245,7 @@ class ScheduledJob:
 def print_banner(jobs: list):
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print("\n" + "█" * 70)
-    print("  SANGEETA INFOTECH — AUTONOMOUS 4-IN-1 MASTER CRON ENGINE")
+    print("  TEST-DEMO — AUTONOMOUS 4-IN-1 MASTER CRON ENGINE")
     print(f"  Live Status: 🟢 ACTIVE | Current Time: {now_str}")
     print("█" * 70)
     print("  Active Scheduled Jobs:")

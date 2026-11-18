@@ -196,7 +196,7 @@ def export_outreach_html_report(output_file: str = "hot_leads_outreach.html"):
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Sangeeta Infotech - Hot Leads Outreach Hub</title>
+<title>test-demo - Hot Leads Outreach Hub</title>
 <style>
   body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 24px; }}
   .container {{ max-width: 1200px; margin: 0 auto; }}
