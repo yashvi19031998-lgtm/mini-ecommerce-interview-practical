@@ -27,3 +27,8 @@ company_settings.json
 followup_templates.json
 .datastore/
 *.sync.tmp
+# Local run logs: they hold lead e-mails, phone numbers and mail texts - never push them (public repo)
+logs/cron/
+logs/daily_reports/
+logs/*.before_test_cleanup.csv
+testing_cron.txt
