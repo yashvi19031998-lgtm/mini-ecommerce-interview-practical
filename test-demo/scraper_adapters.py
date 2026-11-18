@@ -544,8 +544,15 @@ def run_linkedin_scraper_adapter() -> List[Dict[str, Any]]:
     try:
         import linkedin_scraper as ls
 
+        linkedin_queries = [
+            'site:linkedin.com/posts ("looking for full stack developer" OR "hiring React developer" OR "need mobile app developer" OR "looking for developer team")',
+            'site:linkedin.com/posts ("need a website" OR "need custom software" OR "looking for Python developer" OR "looking for Flutter developer")',
+            f'site:linkedin.com/in ("Founder" OR "CEO" OR "Co-founder") ("Fintech" OR "E-commerce" OR "Healthcare" OR "Logistics" OR "Startup") {loc}',
+            f'site:linkedin.com/company ("Real Estate" OR "Logistics" OR "Manufacturing" OR "Hospital" OR "Retail") {loc}',
+        ]
+        query = random.choice(linkedin_queries)
+
         with DDGS() as ddgs:
-            query = f'site:linkedin.com/company "software company" {loc}'
             try:
                 results = list(ddgs.text(query, max_results=5))
                 if results:
@@ -649,8 +656,21 @@ def run_google_maps_scraper_adapter() -> List[Dict[str, Any]]:
     try:
         import google_maps_scraper
         loc = random.choice(B2B_LOCATIONS)
+        client_industries = [
+            "Real Estate Developers",
+            "Logistics and Transport Company",
+            "Manufacturing Company",
+            "Hospital and Healthcare Center",
+            "Textile Manufacturer and Exporter",
+            "Jewelry and Diamond Exporters",
+            "E-commerce Business",
+            "Financial Advisory and Wealth Management",
+            "Solar Energy Company",
+            "Architecture and Interior Design Firm",
+        ]
+        target_industry = random.choice(client_industries)
         live_results = google_maps_scraper.scrape_google_maps(
-            search_query="Software Development Company",
+            search_query=target_industry,
             location=loc,
             max_results=8,
             headless=True

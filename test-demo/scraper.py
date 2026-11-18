@@ -74,16 +74,16 @@ except Exception:
     _live_settings = {}
 
 SEARCH_QUERIES = _live_settings.get("default_keywords") or [
-    'software development company',
-    'web development company',
-    'IT services and software company',
-    'mobile app development company',
-    'hire software development company',
-    'custom software solutions',
     'looking for software development company',
-    'need web development services',
-    'IT consulting company',
-    'software development agency',
+    'need web development agency',
+    'hire dedicated developers for project',
+    'looking for mobile app development company',
+    'need custom software developer',
+    'looking for React Python developer team',
+    'want to build a web portal',
+    'hire dedicated software developers',
+    'custom CRM software developer needed',
+    'ecommerce store developer needed',
 ]
 
 TARGET_CITIES = _live_settings.get("target_cities") or [
