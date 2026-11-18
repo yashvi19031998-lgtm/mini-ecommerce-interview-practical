@@ -763,3 +763,8 @@ export async function apiFetchReportOverview(filters = {}) {
 export async function apiFetchReportInsight(filters = {}) {
   return await apiFetch('/api/reports/overview/insight', { method: 'POST', body: JSON.stringify(filters) });
 }
+
+// Assistant: thumbs up / down on an answer (assistant_knowledge.rate)
+export async function rateAssistantAnswer(question, answer, helpful) {
+  return await apiFetch('/api/chat/feedback', { method: 'POST', body: JSON.stringify({ question, answer, helpful }) });
+}

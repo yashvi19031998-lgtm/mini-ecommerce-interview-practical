@@ -21,10 +21,10 @@ from typing import Any, Callable, Dict, List, Optional
 MAX_MESSAGE = 500
 MAX_ROWS = 25
 
-SUGGESTIONS_EN = ["How many new leads today?", "Hot leads this week", "Emails sent today",
-                  "Which scraper works best?", "Leads in Ahmedabad without a website", "Follow-ups due"]
-SUGGESTIONS_GU = ["Aaje ketla nava leads?", "Aa week na hot leads", "Aaje ketla mail gaya?",
-                  "Kayo scraper saro che?", "Ahmedabad na website vagar na leads", "Follow-up baki"]
+SUGGESTIONS_EN = ["What should I do today?", "How does the mail flow work?", "Report for this month",
+                  "Show mailed leads I have not called", "What happened yesterday?", "Hot leads this week"]
+SUGGESTIONS_GU = ["Aaje shu karu?", "Mail flow kevi rite chale che?", "Aa mahina no report",
+                  "Mail gayo pan call nathi thayo te leads batav", "Gai kale shu thayu?", "Aa week na hot leads"]
 
 _GUJLISH = re.compile(r"\b(ketla|ketlu|ketli|aaje|aje|kale|gaikale|kaya|kayo|kai|kon|batav\w*|che|chhe|nathi|"
                       r"vagar|vina|ma|na|ni|nu|mahine|athvadiya|aa week|baki|shodh\w*|malya|gaya|aavya)\b", re.I)
@@ -159,6 +159,12 @@ def _rules_answer(msg: str, ctx: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     p = _period(msg)
     when = p["label_gu"] if lang == "gu" else p["label_en"]
     m = msg.lower()
+
+    import datetime
+    import chat_rules_extra
+    extra = chat_rules_extra.answer(msg, {**ctx, "today": ctx.get("today") or datetime.date.today().isoformat()}, lang)
+    if extra is not None:
+        return extra
 
     if intent == "help":
         return {"reply": _t(lang,
@@ -391,6 +397,9 @@ def answer(message: Any, load_context: Callable[[], Dict[str, Any]], gemini_post
     except Exception as e:  # noqa: BLE001 - fall back to the rules, and say why
         ai_error = str(e)[:200]
     res = _rules_answer(msg, ctx)
+    if res is None:  # "how does X work" from the built-in guide
+        import chat_rules_extra
+        res = chat_rules_extra.guide(msg)
     if res is not None and ai_error:
         res["note"] = f"AI not available ({ai_error}) - quick answer from the built-in rules."
     if res is not None:

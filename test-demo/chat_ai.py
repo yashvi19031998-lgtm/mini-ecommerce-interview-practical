@@ -31,7 +31,19 @@ Rules:
   letters ("Aaje ketla leads aavya?" -> answer in that style). Be short: a direct answer first, then at most a
   few lines. Do not paste long lists - the app shows the rows of the last find_leads call as a table.
 - Plain text only: no markdown (no **, #, tables); a short numbered list is fine.
-- Score bands: high 7-10, medium 4-6, low 0-3. "Pending" = has an e-mail but no mail sent yet."""
+- Score bands: hot 7-10, warm 4-6, cold 0-3. "Pending" = has an e-mail but no mail sent yet.
+- Pick the right tool: "what should I do / aaje shu karu" -> today_todo; leads waiting for a call, reply,
+  follow-up etc. -> leads_by_next_step; a report, numbers for a period, how a source or client type performs ->
+  report; anything about the mail flow, limits, when mails go, the queue -> mail_flow; "what happened on <date>"
+  -> day_log; "how does X work / why / where do I find" -> how_it_works. Combine tools when the question needs it,
+  and give a short analysis with a clear recommendation, not only numbers.
+- Turn dates in any form ("10 nov", "10/11", "last Monday", "from 1st to 15th") into YYYY-MM-DD yourself.
+- When the owner says "remember ..." / "yaad rakh ..." call remember. Follow every taught fact below.
+
+How the system works:
+{knowledge}
+
+{examples}"""
 
 # ------------------------------------------------------------------ data helpers
 
@@ -293,6 +305,8 @@ TOOLS = [
      "description": "Totals of the whole system: leads, e-mail coverage, mail status, score bands, mails sent, settings.",
      "schema": _schema({})},
 ]
+from chat_tools_extra import EXTRA_TOOLS  # noqa: E402 - today, next steps, report, mail flow, day log, guide, memory
+TOOLS = TOOLS + EXTRA_TOOLS
 _BY_NAME = {t["name"]: t for t in TOOLS}
 
 
@@ -309,7 +323,7 @@ def run_tool(name, args, ctx):
 def _table_rows(name, out):
     if not isinstance(out, dict):
         return None
-    if name == "find_leads" and out.get("rows"):
+    if name in ("find_leads", "leads_by_next_step") and out.get("rows"):
         return out["rows"]
     if name == "get_lead" and out.get("_row"):
         return [out["_row"]]
@@ -335,7 +349,9 @@ def _table(rows):
 
 
 def _system(ctx):
-    return SYSTEM.replace("{today}", ctx["today"])
+    import assistant_knowledge as kb
+    return (SYSTEM.replace("{today}", ctx["today"]).replace("{knowledge}", kb.summary_for_prompt())
+            .replace("{examples}", kb.examples_for_prompt()))
 
 
 # ------------------------------------------------------------------ engines
@@ -395,7 +411,8 @@ def ask_claude(question, ctx, history=None, client=None):
 
 def _gemini_schema(schema):
     """Gemini function declarations take an OpenAPI-style subset: no empty 'required', no enums on non-strings."""
-    props = {k: {kk: vv for kk, vv in v.items()} for k, v in schema.get("properties", {}).items()}
+    props = {k: {kk: ([x for x in vv if x != ""] if kk == "enum" else vv) for kk, vv in v.items()}  # no empty enum values
+             for k, v in schema.get("properties", {}).items()}
     out = {"type": "object", "properties": props}
     if schema.get("required"):
         out["required"] = schema["required"]

@@ -4,15 +4,15 @@
 // Answers come from /api/chat (chat_assistant.py) - read-only questions about leads, e-mails, scrapers.
 
 import React, { useEffect, useRef, useState } from 'react';
-import { MessageCircle, X, Send, Loader2, Bot } from 'lucide-react';
-import { askAssistant } from '../lib/api';
+import { MessageCircle, X, Send, Loader2, Bot, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { askAssistant, rateAssistantAnswer } from '../lib/api';
 
 const STARTERS = [
-  'Aaje ketla nava leads?',
-  'Aaje ketla mail gaya?',
-  'Kayo scraper saro che?',
-  'Ahmedabad na website vagar na leads',
-  'Follow-up baki',
+  'Aaje shu karu?',
+  'Mail flow kevi rite chale che?',
+  'Aa mahina no report',
+  'Mail gayo pan call nathi thayo te leads batav',
+  'Gai kale shu thayu?',
   'Hot leads this week'
 ];
 
@@ -72,13 +72,20 @@ export default function ChatAssistant() {
       const history = messages.filter(m => !m.error).slice(-6).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', text: m.text }));
       const res = await askAssistant(q, history);
       setMessages(prev => [...prev, {
-        role: 'bot', text: res.reply, table: res.table, suggestions: res.suggestions || [], engine: res.engine, note: res.note
+        role: 'bot', question: q, text: res.reply, table: res.table, suggestions: res.suggestions || [], engine: res.engine, note: res.note
       }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'bot', text: err.message || 'Could not get an answer. Is the backend running?', error: true }]);
     } finally {
       setBusy(false);
     }
+  };
+
+  // Rating teaches the assistant: helpful answers are reused as examples, unhelpful ones get more effort
+  const rate = async (i, helpful) => {
+    const m = messages[i];
+    setMessages(prev => prev.map((x, n) => (n === i ? { ...x, rated: helpful ? 'up' : 'down' } : x)));
+    try { await rateAssistantAnswer(m.question, m.text, helpful); } catch { /* rating is optional */ }
   };
 
   return (
@@ -99,7 +106,8 @@ export default function ChatAssistant() {
           <div className="ca-list" ref={listRef} aria-live="polite">
             {messages.length === 0 && (
               <div className="ca-intro">
-                <p>Puchho tamara leads, mail, follow-up ane scrapers vishe — English, Gujarati ke Gujlish ma.</p>
+                <p>Puchho kai pan: aaje shu karvanu, mail flow, koi pan date no report, ek lead ni vigat, system kevi rite chale che — English, Gujarati ke Gujlish ma.</p>
+                <p className="ca-tip">Shikhvado: “yaad rakh: …” lakho, te pachhi dar javab ma dhyan rakhshe.</p>
                 <div className="ca-chips">
                   {STARTERS.map(s => <button key={s} type="button" className="ca-chip" onClick={() => ask(s)}>{s}</button>)}
                 </div>
@@ -117,6 +125,16 @@ export default function ChatAssistant() {
                 {m.role === 'bot' && m.engine === 'gemini' && <div className="ca-note">Answered by Gemini AI from your data</div>}
                 {m.role === 'bot' && m.engine === 'claude' && <div className="ca-note">Answered by Claude AI from your data</div>}
                 {m.role === 'bot' && m.note && <div className="ca-note">{m.note}</div>}
+                {m.role === 'bot' && !m.error && m.question && (
+                  <div className="ca-rate">
+                    {m.rated ? <span>{m.rated === 'up' ? 'Thanks - I will answer like this again.' : 'Noted - I will try harder on this question.'}</span> : (
+                      <>
+                        <button type="button" onClick={() => rate(i, true)} aria-label="Helpful answer" title="Helpful"><ThumbsUp size={13} /></button>
+                        <button type="button" onClick={() => rate(i, false)} aria-label="Not helpful" title="Not helpful"><ThumbsDown size={13} /></button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
             {busy && <div className="ca-msg ca-bot"><div className="ca-bubble ca-typing"><Loader2 size={14} className="animate-spin" /> Thinking…</div></div>}

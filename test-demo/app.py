@@ -2382,6 +2382,19 @@ def chat_endpoint():
     return jsonify({"success": True, **res})
 
 
+@app.route("/api/chat/feedback", methods=["POST"])
+def chat_feedback_endpoint():
+    """Thumbs up / down on an answer. Helpful answers become examples for the assistant; unhelpful ones are
+    flagged so it tries harder on that question next time. {question, answer, helpful}"""
+    import assistant_knowledge
+    data = _json_body()
+    try:
+        n = assistant_knowledge.rate(data.get("question"), data.get("answer"), bool(data.get("helpful")))
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "examples": n})
+
+
 # ==============================================================================
 # WEBSITE CHATBOT (website_chatbot.py) - PUBLIC: no login. Lives outside /api/ on purpose
 # (the login guard covers /api/ only); protected by an origin allow-list, size limits and rate limits.
