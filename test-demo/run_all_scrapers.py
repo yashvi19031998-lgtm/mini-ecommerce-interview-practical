@@ -349,15 +349,16 @@ def _is_pid_alive(pid: int) -> bool:
             return False
 
 
-def run_lock_active() -> bool:
+def run_lock_active(lock_file: str = None) -> bool:
     """True while a scraper run really holds the lock: the file exists, its process is alive and it is
     younger than 3 hours. A lock left by a crashed run does not count."""
-    if not os.path.exists(LOCK_FILE):
+    lock_file = lock_file or LOCK_FILE
+    if not os.path.exists(lock_file):
         return False
     try:
-        mtime = os.path.getmtime(LOCK_FILE)
+        mtime = os.path.getmtime(lock_file)
         try:
-            with open(LOCK_FILE, "r") as f:
+            with open(lock_file, "r") as f:
                 pid = int(f.read().strip())
         except Exception:
             pid = 0

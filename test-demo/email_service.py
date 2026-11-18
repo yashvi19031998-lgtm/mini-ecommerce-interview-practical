@@ -32,6 +32,81 @@ def get_already_sent_emails() -> set:
         print(f"[WARN] Failed to read {SENT_LOG_FILE}: {e}")
     return sent
 
+# ---------------------------------------------------------------------------------------------
+# Who must never get an outreach mail
+# ---------------------------------------------------------------------------------------------
+# Free mail providers: different addresses there are different people, so the one-mail-per-company rule
+# does not apply to them.
+FREE_MAIL = {
+    "gmail.com", "googlemail.com", "yahoo.com", "yahoo.in", "yahoo.co.in", "ymail.com", "outlook.com", "hotmail.com",
+    "live.com", "msn.com", "icloud.com", "me.com", "aol.com", "proton.me", "protonmail.com", "rediffmail.com",
+    "zoho.com", "zohomail.in", "gmx.com", "mail.com", "yandex.com",
+}
+# Second-level suffixes: "acme.co.in" is the company, not "co.in"
+_SUFFIX2 = {"co.in", "org.in", "net.in", "firm.in", "gen.in", "ind.in", "ac.in", "edu.in", "gov.in", "nic.in",
+            "co.uk", "org.uk", "ac.uk", "com.au", "net.au", "org.au", "co.nz", "com.sg", "com.br", "co.za", "com.my"}
+# Addresses that never buy software: complaints, legal, privacy, robots, press
+ROLE_BLOCK = re.compile(
+    r"^(grievance|grievances|grievanceofficer|privacy|privacy[-._]?officer|dpo|dmca|abuse|legal|law|security|"
+    r"compliance|no[-._]?reply|donotreply|do[-._]?not[-._]?reply|noreply\d*|mailer[-._]?daemon|postmaster|"
+    r"webmaster|hostmaster|unsubscribe|press|media|pr|newsroom|affiliate|affiliates|warranty|escalation|"
+    r"escalations|nodal|nodal[-._]?officer|investor|investors|ir|bounce|bounces)([-._].*)?$")
+_LOCAL_OK = re.compile(r"^[a-z0-9][a-z0-9._%+-]*$")
+
+
+def company_domain(email: str) -> str:
+    """The company part of an address: info@mail.acme.co.in -> acme.co.in. Empty for free mail."""
+    dom = str(email or "").strip().lower().rsplit("@", 1)[-1].strip(".")
+    if not dom or dom in FREE_MAIL:
+        return ""
+    parts = dom.split(".")
+    keep = 3 if ".".join(parts[-2:]) in _SUFFIX2 and len(parts) >= 3 else 2
+    base = ".".join(parts[-keep:])
+    return "" if base in FREE_MAIL else base
+
+
+def outreach_block_reason(email: str, already_sent: set) -> str:
+    """Why an automatic / bulk outreach mail must not go to this address ('' = it may go)."""
+    email = str(email or "").strip().lower()
+    local = email.split("@", 1)[0]
+    if not _LOCAL_OK.match(local):
+        return "the address looks broken"
+    if ROLE_BLOCK.match(local):
+        return f"'{local}@' is a complaints / legal / no-reply style address, not a buyer"
+    dom = company_domain(email)
+    if dom:
+        for sent in already_sent:
+            if sent != email and company_domain(sent) == dom:
+                return f"this company ({dom}) already got a mail at {sent.split('@')[0]}@ - one mail per company"
+    return ""
+
+
+def refresh_sent_from_db() -> dict:
+    """Adds addresses mailed from another machine (GitHub Actions) to the local sent log, so the duplicate and
+    one-per-company checks see them. {'ok': bool, 'added': int, 'error': str}. ok is True when the database is
+    not set up at all (nothing to check against)."""
+    try:
+        import datastore
+        if not datastore.configured():
+            return {"ok": True, "added": 0, "error": ""}
+        remote = datastore.remote_sent_addresses()
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "added": 0, "error": str(e)[:200]}
+    local = get_already_sent_emails()
+    missing = sorted(remote - local)
+    if missing:
+        ensure_sent_log_exists()
+        with open(SENT_LOG_FILE, mode="a", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            for em in missing:
+                writer.writerow([em, remote_note_time(), "(sent elsewhere - from the database)"])
+    return {"ok": True, "added": len(missing), "error": ""}
+
+
+def remote_note_time() -> str:
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
 def record_email_sent(email: str, subject: str = ""):
     """Permanently appends an email to the sent log so it can NEVER be emailed again."""
     ensure_sent_log_exists()
@@ -109,6 +184,24 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
     if not to_email or "@" not in to_email:
         return {"success": False, "error": f"Invalid recipient email: {to_email}"}
 
+    # STRICT DUPLICATE SHIELD: Under no circumstances allow sending to the same email twice!
+    if not bypass_duplicate_check:
+        already_sent = get_already_sent_emails()
+        # One outreach mail per company, and never to complaints / legal / no-reply addresses: several mails
+        # to one company's inboxes get the sender reported and blocked.
+        block = outreach_block_reason(clean_email, already_sent) if clean_email not in already_sent else ""
+        if block:
+            print(f"       [COMPANY / ROLE BLOCKED] {clean_email}: {block}")
+            return {"success": False, "error": f"Not sent: {block}.", "already_sent": "one mail per company" in block,
+                    "blocked": True}
+        if clean_email in already_sent:
+            print(f"       [DUPLICATE BLOCKED] {clean_email} has ALREADY received an outreach email! Sending BLOCKED.")
+            return {
+                "success": False,
+                "error": f"Email '{clean_email}' has already received an outreach email. Duplicate blocked.",
+                "already_sent": True
+            }
+
     # MAILBOX CHECK: never send to an address the receiving server says does not exist
     if verify:
         try:
@@ -127,17 +220,6 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
                 "invalid": verdict == INVALID,
             }
 
-
-    # STRICT DUPLICATE SHIELD: Under no circumstances allow sending to the same email twice!
-    if not bypass_duplicate_check:
-        already_sent = get_already_sent_emails()
-        if clean_email in already_sent:
-            print(f"       [DUPLICATE BLOCKED] {clean_email} has ALREADY received an outreach email! Sending BLOCKED.")
-            return {
-                "success": False,
-                "error": f"Email '{clean_email}' has already received an outreach email. Duplicate blocked.",
-                "already_sent": True
-            }
 
     try:
         msg = MIMEMultipart("alternative")

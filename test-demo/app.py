@@ -284,6 +284,19 @@ def patch_lead_status(lead_id):
                                 lead_email=lead.get("email", ""))
     return jsonify({"success": True})
 
+def _sent_log_fresh():
+    """None when the local sent log now includes every mail sent elsewhere (GitHub); else an error response.
+    Skipped in tests (no database calls from the test suite)."""
+    if app.config.get("TESTING"):
+        return None
+    import email_service
+    res = email_service.refresh_sent_from_db()
+    if res["ok"]:
+        return None
+    return jsonify({"success": False, "error": "Could not check the database for mails already sent from GitHub, "
+                                              f"so nothing was sent (no double mails). Try again in a minute. ({res['error']})"}), 503
+
+
 @app.route("/api/leads/send-email", methods=["POST"])
 def send_single_lead_email():
     data = _json_body()
@@ -296,6 +309,9 @@ def send_single_lead_email():
         return jsonify({"success": False, "error": "to, subject, and message required"}), 400
     if not all(isinstance(v, str) for v in (to_email, subject, message)):
         return jsonify({"success": False, "error": "to, subject, and message must be text"}), 400
+    stale = _sent_log_fresh()
+    if stale:
+        return stale
 
     # User manually clicked Send in UI: allow manual test/send with bypass_duplicate_check=True.
     # The do-not-contact list is never bypassed: the lead's company name goes to the shield too.
@@ -355,6 +371,9 @@ def send_bulk_leads_email():
         return jsonify({"success": False, "error": "lead_ids must be a list; subject and message must be text"}), 400
     if len(lead_ids) > MAX_BULK_EMAILS:
         return jsonify({"success": False, "error": f"Send to at most {MAX_BULK_EMAILS} leads at a time."}), 400
+    stale = _sent_log_fresh()
+    if stale:
+        return stale
 
     with _bulk_lock:
         running = [j for j in _bulk_jobs.values() if not j["done"]]
@@ -728,7 +747,7 @@ def trigger_scheduler_run():
     # by a crashed run (its process is gone) does not block a new run.
     try:
         from run_all_scrapers import run_lock_active
-        locked = run_lock_active()
+        locked = run_lock_active(os.path.join(BASE_DIR, ".scraper_runner.lock"))
     except Exception:
         locked = os.path.exists(os.path.join(BASE_DIR, ".scraper_runner.lock"))
     if locked or (_scheduler_thread is not None and _scheduler_thread.is_alive()):
@@ -832,6 +851,10 @@ def import_commit():
         if not leads:
             return jsonify({"success": False, "error": "The selected leads are not valid records."}), 400
 
+        if send_outreach_email:
+            stale = _sent_log_fresh()
+            if stale:
+                return stale
         result = lead_importer.commit_imported_leads(
             leads_to_commit=leads,
             send_outreach_email=send_outreach_email,
@@ -1177,6 +1200,9 @@ def followups_sequence_send():
         return jsonify({"success": False, "error": "Select at least one follow-up to send."}), 400
     if len(lead_ids) > 50:
         return jsonify({"success": False, "error": "Send at most 50 follow-ups at a time."}), 400
+    stale = _sent_log_fresh()
+    if stale:
+        return stale
     wanted = {str(x) for x in lead_ids}
     due = [i for i in followup_sequence.plan(_lead_index())["due"] if i["lead_id"] in wanted]
     if not due:
@@ -1379,6 +1405,10 @@ def save_search_engine_results():
     if not valid:
         return jsonify({"success": False, "error": "The selected results have no name or link."}), 400
     leads = [search_engine.result_to_raw_lead(r) for r in valid]
+    if data.get("send_outreach_email"):
+        stale = _sent_log_fresh()
+        if stale:
+            return stale
     with job_save_lock:
         res = lead_importer.commit_imported_leads(leads, send_outreach_email=bool(data.get("send_outreach_email")),
                                                   master_csv=MASTER_PATH)

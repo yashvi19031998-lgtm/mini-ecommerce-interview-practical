@@ -25,6 +25,21 @@ class TestWhatsAppImport(unittest.TestCase):
     def setUp(self):
         self.app = app_module.app.test_client()
         self.app.testing = True
+        # Activity and sent-mail logs go to a temp folder: the test must never write "Email sent" rows
+        # into the real follow-up history (it used to add them to LEAD-00001 on every run).
+        import followup_store
+        import email_service
+        self._tmp = tempfile.mkdtemp()
+        self._patches = [
+            mock.patch.object(followup_store, "ACTIVITY_FILE", os.path.join(self._tmp, "activity.csv")),
+            mock.patch.object(email_service, "SENT_LOG_FILE", os.path.join(self._tmp, "sent.csv")),
+        ]
+        for p in self._patches:
+            p.start()
+
+    def tearDown(self):
+        for p in self._patches:
+            p.stop()
 
     def test_parse_whatsapp_chat_standard_and_unicode(self):
         sample_chat = (

@@ -190,6 +190,17 @@ def remote_hashes(kind):
         offset += PAGE
 
 
+def remote_sent_addresses() -> set:
+    """Every address in the database's sent-mail log (mails sent from any machine), lower case."""
+    out, offset = set(), 0
+    while True:
+        rows = _req("GET", f"?select=email:data->>email&kind=eq.sent_email&order=key&limit={PAGE}&offset={offset}")
+        out.update(str(r.get("email") or "").strip().lower() for r in rows if r.get("email"))
+        if len(rows) < PAGE:
+            return out
+        offset += PAGE
+
+
 def remote_rows(kind, keys):
     out = {}
     keys = list(keys)

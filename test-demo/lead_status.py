@@ -140,7 +140,22 @@ def build_context(sent: List[Dict[str, str]], activities: List[Dict[str, str]]) 
         em, when = _s(s.get("email")).lower(), _parse_ts(s.get("sent_at"))
         if em and when and when > sent_at.get(em, datetime.datetime.min):
             sent_at[em] = when
-    return {"by_id": by_id, "by_email": by_email, "sent_at": sent_at}
+    import email_service
+    domains = {d for d in (email_service.company_domain(e) for e in sent_at) if d}
+    return {"by_id": by_id, "by_email": by_email, "sent_at": sent_at, "sent_domains": domains}
+
+
+def mail_blocked(email: str, ctx: Dict[str, Any]) -> bool:
+    """True when an outreach mail to this address would be refused: its company already got a mail at another
+    address, or it is a complaints / legal / no-reply style address (email_service.outreach_block_reason)."""
+    import email_service
+    if not email or email in ctx["sent_at"]:
+        return False
+    local = email.split("@", 1)[0]
+    if email_service.ROLE_BLOCK.match(local) or not email_service._LOCAL_OK.match(local):
+        return True
+    dom = email_service.company_domain(email)
+    return bool(dom) and dom in ctx.get("sent_domains", set())
 
 
 def stage_of(lead: Dict[str, Any], ctx: Dict[str, Any], now: Optional[datetime.datetime] = None) -> Dict[str, Any]:
@@ -181,7 +196,7 @@ def stage_of(lead: Dict[str, Any], ctx: Dict[str, Any], now: Optional[datetime.d
         return {**res, "stage": "no_reply"}
     if _s(lead.get("ai_category")).lower() in NOT_FIT:
         return {**res, "stage": "not_fit"}
-    if email and em_stat not in NOT_MAILABLE and not info.get("bounce"):
+    if email and em_stat not in NOT_MAILABLE and not info.get("bounce") and not mail_blocked(email, ctx):
         return {**res, "stage": "mail_pending"}
     if phone_of(lead):
         return {**res, "stage": "call_pending"}
@@ -299,7 +314,7 @@ def pending_channels(lead: Dict[str, Any], ctx: Dict[str, Any], stage: str) -> L
     out = []
     mailed = (email and email in ctx["sent_at"]) or em_stat == "SENT" or status == "EMAIL_SENT" or \
         bool(types & {"email_sent", "email"})
-    if email and not mailed and em_stat not in NOT_MAILABLE and not info.get("bounce"):
+    if email and not mailed and em_stat not in NOT_MAILABLE and not info.get("bounce") and not mail_blocked(email, ctx):
         out.append("email")
     phone = phone_of(lead)
     if phone and not types & {"call", "meeting"}:
