@@ -1042,3 +1042,17 @@ def run_yellowpages_adapter() -> List[Dict[str, Any]]:
         print(f"  [yellowpages adapter execution notice] {e}")
 
     return leads
+
+
+# ==============================================================================
+# 20. COMPETITOR_CLIENT_HARVESTER ADAPTER (Competitor Paying Client Footprint Engine)
+# ==============================================================================
+def run_competitor_client_adapter() -> List[Dict[str, Any]]:
+    """Harvests paying client websites of competing software agencies via footer credits."""
+    leads = []
+    try:
+        import competitor_client_harvester as cch
+        leads = cch.harvest_competitor_clients(max_results_per_competitor=3)
+    except Exception as e:
+        print(f"  [competitor_client_adapter notice] {e}")
+    return leads

@@ -278,6 +278,12 @@ SCRAPERS_CONFIG = [
         "category": "B2B Directory"
     },
     {
+        "name": "competitor_client_harvester.py (Competitor Agency Paying Client Harvester)",
+        "func": scraper_adapters.run_competitor_client_adapter,
+        "enabled": True,
+        "category": "Competitor Client Hijacking"
+    },
+    {
         "name": "apollo_enricher.py (Apollo.io Verified B2B Prospect Harvester)",
         "func": run_apollo_prospect_adapter,
         "enabled": bool(os.getenv("APOLLO_SEARCH_KEYWORDS", "").strip() and os.getenv("APOLLO_API_KEY", "").strip()),
