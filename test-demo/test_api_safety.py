@@ -46,6 +46,8 @@ class ApiSafetyBase(unittest.TestCase):
             mock.patch.object(settings_manager, "SETTINGS_FILE", self.settings_file),
             mock.patch.object(app_module.followup_store, "safe_log", lambda *a, **k: None),
             mock.patch.object(app_module, "send_smtp_email", side_effect=AssertionError("no e-mail in tests")),
+            # the daily Gmail limit must not depend on how many real mails this machine sent today
+            mock.patch("run_all_scrapers.emails_sent_today", return_value=0),
         ]
         for p in patches:
             p.start()

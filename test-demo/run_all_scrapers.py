@@ -59,13 +59,23 @@ def _int_or(value, default):
 _per_run_setting = _initial_settings.get("maxPendingEmailsPerRun")
 MAX_PENDING_EMAILS_PER_RUN = max(0, _int_or(
     _per_run_setting if _per_run_setting not in (None, "") else os.getenv("MAX_PENDING_EMAILS_PER_RUN"), 5))
-# Daily email cap validation: default 0 (unlimited - daily 50 cap validation removed).
-_daily_setting = _initial_settings.get("maxEmailsPerDay")
-MAX_EMAILS_PER_DAY = max(0, _int_or(
-    _daily_setting if _daily_setting not in (None, "") else os.getenv("MAX_EMAILS_PER_DAY"), 0))
+# Daily limit per Gmail account, counting every mail the app sent today (automatic, bulk, manual, follow-ups,
+# GitHub and this PC). Gmail blocks accounts that send many cold mails a day: two accounts were blocked on
+# 2026-11-13. 50 is a HARD limit: the setting maxEmailsPerDay or MAX_EMAILS_PER_DAY can lower it, but a
+# higher value, 0 or an empty value still means 50.
+GMAIL_DAILY_LIMIT = 50
+
+
+def daily_mail_limit(setting=None, env_value=None) -> int:
+    """The daily limit in force: the setting, else the variable, else 50 - and never above 50 or "unlimited"."""
+    wanted = _int_or(setting if setting not in (None, "") else env_value, GMAIL_DAILY_LIMIT)
+    return GMAIL_DAILY_LIMIT if wanted <= 0 else min(wanted, GMAIL_DAILY_LIMIT)
+
+
+MAX_EMAILS_PER_DAY = daily_mail_limit(_initial_settings.get("maxEmailsPerDay"), os.getenv("MAX_EMAILS_PER_DAY"))
 # Prospects (companies with no request yet, AUTO_EMAIL_PROSPECT_SIGNALS=true) get their own, smaller daily
 # limit inside MAX_EMAILS_PER_DAY, and are e-mailed only after every ready real buyer.
-MAX_PROSPECT_EMAILS_PER_DAY = max(0, _int_or(os.getenv("MAX_PROSPECT_EMAILS_PER_DAY"), 0))
+MAX_PROSPECT_EMAILS_PER_DAY = min(max(0, _int_or(os.getenv("MAX_PROSPECT_EMAILS_PER_DAY"), 15)), MAX_EMAILS_PER_DAY)
 PROSPECT_SOURCE = "auto outreach (prospect)"
 # Short intro for prospects, used when the AI e-mail writer is not available.
 PROSPECT_SUBJECT = "Software help for {company}"
@@ -697,7 +707,7 @@ def run_email_steps(registry: MasterLeadRegistry) -> int:
         return 0
     registry.load_master()  # the follow-up step may have saved reply statuses
     per_run = MAX_PENDING_EMAILS_PER_RUN or "none - every qualified lead"
-    daily_disp = f"{MAX_EMAILS_PER_DAY}" if MAX_EMAILS_PER_DAY > 0 else "unlimited (daily 50 cap removed)"
+    daily_disp = f"{MAX_EMAILS_PER_DAY} (Gmail limit, at most {GMAIL_DAILY_LIMIT})"
     print(f"\n[*] Emailing AI-qualified leads (per-run limit: {per_run}; daily limit: {daily_disp})...")
     sent = dispatch_pending_outreach_emails(registry, max_batch=MAX_PENDING_EMAILS_PER_RUN)
     print(f"[*] Outreach emails sent this run: {sent}")
@@ -757,8 +767,6 @@ def run_outreach_only():
             os.environ["EMAIL_VERIFY_MODE"] = "dns_only"
         min_score = str(settings.get("min_lead_score", 4))
         os.environ["MIN_AI_SCORE_FOR_AUTO_EMAIL"] = min_score
-        if "MAX_EMAILS_PER_DAY" not in os.environ:
-            os.environ["MAX_EMAILS_PER_DAY"] = "0"
 
         run_email_steps(registry)
         sync_database()

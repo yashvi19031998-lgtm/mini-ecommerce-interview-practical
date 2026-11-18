@@ -96,8 +96,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("group: lead-data", wf)
         self.assertIn("datastore.py sync --required", wf)
         self.assertIn("MIN_AI_SCORE_FOR_AUTO_EMAIL:", wf)
-        self.assertIn("MAX_EMAILS_PER_DAY:", wf)
-        self.assertIn("MAX_PROSPECT_EMAILS_PER_DAY:", wf)
+        self.assertIn("MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '50' }}", wf)
+        self.assertIn("MAX_PROSPECT_EMAILS_PER_DAY: ${{ vars.MAX_PROSPECT_EMAILS_PER_DAY || '15' }}", wf)
 
 
 def _lead(i, category, score, email=None):
