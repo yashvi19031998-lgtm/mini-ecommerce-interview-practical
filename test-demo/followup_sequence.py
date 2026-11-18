@@ -39,22 +39,27 @@ DEFAULT_TEMPLATES = [
     {
         "subject": "Re: {original_subject}",
         "body": ("Hi {name},\n\n"
-                 "Just following up on my email from {first_date} - I'd love to know if {company} needs any help "
-                 "with web, mobile or custom software work right now.\n\n"
-                 "Would a short 10-minute call this week be useful?"),
+                 "Just following up on my email from {first_date} with something more useful than a generic pitch.\n\n"
+                 "For a team scaling operations or managing delivery bottlenecks, we typically start with a one-page technical roadmap: "
+                 "current bottlenecks, recommended architecture, delivery sequence, and a fixed-price first milestone.\n\n"
+                 "We can prepare a similar 1-page roadmap for {company}—no obligation. Would a short 10-minute call this week be useful?"),
     },
     {
         "subject": "Re: {original_subject}",
         "body": ("Hi {name},\n\n"
-                 "Checking in once more. If you have a project on hold or need extra developers for a while, "
-                 "we can usually start within a week.\n\n"
+                 "Checking in once more. If you have projects on hold or need extra engineering bandwidth without hiring overhead, "
+                 "we offer a low-risk 20-hour Discovery & Delivery Sprint.\n\n"
+                 "You get a working proof of concept, source code in your repository, and a technical roadmap. "
+                 "If the communication or delivery speed isn't what you expected, you can stop after the sprint with no further commitment.\n\n"
                  "Happy to share a few relevant examples of our work - just reply to this email."),
     },
     {
         "subject": "Re: {original_subject}",
         "body": ("Hi {name},\n\n"
-                 "I don't want to fill your inbox, so this is my last note. If the timing isn't right, no problem "
-                 "at all - feel free to reach out whenever you need a development partner.\n\n"
+                 "I don't want to fill your inbox, so this is my last note. I'll assume software engineering capacity isn't a priority "
+                 "for {company} right now, so I'll stop following up.\n\n"
+                 "Before I close the file: we currently have availability to begin a dedicated sprint engagement in the next two weeks. "
+                 "If this becomes relevant later on, simply reply 'later' and I'll check back at a better time.\n\n"
                  "Wishing {company} all the best."),
     },
 ]
