@@ -92,22 +92,45 @@ def detect_tech_and_intent(lead: Dict[str, Any]) -> Dict[str, Any]:
     combined_text = " ".join(combined_parts).lower()
 
     detected_tech = []
-    if any(w in combined_text for w in ["react", "next.js", "nextjs", "frontend"]):
+    # 1. Video Reels & Festival Creatives
+    if any(w in combined_text for w in ["reel", "reels", "festival", "graphic design", "creative design", "social media manager", "instagram post", "video editing"]):
+        detected_tech.append("Social Media Creatives & Video Reels")
+    # 2. Website Maintenance & AMC
+    if any(w in combined_text for w in ["maintenance", "website amc", "website support", "bug fix", "site update", "security patch", "speed optimization"]):
+        detected_tech.append("Website Maintenance & 24/7 Support")
+    # 3. WordPress & WooCommerce
+    if any(w in combined_text for w in ["wordpress", "elementor", "divi", "woocommerce"]):
+        detected_tech.append("WordPress & WooCommerce")
+    # 4. PHP, Laravel & CodeIgniter
+    if any(w in combined_text for w in ["laravel", "codeigniter", "php", "symfony"]):
+        detected_tech.append("PHP / Laravel / CodeIgniter")
+    # 5. Angular
+    if any(w in combined_text for w in ["angular", "angularjs"]):
+        detected_tech.append("Angular Frontend")
+    # 6. React / Next.js
+    if any(w in combined_text for w in ["next.js", "nextjs", "react", "frontend"]):
         detected_tech.append("React / Next.js")
+    # 7. Node.js
     if any(w in combined_text for w in ["node", "nodejs", "express", "nestjs"]):
-        detected_tech.append("Node.js")
+        detected_tech.append("Node.js Backend")
+    # 8. Python
     if any(w in combined_text for w in ["python", "django", "fastapi", "flask"]):
-        detected_tech.append("Python")
-    if any(w in combined_text for w in ["flutter", "react native", "ios", "android", "mobile app"]):
-        detected_tech.append("Mobile Apps (Flutter/React Native)")
+        detected_tech.append("Python / AI")
+    # 9. Mobile Apps (Flutter / React Native)
+    if any(w in combined_text for w in ["flutter", "react native", "ios", "android", "mobile app", "app developer"]):
+        detected_tech.append("Mobile App Development (Flutter/Native)")
+    # 10. CRM & Business Portals
+    if any(w in combined_text for w in ["crm", "erp", "salesforce", "hubspot", "zoho", "portal", "dashboard"]):
+        detected_tech.append("Custom CRM & ERP Portals")
+    # 11. E-Commerce
+    if any(w in combined_text for w in ["shopify", "ecommerce", "e-commerce", "cart"]):
+        detected_tech.append("E-Commerce (Shopify/WooCommerce)")
+    # 12. Full-Stack
     if any(w in combined_text for w in ["full stack", "fullstack", "full-stack"]):
         detected_tech.append("Full-Stack Web Development")
-    if any(w in combined_text for w in ["shopify", "woocommerce", "ecommerce", "e-commerce", "cart"]):
-        detected_tech.append("E-Commerce (Shopify/WooCommerce)")
+    # 13. AI & Automation
     if any(w in combined_text for w in ["ai", "machine learning", "automation", "llm", "bot"]):
         detected_tech.append("AI & Process Automation")
-    if any(w in combined_text for w in ["php", "laravel", "wordpress"]):
-        detected_tech.append("PHP / Laravel")
 
     # Primary requirement label
     req_label = str(lead.get("ai_requirement", "")).strip()
@@ -144,6 +167,7 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
     requirement = intent_info["requirement"]
     is_hiring = intent_info["is_hiring"]
     is_ecommerce = intent_info["is_ecommerce"]
+    tech_lower = primary_tech.lower()
 
     greeting = f"Hi Team {company}" if company not in ("your team", "your company") else "Hello"
 
@@ -161,7 +185,103 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         )
         return subject, body
 
-    # Category 1: Developer Hiring / Technical Talent
+    # Category 1: Social Media Creatives, Reels & Festival Posts
+    if "reels" in tech_lower or "social media" in tech_lower:
+        subject = f"High-Impact Video Reels & Creative Design for {company}"
+        body = (
+            f"{greeting},\n\n"
+            f"I came across **{company}**'s brand presence. In today's digital landscape, engaging short-form video Reels, "
+            f"timely festival campaigns, and consistent visual storytelling are the highest-ROI drivers of customer recall and brand trust.\n\n"
+            f"At **Sangeeta Infotech**, our creative media team produces high-retention video Reels, branded festival creatives, "
+            f"and social storytelling packages tailored to your brand identity with predictable weekly turnarounds.\n\n"
+            f"Would you be open to a brief **10-minute discovery call** this week to see a sample creative roadmap for **{company}**?"
+        )
+        return subject, body
+
+    # Category 2: Website Maintenance & 24/7 Support AMC
+    if "maintenance" in tech_lower or "support" in tech_lower:
+        subject = f"Proactive Website Maintenance & 24/7 Technical Support for {company}"
+        body = (
+            f"{greeting},\n\n"
+            f"I came across **{company}**'s website. For established businesses, ensuring continuous uptime, regular security patches, "
+            f"rapid bug resolution, and high speed is essential to protect customer trust and search rankings.\n\n"
+            f"At **Sangeeta Infotech**, we provide comprehensive Website Maintenance & AMC services. Our dedicated web engineers handle "
+            f"regular backups, core updates, speed optimizations, and proactive technical support starting from just **₹450/- INR / hour**—giving "
+            f"your team peace of mind without full-time hiring overhead.\n\n"
+            f"Would a brief **10-minute review** be helpful to see how we can keep **{company}**'s web presence running flawlessly?"
+        )
+        return subject, body
+
+    # Category 3: WordPress & WooCommerce
+    if "wordpress" in tech_lower:
+        subject = f"Dedicated WordPress & WooCommerce Engineering for {company}"
+        body = (
+            f"{greeting},\n\n"
+            f"I noticed **{company}**'s digital presence and web infrastructure. For scaling businesses, maintaining high-speed performance, "
+            f"custom plugin integrations, and flawless responsive layouts is crucial for customer conversion.\n\n"
+            f"At **Sangeeta Infotech**, our senior engineers specialize in custom WordPress & WooCommerce development, theme customizations, "
+            f"and secure API integrations. We provide pre-vetted, dedicated developers starting from just **₹450/- INR / hour** who integrate "
+            f"seamlessly into your sprint requirements.\n\n"
+            f"Would you be open to a brief **10-minute discovery call** this week to explore how we can support **{company}**'s technical delivery?"
+        )
+        return subject, body
+
+    # Category 4: PHP, Laravel & CodeIgniter
+    if "laravel" in tech_lower or "codeigniter" in tech_lower or "php" in tech_lower:
+        subject = f"Senior Laravel & PHP Backend Engineering for {company}"
+        body = (
+            f"{greeting},\n\n"
+            f"I came across **{company}**'s software platform. When scaling backend architectures, having clean, secure, "
+            f"and maintainable Laravel & PHP systems is vital for operational velocity and zero-downtime reliability.\n\n"
+            f"At **Sangeeta Infotech**, we specialize in enterprise Laravel development, CodeIgniter modernization, and high-load RESTful APIs. "
+            f"Our dedicated backend engineers are available starting from just **₹450/- INR / hour**—delivering production-ready code with "
+            f"complete Git transparency and daily standups.\n\n"
+            f"Would a short **10-minute discovery call** this week be useful to review **{company}**'s technical roadmap?"
+        )
+        return subject, body
+
+    # Category 5: Angular, Next.js & Modern Frontend
+    if "angular" in tech_lower or "next.js" in tech_lower or "react" in tech_lower:
+        subject = f"Modern Next.js & Angular Frontend Engineering for {company}"
+        body = (
+            f"{greeting},\n\n"
+            f"I came across **{company}**'s digital products. Creating lightning-fast, reactive web interfaces with seamless state management "
+            f"directly impacts customer engagement and product adoption.\n\n"
+            f"At **Sangeeta Infotech**, our frontend engineers specialize in modern Next.js, React, and Angular architectures, building modular "
+            f"design systems and performance-optimized portals. We offer dedicated senior engineers starting from just **₹450/- INR / hour** on "
+            f"flexible monthly sprint models.\n\n"
+            f"Would you be open to a brief **10-minute conversation** this week to see if our developers could accelerate your frontend backlog?"
+        )
+        return subject, body
+
+    # Category 6: Custom CRM & ERP Business Portals
+    if "crm" in tech_lower or "erp" in tech_lower:
+        subject = f"Custom CRM & Business Workflow Automation for {company}"
+        body = (
+            f"{greeting},\n\n"
+            f"I noticed **{company}**'s growing business operations. As organizations scale, connected CRM workflows, internal dashboards, "
+            f"and centralized lead management eliminate operational friction and double team productivity.\n\n"
+            f"At **Sangeeta Infotech**, we architect custom CRM solutions, workflow automations, and third-party integrations (HubSpot, Salesforce, "
+            f"Zoho, Custom Portals). Our dedicated full-stack engineers start from just **₹450/- INR / hour**, turning fragmented tools into unified "
+            f"operational engines.\n\n"
+            f"Would you be open to a brief **10-minute discussion** this week to explore streamlining your internal workflows?"
+        )
+        return subject, body
+
+    # Category 7: Mobile App Development (Flutter, iOS, Android)
+    if "mobile" in tech_lower or "flutter" in tech_lower or "app" in tech_lower:
+        subject = f"Native & Flutter Mobile App Engineering for {company}"
+        body = (
+            f"{greeting},\n\n"
+            f"I came across **{company}**'s business presence. In mobile-first markets, delivering smooth, responsive mobile experiences "
+            f"across both iOS and Android is critical for user retention and brand value.\n\n"
+            f"At **Sangeeta Infotech**, our senior engineers build native and cross-platform apps using Flutter and React Native, with secure "
+            f"backend integrations and high App Store ratings. Our dedicated app developers are available starting from just **₹450/- INR / hour**.\n\n"
+            f"Would you be open to a brief **10-minute discovery call** this week to explore bringing your app roadmap to life?"
+        )
+        return subject, body
+
+    # Category 8: Developer Hiring / Technical Talent
     if is_hiring:
         tech_mention = role if role else (f"{primary_tech} developer" if "developer" not in primary_tech.lower() else primary_tech)
         subject = f"Dedicated {tech_mention} Talent for {company}"
@@ -176,8 +296,9 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
             f"Would you be open to a brief **10-minute introductory call** this week to see if our developers could "
             f"support your current roadmap?"
         )
+        return subject, body
 
-    # Category 2: E-Commerce Store (Shopify / WooCommerce)
+    # Category 9: E-Commerce Store (Shopify / WooCommerce)
     elif is_ecommerce:
         subject = f"Web Performance & Custom Engineering for {company}"
         body = (
@@ -189,8 +310,9 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
             f"engineering services start from just **₹450/- INR / hour** with sprint-based flexible delivery.\n\n"
             f"Would you be open to a brief **10-minute discovery call** to explore how we can support **{company}**'s technical roadmap?"
         )
+        return subject, body
 
-    # Category 3: General Software / Business System Project
+    # Category 10: General Custom Software / Digital Engineering
     else:
         subject = f"Custom Software & Web Engineering for {company}"
         body = (
@@ -203,8 +325,7 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
             f"high-performance digital solutions tailored to your unique workflows without agency overhead.\n\n"
             f"Would you be open to a quick **10-minute discovery call** this week to explore potential collaboration?"
         )
-
-    return subject, body
+        return subject, body
 
 
 def generate_with_claude(lead_data: Dict[str, Any], company: str, requirement: str,

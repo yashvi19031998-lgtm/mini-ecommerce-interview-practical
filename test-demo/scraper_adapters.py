@@ -58,7 +58,29 @@ DYNAMIC_SEARCH_QUERIES = [
     '("need integration" OR "need automation" OR "connect our systems" OR "API integration") ("CRM" OR "ERP" OR "Salesforce" OR "Shopify" OR "HubSpot")',
     # 13. Metros & Indian Commercial Hubs
     '("looking for software development company" OR "need software developer") ("Mumbai" OR "Delhi" OR "Bengaluru" OR "Pune" OR "Hyderabad" OR "Ahmedabad") ("RFP" OR "budget" OR "hire")',
-    # 14. Global High-Ticket Outreach (US, UK, UAE, Canada, Australia)
+    # 14. WordPress & WooCommerce Engineering
+    '("need WordPress developer" OR "hire WordPress developer" OR "WordPress maintenance") ("agency" OR "freelance" OR "company")',
+    '("WooCommerce development" OR "WordPress custom plugin" OR "custom WooCommerce store") ("need" OR "looking for")',
+    # 15. PHP, Laravel & CodeIgniter Backend
+    '("need Laravel developer" OR "hire Laravel developer" OR "looking for Laravel developer") ("PHP" OR "backend" OR "API")',
+    '("CodeIgniter developer needed" OR "hire CodeIgniter agency" OR "PHP web development company")',
+    # 16. Angular, Next.js & Node.js Modern Stack
+    '("need Angular developer" OR "hire Angular developer" OR "looking for Angular agency")',
+    '("need Nextjs developer" OR "hire Next.js developer" OR "looking for React Nextjs")',
+    '("need Nodejs developer" OR "hire Node.js backend developer" OR "Nodejs development company")',
+    # 17. Website Maintenance & 24/7 AMC Support
+    '("website maintenance required" OR "looking for website maintenance" OR "need website support" OR "website AMC services")',
+    '("fix WordPress website" OR "website bug fixing support" OR "monthly website maintenance contract")',
+    # 18. Custom CRM & Business Portals
+    '("need custom CRM" OR "custom CRM development" OR "looking for CRM developer") ("portal" OR "business" OR "agency")',
+    '("custom ERP development company" OR "need ERP software developer" OR "custom business portal")',
+    # 19. Social Media Reels & Festival Creative Design
+    '("looking for social media agency" OR "need reels creator" OR "video reels for business") ("Instagram" OR "marketing" OR "branding")',
+    '("graphic designer for festival posts" OR "festival creative design agency" OR "social media post maker" OR "digital branding")',
+    # 20. Mobile Apps (Flutter, iOS, Android)
+    '("need Flutter developer" OR "hire Flutter developer" OR "cross platform mobile app") ("need" OR "looking for")',
+    '("iOS developer needed" OR "Android app developer needed" OR "hire mobile app agency")',
+    # 21. Global High-Ticket Outreach (US, UK, UAE, Canada, Australia)
     'looking for software development agency US UK India',
     'hire dedicated React Python developers remote',
     'startup MVP software development agency remote',

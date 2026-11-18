@@ -332,6 +332,7 @@ class Api(Base):
     def setUp(self):
         super().setUp()
         import app as app_module
+        app_module.app.config["TESTING"] = True
         self.app = app_module
         self.client = app_module.app.test_client()
         ok = SimpleNamespace(status_code=200, json=lambda: {"email": "owner@example.com"})
