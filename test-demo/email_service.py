@@ -192,8 +192,7 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
         block = outreach_block_reason(clean_email, already_sent) if clean_email not in already_sent else ""
         if block:
             print(f"       [COMPANY / ROLE BLOCKED] {clean_email}: {block}")
-            return {"success": False, "error": f"Not sent: {block}.", "already_sent": "one mail per company" in block,
-                    "blocked": True}
+            return {"success": False, "error": f"Not sent: {block}.", "blocked": True}
         if clean_email in already_sent:
             print(f"       [DUPLICATE BLOCKED] {clean_email} has ALREADY received an outreach email! Sending BLOCKED.")
             return {

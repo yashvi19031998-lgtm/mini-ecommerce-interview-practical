@@ -94,5 +94,20 @@ class BulkKeepsGoing(unittest.TestCase):
         self.assertIn("boom", bad["error"])
 
 
+class BulkBlocked(unittest.TestCase):
+    def test_company_rule_is_a_skip_not_a_failure_and_does_not_mark_sent(self):
+        leads = [{"id": f"L{i}", "Email": f"x{i}@acme.in", "Company Name": "Acme"} for i in range(4)]
+        updates = []
+        with mock.patch.object(app, "read_leads", return_value=leads),                 mock.patch.object(app, "send_smtp_email", return_value={"success": False, "blocked": True, "error": "Not sent: company"}),                 mock.patch.object(app, "update_lead_record", side_effect=lambda lid, f: updates.append(f) or True),                 mock.patch.object(app.followup_store, "safe_log"),                 mock.patch.object(app, "load_settings", return_value={}),                 mock.patch.object(app, "format_signature", return_value=""):
+            job = {"job_id": "t", "total": 4, "processed": 0, "sent": 0, "failed": 0, "not_verified": 0, "skipped": 0,
+                   "done": False, "stopped_reason": "", "results": []}
+            import run_all_scrapers
+            with mock.patch.object(run_all_scrapers, "emails_sent_today", return_value=0):
+                app._run_bulk_job(job, [l["id"] for l in leads], "Hi", "Hello", 0)
+        self.assertEqual((job["sent"], job["failed"], job["skipped"], job["stopped_reason"]), (0, 0, 4, ""))
+        self.assertEqual({r["reason"] for r in job["results"]}, {"blocked"})
+        self.assertEqual(updates, [])  # never marked as sent
+
+
 if __name__ == "__main__":
     unittest.main()

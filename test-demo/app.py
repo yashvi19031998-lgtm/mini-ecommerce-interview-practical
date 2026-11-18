@@ -425,7 +425,7 @@ def _bulk_note(job, lid, email, ok, reason, error=""):
             job["sent"] += 1
         elif reason == "not_verified":
             job["not_verified"] += 1
-        elif reason in ("no_email", "already_sent", "excluded", "daily_limit", "stopped"):
+        elif reason in ("no_email", "already_sent", "excluded", "daily_limit", "stopped", "blocked"):
             job["skipped"] += 1
         else:
             job["failed"] += 1
@@ -513,6 +513,8 @@ def _bulk_one(job, idx, lid, lead_ids, all_leads, sig, subject_tpl, message_tpl,
         _bulk_note(job, lid, to_email, False, "not_verified", res.get("error", ""))
         if "port 25" in str(res.get("error", "")):
             job["stopped_reason"] = "This computer cannot check mailboxes (port 25 blocked), so nothing is sent."
+    elif res.get("blocked"):  # one mail per company / complaints-style address: nothing sent, not a failure
+        _bulk_note(job, lid, to_email, False, "blocked", res.get("error", ""))
     elif res.get("already_sent"):
         update_lead_record(lid, {"Email Status": "SENT", "Status": "EMAIL_SENT"})
         _bulk_note(job, lid, to_email, False, "already_sent", res.get("error", ""))

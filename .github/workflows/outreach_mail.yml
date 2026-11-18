@@ -4,8 +4,9 @@ name: Outreach Mail (office hours)
 # replies / bounces / opt-outs. No scraping here: that is auto_scraper_1hr.yml.
 on:
   schedule:
-    # Runs every single hour at :45 (smoothly interleaved between scrapers at :15 and :30)
-    - cron: '45 * * * *'
+    # Office hours only: Mon-Sat, 10:15 to 18:15 IST (04:45-12:45 UTC), every hour at :45 UTC.
+    # Mail at night or on Sunday looks like spam and gets the sender blocked.
+    - cron: '45 4-12 * * 1-6'
   workflow_dispatch: # Manual run from the GitHub Actions tab
 
 permissions:

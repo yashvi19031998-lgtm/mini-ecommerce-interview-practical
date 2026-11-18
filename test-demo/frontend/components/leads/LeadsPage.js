@@ -57,8 +57,12 @@ function matches(l, f, q) {
   if (f.source && leadSource(l) !== f.source) return false;
   if (f.outcome && leadOutcome(l) !== f.outcome) return false;
   if (f.found) {
-    const from = foundFrom(f.found);
-    if (!foundDate(l) || foundDate(l) < from) return false;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(f.found)) {  // one exact day (from a report)
+      if (foundDate(l) !== f.found) return false;
+    } else {
+      const from = foundFrom(f.found);
+      if (!foundDate(l) || foundDate(l) < from) return false;
+    }
   }
   if (f.contact) {
     const em = !!leadEmail(l), ph = !!leadPhone(l), po = !!postUrl(l);
@@ -168,6 +172,15 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
   const rows = useMemo(() => sortLeads(base.filter(l => matches(l, { action: f.action }, '')), f.sort), [base, f.action, f.sort]);
   const pages = Math.max(1, Math.ceil(rows.length / pageSize));
   const pageRows = rows.slice((page - 1) * pageSize, page * pageSize);
+  // When the list changes (e.g. reloaded after a bulk mail), drop selected leads that are no longer in it
+  useEffect(() => {
+    setSelected(prev => {
+      if (!prev.size) return prev;
+      const ids = new Set(rows.map(l => l.id));
+      const next = new Set([...prev].filter(id => ids.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [rows]);
   const selectedRows = rows.filter(l => selected.has(l.id));
   const mailable = selectedRows.filter(l => isPending(l, 'email'));
   const selectAllMatching = () => setSelected(new Set(rows.map(l => l.id)));
@@ -253,6 +266,7 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
             <label className="fsel"><span>Found</span>
               <select value={f.found} onChange={e => set({ found: e.target.value })}>
                 {FOUND.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                {/^\d{4}-\d{2}-\d{2}$/.test(f.found) && <option value={f.found}>On {f.found}</option>}
               </select>
             </label>
             <label className="fsel"><span>Outcome</span>
@@ -301,7 +315,7 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
             {f.pending && <span className="tag">{PENDING.find(p => p.id === f.pending)?.label} <button type="button" onClick={() => set({ pending: '' })} aria-label="Remove pending filter"><X size={12} /></button></span>}
             {f.band && <span className="tag">{BANDS[f.band].label} <button type="button" onClick={() => set({ band: '' })} aria-label="Remove temperature filter"><X size={12} /></button></span>}
             {f.source && <span className="tag">{f.source} <button type="button" onClick={() => set({ source: '' })} aria-label="Remove source filter"><X size={12} /></button></span>}
-            {f.found && <span className="tag">Found: {FOUND.find(o => o.id === f.found)?.label} <button type="button" onClick={() => set({ found: '' })} aria-label="Remove date filter"><X size={12} /></button></span>}
+            {f.found && <span className="tag">Found: {FOUND.find(o => o.id === f.found)?.label || f.found} <button type="button" onClick={() => set({ found: '' })} aria-label="Remove date filter"><X size={12} /></button></span>}
             {f.outcome && <span className="tag">{OUTCOME_LABEL[f.outcome]} <button type="button" onClick={() => set({ outcome: '' })} aria-label="Remove outcome filter"><X size={12} /></button></span>}
             {f.contact && <span className="tag">{CONTACT.find(o => o.id === f.contact)?.label} <button type="button" onClick={() => set({ contact: '' })} aria-label="Remove contact filter"><X size={12} /></button></span>}
             <button type="button" className="lv-clear" onClick={clearAll}>Clear all</button>

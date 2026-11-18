@@ -32,7 +32,10 @@ function niceDay(day) {
   return Number.isNaN(d.getTime()) ? day : d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export default function DailyLeadsTab({ filters, reloadKey = 0, onNotice = () => {} }) {
+// Daily score bands -> the Leads page's temperature
+const BAND_TO_TEMP = { high: 'hot', medium: 'warm', low: 'cold', unscored: '' };
+
+export default function DailyLeadsTab({ filters, reloadKey = 0, onNotice = () => {}, onOpenLeads = null }) {
   const [band, setBand] = useState(() => {
     try { return localStorage.getItem('reports_daily_band') || 'all'; } catch { return 'all'; }
   });
@@ -172,6 +175,12 @@ export default function DailyLeadsTab({ filters, reloadKey = 0, onNotice = () =>
               {detail.label} - {niceDay(detail.day)} {detail.loading ? '' : `(${formatNum(detail.total)})`}
             </div>
             <div className="rp-table-actions">
+              {onOpenLeads && (
+                <button type="button" className="theme-pill-btn" title="Open these leads on the Leads page to call, WhatsApp or mail them in bulk"
+                  onClick={() => onOpenLeads({ found: detail.day, pending: detail.state === 'pending' ? 'email' : '', band: BAND_TO_TEMP[band] || '' })}>
+                  Open in Leads
+                </button>
+              )}
               <button type="button" className="theme-pill-btn neutral" onClick={() => setDetail(null)} aria-label="Close list">
                 <X size={13} /> Close
               </button>

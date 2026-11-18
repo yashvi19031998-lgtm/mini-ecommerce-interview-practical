@@ -253,9 +253,10 @@ function DashboardContent() {
     }
   };
 
-  const handleSendBulkEmail = async ({ lead_ids, subject, message, delay_ms }, onProgress = null) => {
+  const handleSendBulkEmail = async ({ lead_ids, subject, message, delay_ms, use_ai = false }, onProgress = null) => {
     try {
-      const res = await sendBulkEmail({ lead_ids, subject, message, delay_ms }, onProgress);
+      // use_ai comes from the pop-up's "write each mail with AI" switch (it was dropped here before, so AI was always on)
+      const res = await sendBulkEmail({ lead_ids, subject, message, delay_ms, use_ai }, onProgress);
       // Only leads the server really e-mailed are marked as sent. Before, every selected lead was shown
       // as EMAIL_SENT and the message counted all of them, even when some (or all) were refused.
       const sentIds = new Set((res.results || []).filter(r => r.success).map(r => String(r.id)));

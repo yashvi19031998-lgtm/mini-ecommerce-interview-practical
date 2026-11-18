@@ -192,6 +192,24 @@ def _role_text(lead: dict) -> str:
     return f"{lead.get('company_name') or ''} | {head}"
 
 
+# Work we do even when the title sounds like a non-IT role ("Social media creator", "Bot creator", "UI/UX")
+_OUR_WORK = re.compile(r"\b(seo|social media|google ads|meta ads|facebook ads|digital marketing|marketing|bots?|"
+                       r"automation|ui/ux|ux|ui designer|web ?site|web ?app|mobile app|software|developer|shopify)\b", re.I)
+NOT_SOFTWARE_SCORE_CAP = 2
+
+
+def not_software_role(lead: dict) -> bool:
+    """True for a buyer-type post whose role is clearly not our work (bartender, voice-over, translator,
+    commission sales, customer support, UGC / video creator...) and that mentions no software or marketing
+    work. Uses only the post itself: the AI's own fields are often a generic 'Software engineering'."""
+    if str(lead.get("ai_category") or "").strip() not in ("client_project", "hiring_developer"):
+        return False
+    role = _role_text(lead)
+    full = f"{role} {lead.get('description') or ''}"
+    return bool(_NON_IT_ROLE.search(role)) and not _DEV_PERSON.search(role) and not _DEV_ROLE.search(full) \
+        and not _OUR_WORK.search(full)
+
+
 def _env_int(name, default):
     try:
         return int(os.getenv(name, str(default)))
@@ -692,6 +710,10 @@ def qualify_leads(registry: MasterLeadRegistry, limit: int = AI_QUALIFY_LIMIT) -
 
         score = max(0, min(10, int(result.get("score", 0))))
         reason = result.get("reason", "")
+        if not_software_role({**lead, "ai_category": result.get("category", "")}):
+            score = min(score, NOT_SOFTWARE_SCORE_CAP)
+            result["category"] = "irrelevant"
+            reason = f"[Not software / marketing work, score capped] {reason}"
         if is_stale(lead) and score > STALE_SCORE_CAP:
             score = STALE_SCORE_CAP
             reason = f"[Stale: older than {STALE_AFTER_DAYS} days, score capped] {reason}"

@@ -92,6 +92,7 @@ export default function BulkEmailModal({
     excluded: 'On the do-not-contact list',
     daily_limit: 'Daily limit reached',
     stopped: 'Stopped',
+    blocked: 'Skipped: company already mailed, or a complaints / no-reply address',
     error: 'Send failed'
   };
   const reasonCounts = {};

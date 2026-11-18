@@ -194,7 +194,7 @@ def stage_of(lead: Dict[str, Any], ctx: Dict[str, Any], now: Optional[datetime.d
         return {**res, "stage": "no_reply"}
     if status in ("CONTACTED", "EMAIL_SENT", "MEETING"):
         return {**res, "stage": "no_reply"}
-    if _s(lead.get("ai_category")).lower() in NOT_FIT:
+    if _s(lead.get("ai_category")).lower() in NOT_FIT or _not_software(lead):
         return {**res, "stage": "not_fit"}
     if email and em_stat not in NOT_MAILABLE and not info.get("bounce") and not mail_blocked(email, ctx):
         return {**res, "stage": "mail_pending"}
@@ -288,8 +288,18 @@ def stage_list(leads, sent, activities, stage, band="all", source="", q="", limi
 BANDS = (("hot", 7, 10), ("warm", 4, 6), ("cold", 0, 3))
 
 
+def _not_software(lead) -> bool:
+    try:
+        from lead_quality import not_software_role
+        return not_software_role(lead)
+    except Exception:  # noqa: BLE001 - a display rule must never break the lists
+        return False
+
+
 def band_of(lead: Dict[str, Any]) -> str:
-    """hot (score 7-10), warm (4-6), cold (0-3) or unscored."""
+    """hot (score 7-10), warm (4-6), cold (0-3) or unscored. A non-software role counts as cold."""
+    if _not_software(lead):
+        return "cold"
     score = lead_score(lead)
     if score is None:
         return "unscored"
@@ -330,7 +340,11 @@ def annotate(leads, sent, activities, now=None) -> List[Dict[str, Any]]:
     out = []
     for lead in leads:
         st = stage_of(lead, ctx, now)
-        out.append({**lead, "next_action": st["stage"], "band": band_of(lead),
+        shown = lead
+        if _not_software(lead):  # scored before the rule existed: show it as the rule would score it today
+            shown = {**lead, "ai_score": str(min(lead_score(lead) or 0, 2)), "ai_category": "irrelevant",
+                     "score_note": "Not software or marketing work"}
+        out.append({**shown, "next_action": st["stage"], "band": band_of(lead),
                     "last_contact": st["last_contact"], "followup_due": st["due"],
                     "pending": pending_channels(lead, ctx, st["stage"])})
     return out

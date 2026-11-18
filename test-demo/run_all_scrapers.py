@@ -589,6 +589,9 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
                 time.sleep(delay_sec)
         elif mail_res.get("excluded"):
             lead_obj["email_status"] = "EXCLUDED_COMPANY"
+        elif mail_res.get("blocked"):
+            # one mail per company / complaints-style address: skipped on purpose, not a send failure
+            print(f"       -> [AUTO-MAIL-PENDING] [SKIPPED] {raw_email}: {mail_res.get('error')}")
         elif mail_res.get("verify"):
             # The mailbox check stopped it: nothing was sent, so this is not a send failure
             verdict = mail_res["verify"]

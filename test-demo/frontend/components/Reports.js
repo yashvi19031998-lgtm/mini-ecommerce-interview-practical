@@ -521,7 +521,7 @@ export default function Reports({ onOpenLeads, onOpenLeadsFiltered = null, onOpe
 
         {activeTab === 'summary' && <SummaryTab onOpenLeads={onOpenLeadsFiltered} onNotice={(type, msg) => (type === 'error' ? setError(msg) : null)} />}
         {activeTab === 'lead-status' && <LeadStatusTab onNotice={(type, msg) => (type === 'error' ? setError(msg) : null)} />}
-        {activeTab === 'daily-leads' && <DailyLeadsTab filters={filters} onNotice={(_, msg) => setError(msg)} />}
+        {activeTab === 'daily-leads' && <DailyLeadsTab filters={filters} onOpenLeads={onOpenLeadsFiltered} onNotice={(_, msg) => setError(msg)} />}
 
         {activeTab === 'reply-today' &&<ReplyToday onNotice={(_, msg) => setError(msg)} />}
 
