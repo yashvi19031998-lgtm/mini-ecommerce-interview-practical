@@ -2240,7 +2240,9 @@ def today_endpoint():
         month = {c["key"]: {"value": c.get("value"), "prev": c.get("prev_value")} for c in cards}
     except (ValueError, KeyError) as e:
         print(f"[today] month summary failed: {e}")
-    return jsonify({"success": True, **res, "month": month})
+    goals = load_settings().get("monthlyGoals") or {}
+    goals = {k: int(v) for k, v in goals.items() if str(v).strip().isdigit() and int(v) > 0} if isinstance(goals, dict) else {}
+    return jsonify({"success": True, **res, "month": month, "goals": goals})
 
 @app.route("/api/reports/lead-status/list", methods=["GET"])
 def report_lead_status_list_endpoint():

@@ -6,8 +6,8 @@
 // is doing on its own. Backend: GET /api/today (lead_status.py + reports_engine.py).
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowRight, Check, CheckCircle2, ExternalLink, Loader2, Mail, MessageCircle, Phone, RefreshCw } from 'lucide-react';
-import { fetchToday, markLeadContacted } from '../../lib/api';
+import { ArrowRight, Check, CheckCircle2, ExternalLink, Loader2, Mail, MessageCircle, Phone, RefreshCw, Target } from 'lucide-react';
+import { fetchToday, markLeadContacted, saveSettings } from '../../lib/api';
 import { ACTIONS, TODO_ACTIONS, whatsappUrl, niceDate } from '../../lib/leadMeta';
 
 const fmt = (n) => (n == null ? '–' : Number(n).toLocaleString());
@@ -67,6 +67,7 @@ export default function TodayPage({ userName = '', onOpenLead, onOpenLeads, onFi
   const [error, setError] = useState('');
   const [done, setDone] = useState({});
   const [loading, setLoading] = useState(false);
+  const [editGoals, setEditGoals] = useState(null); // { key: '123' } while the goal form is open
 
   const load = useCallback(() => {
     setLoading(true);
@@ -87,6 +88,19 @@ export default function TodayPage({ userName = '', onOpenLead, onOpenLeads, onFi
       notify(`${item.name}: logged. It moves to "Waiting for reply".`, 'success');
     } catch (err) {
       setDone(d => { const n = { ...d }; delete n[item.id]; return n; });
+      notify(err.message, 'error');
+    }
+  };
+
+  const saveGoals = async (e) => {
+    e.preventDefault();
+    const clean = Object.fromEntries(Object.entries(editGoals).map(([k, v]) => [k, Math.max(0, parseInt(v, 10) || 0)]).filter(([, v]) => v > 0));
+    try {
+      await saveSettings({ monthlyGoals: clean });
+      setEditGoals(null);
+      notify('Goals saved', 'success');
+      load();
+    } catch (err) {
       notify(err.message, 'error');
     }
   };
@@ -192,21 +206,48 @@ export default function TodayPage({ userName = '', onOpenLead, onOpenLeads, onFi
         {/* How we are doing */}
         <aside className="td-side">
           <section className="td-card">
-            <h2 className="td-card-title">This month</h2>
-            <dl className="td-month">
-              {MONTH.map(m => {
-                const v = data?.month?.[m.key];
-                return (
-                  <div key={m.key} className="td-month-row">
-                    <dt>{m.label}</dt>
-                    <dd>
-                      <span className="td-month-val">{fmt(v?.value)}</span>
-                      <Delta value={v?.value} prev={v?.prev} />
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
+            <div className="td-card-head">
+              <h2 className="td-card-title">This month</h2>
+              {!editGoals && (
+                <button type="button" className="td-link" onClick={() => setEditGoals(Object.fromEntries(MONTH.map(m => [m.key, String(data?.goals?.[m.key] || '')])))}>
+                  <Target size={13} /> {data?.goals && Object.keys(data.goals).length ? 'Edit goals' : 'Set goals'}
+                </button>
+              )}
+            </div>
+            {editGoals ? (
+              <form className="td-goals-form" onSubmit={saveGoals}>
+                <p className="td-goals-help">Target for each month. Leave empty for no target.</p>
+                {MONTH.map(m => (
+                  <label key={m.key} className="td-goal-input">
+                    <span>{m.label}</span>
+                    <input type="number" min="0" inputMode="numeric" value={editGoals[m.key]} placeholder="–"
+                      onChange={e => setEditGoals(g => ({ ...g, [m.key]: e.target.value }))} />
+                  </label>
+                ))}
+                <div className="td-goals-actions">
+                  <button type="button" className="btn btn-ghost sm" onClick={() => setEditGoals(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary sm">Save goals</button>
+                </div>
+              </form>
+            ) : (
+              <dl className="td-month">
+                {MONTH.map(m => {
+                  const v = data?.month?.[m.key];
+                  const goal = data?.goals?.[m.key];
+                  const pct = goal ? Math.min(100, Math.round(((v?.value || 0) / goal) * 100)) : null;
+                  return (
+                    <div key={m.key} className="td-month-row">
+                      <dt>{m.label}</dt>
+                      <dd>
+                        <span className="td-month-val">{fmt(v?.value)}{goal ? <small> / {fmt(goal)}</small> : null}</span>
+                        {goal ? <span className={`td-delta ${pct >= 100 ? 'up' : 'flat'}`}>{pct}% of goal</span> : <Delta value={v?.value} prev={v?.prev} />}
+                      </dd>
+                      {goal ? <div className="td-goal-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${m.label}: ${pct}% of goal`}><span style={{ width: `${pct}%` }} className={pct >= 100 ? 'met' : ''} /></div> : null}
+                    </div>
+                  );
+                })}
+              </dl>
+            )}
           </section>
 
           <section className="td-card">

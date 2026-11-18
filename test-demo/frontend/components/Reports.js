@@ -48,7 +48,7 @@ import LeadStatusTab from './reports/LeadStatusTab';
 export const REPORT_SECTIONS = [
   { id: 'lead-status', label: 'Lead Status', icon: ListChecks, noFilters: true },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'daily-leads', label: 'Daily Leads & Mail', icon: CalendarRange },
+  { id: 'daily-leads', label: 'Leads & mail by day', icon: CalendarRange },
   { id: 'reply-today', label: 'Reply Today', icon: MessageSquareReply, noFilters: true },
   { id: 'not-contacted', label: 'New Leads - Not Contacted', icon: UserPlus, noFilters: true },
   { id: 'followups', label: 'Follow-up Watchlist', icon: BellRing },
@@ -56,8 +56,8 @@ export const REPORT_SECTIONS = [
   { id: 'sources', label: 'Sources', icon: Globe },
   { id: 'pipeline', label: 'Pipeline', icon: TrendingUp },
   { id: 'outreach', label: 'Outreach', icon: Send },
-  { id: 'data-health', label: 'Data Health', icon: ShieldAlert, noFilters: true },
-  { id: 'daily-log', label: 'Daily Log', icon: Calendar, noFilters: true },
+  { id: 'data-health', label: 'Missing details', icon: ShieldAlert, noFilters: true },
+  { id: 'daily-log', label: 'Activity log', icon: Calendar, noFilters: true },
 ];
 const TABS = REPORT_SECTIONS;
 

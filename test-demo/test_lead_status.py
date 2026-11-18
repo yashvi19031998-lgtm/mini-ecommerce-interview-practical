@@ -80,6 +80,22 @@ class Stages(unittest.TestCase):
             ls.summary(leads, [], [], band="nope")
 
 
+class ListAndToday(unittest.TestCase):
+    def test_band_and_annotate(self):
+        self.assertEqual([ls.band_of(lead(ai_score=s)) for s in ("9", "5", "1")], ["hot", "warm", "cold"])
+        self.assertEqual(ls.band_of(lead(ai_score="", intent_score="")), "unscored")
+        out = ls.annotate([lead(mobile_number="9825012345")], [], [], now=NOW)[0]
+        self.assertEqual((out["next_action"], out["band"], out["last_contact"]), ("call_pending", "hot", ""))
+
+    def test_today_lanes(self):
+        leads = [lead(lead_id=f"P{i}", mobile_number="9825012345") for i in range(7)] + [lead(lead_id="M", email="a@acme.in")]
+        res = ls.today(leads, [], [], per_lane=5, now=NOW)
+        lane = next(l for l in res["lanes"] if l["id"] == "call_pending")
+        self.assertEqual((lane["count"], len(lane["items"])), (7, 5))
+        self.assertEqual([l["id"] for l in res["lanes"]], ls.TODO_STAGES)
+        self.assertNotIn("mail_pending", ls.TODO_STAGES)
+
+
 class Api(unittest.TestCase):
     def setUp(self):
         import app
@@ -97,6 +113,15 @@ class Api(unittest.TestCase):
             r = self.client.get("/api/reports/lead-status/list?stage=call_pending")
             self.assertEqual(r.get_json()["items"][0]["id"], "B")
             self.assertEqual(self.client.get("/api/reports/lead-status/list?stage=bad").status_code, 400)
+
+    def test_leads_carry_next_action_and_today_has_goals(self):
+        leads = [lead(lead_id="B", mobile_number="9825012345")]
+        with mock.patch.object(self.app, "read_leads", return_value=leads),                 mock.patch.object(self.app, "_report_context", return_value=(leads, [], [], [])),                 mock.patch.object(self.app, "load_settings", return_value={"monthlyGoals": {"won": "3", "replied": "x", "meetings": 0}}):
+            row = self.client.get("/api/leads").get_json()["leads"][0]
+            self.assertEqual((row["next_action"], row["band"]), ("call_pending", "hot"))
+            today = self.client.get("/api/today").get_json()
+            self.assertEqual(today["goals"], {"won": 3})
+            self.assertEqual(today["todo"], 1)
 
     def test_mark_done(self):
         with mock.patch.object(self.app, "_lead_info", return_value={"id": "B", "name": "Acme", "email": ""}), \

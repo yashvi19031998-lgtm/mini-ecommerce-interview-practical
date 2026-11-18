@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { REPORT_SECTIONS } from './Reports';
+import { menuPath } from './Sidebar';
 import { 
   Search, RefreshCw, Play, Send, Moon, Sun, Bell, 
   Menu, LogOut, ChevronRight, CheckCircle2, AlertCircle
@@ -70,7 +71,8 @@ export default function Header({
     settings: { root: 'LeadsGen AI', leaf: 'Intelligence & SMTP Settings' }
   };
 
-  const crumb = tabTitles[activeTab] || tabTitles.leads;
+  // Names come from the sidebar menu; the table above only covers pages that are not in the menu.
+  const crumb = menuPath(activeTab) || tabTitles[activeTab] || { root: 'LeadsGen AI', leaf: 'Today' };
 
   return (
     <header className="theme-header">
@@ -101,7 +103,7 @@ export default function Header({
           </svg>
           <input 
             type="text" 
-            placeholder="Search leads, decision makers, tech stack..." 
+            placeholder="Search leads by name, e-mail or phone" 
             value={searchQuery || ''}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
           />

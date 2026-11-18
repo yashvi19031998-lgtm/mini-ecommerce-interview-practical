@@ -351,6 +351,7 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
                     <td className="c-lead">
                       <button type="button" className="lv-lead-btn" onClick={(e) => { e.stopPropagation(); onOpenLead(l.id); }}>{leadName(l)}</button>
                       {leadAbout(l) && <span className="lv-lead-about">{leadAbout(l)}</span>}
+                      <span className="lv-mobile-step"><ActionPill id={l.next_action} /></span>
                     </td>
                     <td className="c-score"><ScoreChip lead={l} /></td>
                     <td><ActionPill id={l.next_action} /></td>

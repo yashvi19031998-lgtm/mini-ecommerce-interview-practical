@@ -234,7 +234,7 @@ function DashboardContent() {
     setActiveTab('leads');
   };
   const panelLead = panelLeadId ? leads.find(l => l.id === panelLeadId || l.lead_id === panelLeadId) : null;
-  const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
+
 
   const handleSendSingleEmail = async ({ id, to, subject, message }) => {
     try {
@@ -389,7 +389,6 @@ function DashboardContent() {
             {/* Today: the landing page */}
             {activeTab === 'today' && (
               <TodayPage
-                userName={userName}
                 reloadKey={todayReload}
                 onOpenLead={(id) => setPanelLeadId(id)}
                 onOpenLeads={openLeads}

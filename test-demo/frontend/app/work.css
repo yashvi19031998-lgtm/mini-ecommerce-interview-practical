@@ -120,7 +120,7 @@
 .lv-more { display: flex; flex-wrap: wrap; gap: 10px; }
 .fsel { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); flex: 1 1 160px; min-width: 0; }
 .fsel select { height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--border-med); background: var(--bg-white); color: var(--text-primary); font: inherit; font-size: 13px; font-weight: 500; width: 100%; }
-.lv-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.lv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .lv-chip-sep { width: 1px; background: var(--border-light); margin: 4px 2px; flex-shrink: 0; }
 .fchip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border-light); background: var(--bg-white); color: var(--text-secondary); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .fchip:hover { border-color: var(--border-med); color: var(--text-primary); }
@@ -246,3 +246,20 @@
   .band-group { width: 100%; justify-content: space-between; }
   .lv-filters { padding: 12px; }
 }
+
+/* Today: monthly goals */
+.td-card-head { display: flex; justify-content: space-between; align-items: baseline; }
+.td-link { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--primary-blue); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 0; }
+.td-month-row { flex-wrap: wrap; }
+.td-month-val small { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.td-goal-bar { flex-basis: 100%; height: 6px; border-radius: 999px; background: var(--bg-subtle-2); overflow: hidden; }
+.td-goal-bar span { display: block; height: 100%; border-radius: 999px; background: var(--primary-blue); }
+.td-goal-bar span.met { background: var(--success-green); }
+.td-goals-form { display: flex; flex-direction: column; gap: 8px; }
+.td-goals-help { margin: 0 0 4px; font-size: 12.5px; color: var(--text-muted); }
+.td-goal-input { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13.5px; color: var(--text-secondary); }
+.td-goal-input input { width: 96px; height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--border-med); font: inherit; font-size: 14px; text-align: right; }
+.td-goals-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+.lv-mobile-step { display: none; margin-top: 4px; }
+@media (max-width: 720px) { .lv-mobile-step { display: block; } }
+.lp-foot { padding-right: 92px; }

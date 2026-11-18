@@ -82,7 +82,8 @@ export const UTILITY_ITEMS = [
 
 // Report pages pulled up into "Today" are left out of the Reports group so nothing shows twice.
 // Lead Status and Reply Today live on Today / Leads now, so the Reports group leaves them out.
-const TODAY_REPORTS = ['rp-lead-status', 'rp-reply-today'];
+// Not Contacted and Follow-up Watchlist are filters on Leads now (Next step chips).
+const TODAY_REPORTS = ['rp-lead-status', 'rp-reply-today', 'rp-not-contacted', 'rp-followups'];
 const withSection = (items, section) => items.map(i => ({ ...i, section }));
 
 /**
@@ -149,6 +150,18 @@ function buildMenu({ totalLeads, isScraperRunning }) {
       ]
     }
   ];
+}
+
+/** Breadcrumb for a page id, from the menu itself so the names always match: { root, leaf }. */
+export function menuPath(id) {
+  for (const section of buildMenu({ totalLeads: 0, isScraperRunning: false })) {
+    for (const item of section.items) {
+      if (item.id === id) return { root: section.title, leaf: item.label };
+      const child = item.children?.find(c => c.id === id);
+      if (child) return { root: item.label, leaf: child.label };
+    }
+  }
+  return null;
 }
 
 export default function Sidebar({
