@@ -319,7 +319,8 @@ def _age_label(lead: dict) -> str:
 
 def is_stale(lead: dict) -> bool:
     age = lead_age_days(lead)
-    return age is not None and age > STALE_AFTER_DAYS
+    limit = _env_int("STALE_AFTER_DAYS", STALE_AFTER_DAYS)
+    return age is not None and age > limit
 
 
 def _sources(lead: dict) -> list:
