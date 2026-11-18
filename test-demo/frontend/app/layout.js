@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./work.css";
 
 export const metadata = {
   title: "LeadsGen AI — Autonomous B2B Prospecting & Intelligence Engine",

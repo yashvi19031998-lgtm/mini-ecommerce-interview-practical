@@ -744,3 +744,8 @@ export async function markLeadContacted(leadId, action, note = '') {
     method: 'POST', body: JSON.stringify({ lead_id: leadId, action, note })
   });
 }
+
+// Today page: to-do lanes + this month (lead_status.today)
+export async function fetchToday(perLane = 5) {
+  return await apiFetch(`/api/today?per_lane=${perLane}`);
+}

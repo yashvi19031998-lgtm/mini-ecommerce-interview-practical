@@ -247,3 +247,41 @@ def stage_list(leads, sent, activities, stage, band="all", source="", q="", limi
         })
     items.sort(key=lambda i: (i["score"] if i["score"] is not None else -1, i["found_at"]), reverse=True)
     return {"stage": STAGE_INFO[stage], "items": items[:max(1, min(int(limit or 300), 1000))], "total": len(items)}
+
+
+# ---------------------------------------------------------------------------------------------
+# Used by the lead list and the Today page
+# ---------------------------------------------------------------------------------------------
+BANDS = (("hot", 7, 10), ("warm", 4, 6), ("cold", 0, 3))
+
+
+def band_of(lead: Dict[str, Any]) -> str:
+    """hot (score 7-10), warm (4-6), cold (0-3) or unscored."""
+    score = lead_score(lead)
+    if score is None:
+        return "unscored"
+    return next(b for b, lo, hi in BANDS if lo <= score <= hi)
+
+
+def annotate(leads, sent, activities, now=None) -> List[Dict[str, Any]]:
+    """Copies of the leads with next_action (a stage id), band and last_contact added, for the lead list."""
+    ctx = build_context(sent, activities)
+    out = []
+    for lead in leads:
+        st = stage_of(lead, ctx, now)
+        out.append({**lead, "next_action": st["stage"], "band": band_of(lead),
+                    "last_contact": st["last_contact"], "followup_due": st["due"]})
+    return out
+
+
+TODO_STAGES = [s for s in STAGE_IDS if STAGE_INFO[s]["group"] == "todo"]
+
+
+def today(leads, sent, activities, per_lane=5, now=None) -> Dict[str, Any]:
+    """The Today page: count per stage and the best few leads of every to-do stage."""
+    res = summary(leads, sent, activities, now=now)
+    lanes = []
+    for stage in TODO_STAGES:
+        lst = stage_list(leads, sent, activities, stage, limit=per_lane, now=now)
+        lanes.append({**STAGE_INFO[stage], "count": lst["total"], "items": lst["items"]})
+    return {"stages": res["stages"], "todo": res["todo"], "total": res["total"], "lanes": lanes}

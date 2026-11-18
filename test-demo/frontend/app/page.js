@@ -5,7 +5,6 @@ import { AuthProvider, useAuth } from '../lib/auth-context';
 import AuthScreen from '../components/AuthScreen';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import StatsCards from '../components/StatsCards';
 import SearchEngine from '../components/SearchEngine';
 import MiningComingSoon from '../components/MiningComingSoon';
 import GlobalDirectories from '../components/GlobalDirectories';
@@ -24,14 +23,15 @@ import WebsiteAnalyzer from '../components/WebsiteAnalyzer';
 import DomainTools from '../components/DomainTools';
 import LeadCleanup from '../components/LeadCleanup';
 import LeadEnrichment from '../components/LeadEnrichment';
-import LeadsTable from '../components/LeadsTable';
+import LeadsPage, { DEFAULT_FILTERS } from '../components/leads/LeadsPage';
+import LeadPanel from '../components/leads/LeadPanel';
+import TodayPage from '../components/today/TodayPage';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
 import WhatsAppModal from '../components/WhatsAppModal';
 import ScraperConsole from '../components/ScraperConsole';
 import LeadImporter from '../components/LeadImporter';
 import SettingsView from '../components/SettingsView';
-import Dashboard from '../components/Dashboard';
 import Reports from '../components/Reports';
 import JobPortalScraper from '../components/JobPortalScraper';
 import FreelanceScraper from '../components/FreelanceScraper';
@@ -54,17 +54,44 @@ import {
   triggerSupabaseSync
 } from '../lib/api';
 
+// Every page has its own address: #/today, #/leads?action=call_pending&band=hot, #/settings ...
+// so refresh, Back and bookmarks work. Old ids keep working ('dashboard' opens Today).
+const TAB_ALIASES = { dashboard: 'today', 'rp-lead-status': 'today', 'rp-reply-today': 'today' };
+const FILTER_KEYS = Object.keys(DEFAULT_FILTERS);
+
+function readHash() {
+  if (typeof window === 'undefined') return { tab: 'today', filters: { ...DEFAULT_FILTERS } };
+  const raw = window.location.hash.replace(/^#\/?/, '');
+  const [path, query = ''] = raw.split('?');
+  const params = new URLSearchParams(query);
+  const filters = { ...DEFAULT_FILTERS };
+  FILTER_KEYS.forEach(k => { if (params.get(k)) filters[k] = params.get(k); });
+  const tab = TAB_ALIASES[path] || path || 'today';
+  return { tab, filters };
+}
+
+function hashFor(tab, filters) {
+  if (tab !== 'leads') return `#/${tab}`;
+  const params = new URLSearchParams();
+  FILTER_KEYS.forEach(k => { if (filters[k] && filters[k] !== DEFAULT_FILTERS[k]) params.set(k, filters[k]); });
+  const q = params.toString();
+  return `#/leads${q ? `?${q}` : ''}`;
+}
+
 function DashboardContent() {
   const { user, signOut, loading: authLoading } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'searchengines' | 'mining-*' | 'jobportal' | 'followups' | 'crmsources' | 'leads' | 'scraper' | 'import' | 'settings'
+  const [activeTab, setActiveTabRaw] = useState('today'); // 'today' | 'leads' | 'followups' | 'rp-*' | tool pages ...
+  const [leadFilters, setLeadFilters] = useState(DEFAULT_FILTERS);
+  const [panelLeadId, setPanelLeadId] = useState(null);
+  const [todayReload, setTodayReload] = useState(0);
+  const setActiveTab = useCallback((tab) => setActiveTabRaw(TAB_ALIASES[tab] || tab), []);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [leads, setLeads] = useState([]);
   const [backendOnline, setBackendOnline] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
-  const [tableFilter, setTableFilter] = useState('all');
 
   // Scraper State
   const [isScraperRunning, setIsScraperRunning] = useState(false);
@@ -154,6 +181,25 @@ function DashboardContent() {
     prevRunningRef.current = isScraperRunning;
   }, [isScraperRunning, loadLeads, showToast]);
 
+  // Address bar <-> page: read it on load and on Back/Forward, write it when the page or filters change
+  const [routeReady, setRouteReady] = useState(false);
+  useEffect(() => {
+    const apply = () => {
+      const { tab, filters } = readHash();
+      setActiveTabRaw(tab);
+      setLeadFilters(filters);
+    };
+    apply();
+    setRouteReady(true);
+    window.addEventListener('hashchange', apply);
+    return () => window.removeEventListener('hashchange', apply);
+  }, []);
+  useEffect(() => {
+    if (!routeReady) return; // the address bar is read first, never overwritten on load
+    const next = hashFor(activeTab, leadFilters);
+    if (window.location.hash !== next) window.history.pushState(null, '', next);
+  }, [activeTab, leadFilters, routeReady]);
+
   // If Auth is loading
   if (authLoading) {
     return (
@@ -173,14 +219,22 @@ function DashboardContent() {
 
   // Handlers
   const handleLeadStatusChange = async (leadId, newStatus) => {
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, Status: newStatus } : l));
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, Status: newStatus, status: newStatus } : l));
     try {
       await patchLeadStatus(leadId, newStatus);
-      showToast(`Lead #${leadId} status set to ${newStatus}`, 'success');
+      showToast('Outcome saved', 'success');
+      loadLeads(true); // next step changes with the outcome
     } catch (err) {
-      showToast(`Could not save status: ${err.message}`, 'error');
+      showToast(`Could not save the outcome: ${err.message}`, 'error');
     }
   };
+
+  const openLeads = (patch = {}) => {
+    setLeadFilters({ ...DEFAULT_FILTERS, view: leadFilters.view, ...patch });
+    setActiveTab('leads');
+  };
+  const panelLead = panelLeadId ? leads.find(l => l.id === panelLeadId || l.lead_id === panelLeadId) : null;
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
 
   const handleSendSingleEmail = async ({ id, to, subject, message }) => {
     try {
@@ -326,31 +380,21 @@ function DashboardContent() {
             // The top search bar searches the leads list: typing on any other page opens that list,
             // otherwise nothing visible would happen.
             setGlobalSearch(value);
-            if (value.trim() && activeTab !== 'leads') setActiveTab('leads');
+            if (value.trim()) openLeads({ q: value.trim() });
           }}
         />
 
         <div className="theme-scrollable-content">
           <div className="theme-content-padding">
-            {/* Lead KPI cards: only on the two pages about the leads list. On tool pages (scrapers, settings,
-                bulk tools...) they pushed the tool itself below the fold. */}
-            {['dashboard', 'leads'].includes(activeTab) && (
-              <StatsCards
-                leads={leads}
-                activeFilter={tableFilter}
-                onFilterClick={(f) => {
-                  setTableFilter(f);
-                  if (activeTab !== 'leads') setActiveTab('leads');
-                }}
-              />
-            )}
-
-            {/* Dashboard overview */}
-            {activeTab === 'dashboard' && (
-              <Dashboard
-                leads={leads}
-                onOpenJobPortal={() => setActiveTab('jobportal')}
-                onOpenLeads={() => setActiveTab('leads')}
+            {/* Today: the landing page */}
+            {activeTab === 'today' && (
+              <TodayPage
+                userName={userName}
+                reloadKey={todayReload}
+                onOpenLead={(id) => setPanelLeadId(id)}
+                onOpenLeads={openLeads}
+                onFindLeads={() => setActiveTab('scraper')}
+                notify={showToast}
               />
             )}
 
@@ -453,27 +497,14 @@ function DashboardContent() {
 
             {/* TAB 1: Leads CRM & Database */}
             {activeTab === 'leads' && (
-              <LeadsTable
+              <LeadsPage
                 leads={leads}
-                externalFilter={tableFilter}
-                onFilterChange={setTableFilter}
-                onSelectLeadForEmail={(lead) => setSelectedLeadForEmail(lead)}
-                onSelectLeadForWhatsApp={(lead) => setSelectedLeadForWhatsApp(lead)}
-                onBulkEmailOpen={(ids) => {
-                  setBulkEmailLeadIds(ids);
-                  setBulkEmailOpen(true);
-                }}
-                onBulkWhatsAppOpen={(ids) => {
-                  if (ids.length) {
-                    const first = leads.find(l => l.id === ids[0]);
-                    if (first) setSelectedLeadForWhatsApp(first);
-                  }
-                }}
+                loading={isRefreshing}
+                filters={leadFilters}
+                onFiltersChange={setLeadFilters}
+                onOpenLead={(id) => setPanelLeadId(id)}
+                onBulkEmail={(ids) => { setBulkEmailLeadIds(ids); setBulkEmailOpen(true); }}
                 onStatusChange={handleLeadStatusChange}
-                onTriggerQuickScraper={() => handleStartScraperMode('quick')}
-                onNavigateToScraper={() => setActiveTab('scraper')}
-                onNavigateToImport={() => setActiveTab('import')}
-                globalSearch={globalSearch}
               />
             )}
 
@@ -525,6 +556,18 @@ function DashboardContent() {
           </div>
         </div>
       </main>
+
+      {/* Lead panel (Today + Leads) */}
+      {panelLead && (
+        <LeadPanel
+          lead={panelLead}
+          onClose={() => setPanelLeadId(null)}
+          onChanged={() => { loadLeads(true); setTodayReload(n => n + 1); }}
+          onEmail={(l) => setSelectedLeadForEmail(l)}
+          onWhatsApp={(l) => setSelectedLeadForWhatsApp(l)}
+          notify={showToast}
+        />
+      )}
 
       {/* Outreach Modals */}
       {selectedLeadForEmail && (

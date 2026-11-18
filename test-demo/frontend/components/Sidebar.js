@@ -8,7 +8,7 @@ import {
   ShoppingCart, Globe, MessageCircle, House, Network, Factory, Phone, Wrench, Ship, Store,
   Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Link2, TextSearch, ListTree,
   FolderUp, Gauge, CalendarClock, MailSearch, Sparkles, CheckSquare, Eraser, Wand2, BarChart3, Laptop,
-  MessageSquareReply, CalendarRange, ListChecks, Layers, Wrench as ToolsIcon
+  Sun, Layers, Wrench as ToolsIcon
 } from 'lucide-react';
 import { REPORT_SECTIONS } from './Reports';
 
@@ -81,12 +81,13 @@ export const UTILITY_ITEMS = [
 ];
 
 // Report pages pulled up into "Today" are left out of the Reports group so nothing shows twice.
-const TODAY_REPORTS = ['rp-lead-status', 'rp-reply-today', 'rp-daily-leads'];
+// Lead Status and Reply Today live on Today / Leads now, so the Reports group leaves them out.
+const TODAY_REPORTS = ['rp-lead-status', 'rp-reply-today'];
 const withSection = (items, section) => items.map(i => ({ ...i, section }));
 
 /**
  * Sidebar menu, ordered by how often the page is used:
- *   Today         - the daily work (always visible)
+ *   Work          - Today (what to do now), Leads (all leads, filters, board), Follow-ups
  *   Find Leads    - running scrapers; the 18 single sources sit in one folded group
  *   Contacts      - importing and fixing lead data
  *   Insights      - reports
@@ -96,14 +97,11 @@ const withSection = (items, section) => items.map(i => ({ ...i, section }));
 function buildMenu({ totalLeads, isScraperRunning }) {
   return [
     {
-      title: 'Today',
+      title: 'Work',
       items: [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'rp-lead-status', label: 'Lead Status', icon: ListChecks },
-        { id: 'rp-reply-today', label: 'Reply Today', icon: MessageSquareReply },
-        { id: 'leads', label: 'All Leads', icon: Database, badge: totalLeads > 0 ? totalLeads.toLocaleString() : null },
-        { id: 'followups', label: 'Follow-ups', icon: History },
-        { id: 'rp-daily-leads', label: 'Daily Leads & Mail', icon: CalendarRange }
+        { id: 'today', label: 'Today', icon: Sun },
+        { id: 'leads', label: 'Leads', icon: Database, badge: totalLeads > 0 ? totalLeads.toLocaleString() : null },
+        { id: 'followups', label: 'Follow-ups', icon: History }
       ]
     },
     {

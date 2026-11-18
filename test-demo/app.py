@@ -255,6 +255,11 @@ def index():
 @app.route("/api/leads", methods=["GET"])
 def get_leads():
     leads = read_leads()
+    try:  # next_action / band / last_contact for the lead list filters
+        _, _, sent, acts = _report_context()
+        leads = lead_status.annotate(leads, sent, acts)
+    except Exception as e:  # the list must still load
+        print(f"[leads] could not add next actions: {e}")
     return jsonify({"success": True, "leads": leads, "total": len(leads)})
 
 @app.route("/api/leads/<lead_id>/status", methods=["PATCH"])
@@ -2223,6 +2228,19 @@ def report_lead_status_endpoint():
         return jsonify({"success": True, **res})
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
+
+@app.route("/api/today", methods=["GET"])
+def today_endpoint():
+    """The Today page: to-do lanes (best leads per action) + this month against last month."""
+    leads, runs, sent, acts = _report_context()
+    res = lead_status.today(leads, sent, acts, per_lane=request.args.get("per_lane", 5, type=int))
+    month = {}
+    try:
+        cards = reports_engine.summary(leads, runs, acts, sent, {"preset": "this_month"}).get("cards", [])
+        month = {c["key"]: {"value": c.get("value"), "prev": c.get("prev_value")} for c in cards}
+    except (ValueError, KeyError) as e:
+        print(f"[today] month summary failed: {e}")
+    return jsonify({"success": True, **res, "month": month})
 
 @app.route("/api/reports/lead-status/list", methods=["GET"])
 def report_lead_status_list_endpoint():
