@@ -237,10 +237,11 @@ export default function LeadImporter({ onImportSuccess, onLeadsImported, showToa
 
           {/* Option B: Raw Textarea */}
           <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-            <label className="form-label">
+            <label className="form-label" htmlFor="import-chat-text">
               Paste WhatsApp Group Messages / Snippets
             </label>
             <textarea
+              id="import-chat-text"
               className="form-input"
               rows={6}
               placeholder="Paste raw conversation logs here... e.g.

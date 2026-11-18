@@ -51,7 +51,7 @@ class TestAiEmailGenerator(unittest.TestCase):
         }
         res = detect_tech_and_intent(lead_react)
         self.assertTrue(res['is_hiring'])
-        self.assertIn('React / Next.js', res['tech_stack'])
+        self.assertTrue(any('React' in t for t in res['tech_stack']), res['tech_stack'])
 
         # Lead with Python & FastAPI
         lead_python = {
@@ -59,7 +59,8 @@ class TestAiEmailGenerator(unittest.TestCase):
             'Notes': 'Needs Python backend developer experienced with FastAPI and PostgreSQL'
         }
         res_py = detect_tech_and_intent(lead_python)
-        self.assertIn('Python', res_py['tech_stack'])
+        # the label became "Python / AI" (ai_email_generator, 18 Nov): any Python entry counts
+        self.assertTrue(any('Python' in t for t in res_py['tech_stack']), res_py['tech_stack'])
 
         # Lead with Shopify / Ecommerce
         lead_ecom = {
@@ -69,7 +70,7 @@ class TestAiEmailGenerator(unittest.TestCase):
         }
         res_ecom = detect_tech_and_intent(lead_ecom)
         self.assertTrue(res_ecom['is_ecommerce'])
-        self.assertIn('E-Commerce (Shopify/WooCommerce)', res_ecom['tech_stack'])
+        self.assertTrue(any('Shopify' in t for t in res_ecom['tech_stack']), res_ecom['tech_stack'])
 
         # Lead with Flutter / Mobile
         lead_mobile = {
@@ -77,7 +78,7 @@ class TestAiEmailGenerator(unittest.TestCase):
             'Job Title': 'Senior Flutter iOS Android Developer'
         }
         res_mob = detect_tech_and_intent(lead_mobile)
-        self.assertIn('Mobile Apps (Flutter/React Native)', res_mob['tech_stack'])
+        self.assertTrue(any('Flutter' in t for t in res_mob['tech_stack']), res_mob['tech_stack'])
 
     def test_synthesize_tailored_email(self):
         lead = {

@@ -80,6 +80,21 @@ def add_header(response):
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
+    # Big JSON answers (the leads list is ~5 MB) are sent gzip-compressed when the browser accepts it:
+    # about 10x smaller, which matters a lot on a hosted server or a slow connection.
+    try:
+        if (response.status_code == 200 and not response.direct_passthrough and response.mimetype == "application/json"
+                and "gzip" in (request.headers.get("Accept-Encoding") or "").lower()
+                and "Content-Encoding" not in response.headers):
+            data = response.get_data()
+            if len(data) > 4096:
+                import gzip
+                response.set_data(gzip.compress(data, compresslevel=5))
+                response.headers["Content-Encoding"] = "gzip"
+                response.headers["Content-Length"] = str(len(response.get_data()))
+                response.headers["Vary"] = "Accept-Encoding"
+    except Exception:  # noqa: BLE001 - never break a response over compression
+        pass
     return response
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

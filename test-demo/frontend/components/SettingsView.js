@@ -170,8 +170,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group">
-                <label className="form-label">Company Name</label>
-                <input
+                <label className="form-label" htmlFor="set-company_name">Company Name</label>
+                <input id="set-company_name"
                   type="text"
                   className="form-input"
                   value={settings.company_name || ''}
@@ -180,8 +180,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Tagline / Mission Statement</label>
-                <input
+                <label className="form-label" htmlFor="set-tagline">Tagline / Mission Statement</label>
+                <input id="set-tagline"
                   type="text"
                   className="form-input"
                   value={settings.tagline || ''}
@@ -190,8 +190,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Company Description & Core Services (Used by AI & Cold Emails)</label>
-                <textarea
+                <label className="form-label" htmlFor="set-company_description">Company Description & Core Services (Used by AI & Cold Emails)</label>
+                <textarea id="set-company_description"
                   className="form-input"
                   rows={3}
                   placeholder="Describe your company services, core tech stack, and offerings. Used in cold emails and AI qualification..."
@@ -201,8 +201,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Official Website URL</label>
-                <input
+                <label className="form-label" htmlFor="set-website">Official Website URL</label>
+                <input id="set-website"
                   type="text"
                   className="form-input"
                   value={settings.website || ''}
@@ -211,8 +211,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Contact Mobile / WhatsApp</label>
-                <input
+                <label className="form-label" htmlFor="set-phone">Contact Mobile / WhatsApp</label>
+                <input id="set-phone"
                   type="text"
                   className="form-input"
                   value={settings.phone || ''}
@@ -221,8 +221,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Business Office Location</label>
-                <input
+                <label className="form-label" htmlFor="set-address">Business Office Location</label>
+                <input id="set-address"
                   type="text"
                   className="form-input"
                   value={settings.address || ''}
@@ -251,8 +251,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
                 <div className="form-group">
-                  <label className="form-label">SMTP Server Host</label>
-                  <input
+                  <label className="form-label" htmlFor="set-smtp_host">SMTP Server Host</label>
+                  <input id="set-smtp_host"
                     type="text"
                     className="form-input"
                     value={settings.smtp_host || ''}
@@ -262,8 +262,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Port</label>
-                  <input
+                  <label className="form-label" htmlFor="set-smtp_port">Port</label>
+                  <input id="set-smtp_port"
                     type="number"
                     className="form-input"
                     value={settings.smtp_port ?? 587}
@@ -275,8 +275,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Sender Display Name</label>
-                <input
+                <label className="form-label" htmlFor="set-sender_name">Sender Display Name</label>
+                <input id="set-sender_name"
                   type="text"
                   className="form-input"
                   value={settings.sender_name || ''}
@@ -285,8 +285,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Sender Email Address (Username)</label>
-                <input
+                <label className="form-label" htmlFor="set-email">Sender Email Address (Username)</label>
+                <input id="set-email"
                   type="email"
                   className="form-input"
                   value={settings.email || settings.smtp_user || ''}
@@ -327,8 +327,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="form-label">Default Search Keywords (Comma-separated)</label>
-                <input
+                <label className="form-label" htmlFor="set-default_keywords">Default Search Keywords (Comma-separated)</label>
+                <input id="set-default_keywords"
                   type="text"
                   className="form-input"
                   placeholder="e.g. software company, web development, mobile app, IT services"
@@ -341,8 +341,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Default City</label>
-                <input
+                <label className="form-label" htmlFor="set-default_city">Default City</label>
+                <input id="set-default_city"
                   type="text"
                   className="form-input"
                   placeholder="e.g. Ahmedabad"
@@ -352,8 +352,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Default State</label>
-                <input
+                <label className="form-label" htmlFor="set-default_state">Default State</label>
+                <input id="set-default_state"
                   type="text"
                   className="form-input"
                   placeholder="e.g. Gujarat"
@@ -378,8 +378,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Max Automated Emails Per 1-Hour Run (0 = no limit)</label>
-                <input
+                <label className="form-label" htmlFor="set-max_pending_emails">Max Automated Emails Per 1-Hour Run (0 = no limit)</label>
+                <input id="set-max_pending_emails"
                   type="number"
                   min={0}
                   className="form-input"
@@ -393,11 +393,12 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
               </div>
 
               <div className="form-group" style={{ gridColumn: '1 / -1', marginTop: '0.5rem', background: 'rgba(244, 63, 94, 0.05)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f43f5e', fontWeight: 700 }}>
+                <label className="form-label" htmlFor="set-excluded-companies" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f43f5e', fontWeight: 700 }}>
                   <ShieldAlert size={15} />
                   Excluded Companies / Do-Not-Contact List (બ્લેકલિસ્ટેડ કંપનીઓ)
                 </label>
                 <input
+                  id="set-excluded-companies"
                   type="text"
                   className="form-input"
                   placeholder="e.g. 8dots, CompetitorLtd, PartnerCompany"
@@ -444,8 +445,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div className="form-group">
-              <label className="form-label">Target Cities / Locations (Comma Separated)</label>
-              <textarea
+              <label className="form-label" htmlFor="set-target_cities">Target Cities / Locations (Comma Separated)</label>
+              <textarea id="set-target_cities"
                 className="form-input"
                 style={{ minHeight: '90px', resize: 'vertical' }}
                 placeholder="Ahmedabad, Mumbai, Bengaluru, Pune, Delhi NCR, Remote / Worldwide, United States, UK..."
@@ -458,8 +459,8 @@ export default function SettingsView({ showToast, onNavigateToLeads = null }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Default Search Keywords (Comma Separated)</label>
-              <textarea
+              <label className="form-label" htmlFor="set-default_keywords">Default Search Keywords (Comma Separated)</label>
+              <textarea id="set-default_keywords"
                 className="form-input"
                 style={{ minHeight: '90px', resize: 'vertical' }}
                 placeholder="software development company, web development agency, hire dedicated software developers..."

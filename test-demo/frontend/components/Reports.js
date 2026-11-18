@@ -118,6 +118,9 @@ export default function Reports({ onOpenLeads, onOpenLeadsFiltered = null, onOpe
     }
   });
 
+  // Phone: the filter bar folds behind a "Filters" button (CSS shows it always on wider screens)
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   // Filter state
   const [filters, setFilters] = useState(() => {
     try {
@@ -309,6 +312,9 @@ export default function Reports({ onOpenLeads, onOpenLeadsFiltered = null, onOpe
     }
   };
 
+  const activeFilterCount = ['source', 'status', 'pending', 'next_step', 'client_type', 'temp', 'city']
+    .filter(k => filters[k] && filters[k] !== 'all').length;
+
   return (
     <div className="rp-container">
       {/* Page Title & Subtitle */}
@@ -333,7 +339,13 @@ export default function Reports({ onOpenLeads, onOpenLeadsFiltered = null, onOpe
 
       {/* Filter Control Bar (hidden for sections that do not use the period / source / stage filters) */}
       {!current.noFilters && (
-      <div className="rp-filter-bar">
+        <button type="button" className="rp-filter-toggle" aria-expanded={filtersOpen} aria-controls="rp-filter-bar"
+          onClick={() => setFiltersOpen(o => !o)}>
+          {filtersOpen ? 'Hide filters' : `Filters${activeFilterCount ? ` (${activeFilterCount})` : ''}`}
+        </button>
+      )}
+      {!current.noFilters && (
+      <div id="rp-filter-bar" className={`rp-filter-bar ${filtersOpen ? 'is-open' : ''}`}>
         {/* Preset Selector */}
         <div className="rp-filter-group">
           <label className="rp-filter-label" htmlFor="rp-preset-select">

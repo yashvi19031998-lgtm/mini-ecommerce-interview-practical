@@ -103,7 +103,8 @@ export default function Header({
           </svg>
           <input 
             type="text" 
-            placeholder="Search leads by name, e-mail or phone" 
+            placeholder="Search leads by name, e-mail or phone"
+            aria-label="Search leads" 
             value={searchQuery || ''}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
           />

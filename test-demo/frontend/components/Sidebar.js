@@ -36,7 +36,7 @@ export const MINING_ITEMS = [
 export const EXTRACTION_ITEMS = [
   { id: 'dx-mlmdiary', label: 'MLMDiary', icon: Network, section: 'Indian Directories' },
   { id: 'dx-indiamart', label: 'IndiaMART', icon: Factory, section: 'Indian Directories' },
-  { id: 'dx-justdial', label: 'Justdial', icon: Phone, section: 'Indian Directories' },
+  { id: 'dx-justdial', label: 'Justdial', icon: Phone, section: 'Indian Directories', off: true }, // blocks automated access
   { id: 'dx-sulekha', label: 'Sulekha', icon: Wrench, section: 'Indian Directories' },
   { id: 'dx-tradeindia', label: 'TradeIndia', icon: Store, section: 'Indian Directories' },
   { id: 'dx-exportersindia', label: 'ExportersIndia', icon: Ship, section: 'Indian Directories' },
@@ -248,6 +248,7 @@ export default function Sidebar({
                       <ChildIcon size={15} strokeWidth={1.6} style={{ flexShrink: 0 }} />
                       <span className="theme-nav-label">{child.label}</span>
                       {child.soon && <span className="theme-nav-badge soon">Soon</span>}
+                      {child.off && <span className="theme-nav-badge soon" title="Not available: the site blocks automated access">Off</span>}
                     </div>
                   </React.Fragment>
                 );

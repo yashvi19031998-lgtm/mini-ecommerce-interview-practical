@@ -363,3 +363,20 @@
 .rp-multi-all { width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--primary-blue); cursor: pointer; }
 .rp-city { width: 140px; }
 .rp-clear-filters { border: 0; background: none; color: var(--primary-blue); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; align-self: center; }
+
+/* ---- QA fixes 18 Nov ---- */
+/* Follow-ups tabs scroll sideways on a phone instead of sticking out */
+@media (max-width: 720px) {
+  .fu-tabs { overflow-x: auto; scrollbar-width: none; }
+  .fu-tab { white-space: nowrap; flex-shrink: 0; }
+}
+/* The floating chat button covers the last buttons of a page on a phone: leave room under the content */
+@media (max-width: 900px) {
+  .theme-content-padding { padding-bottom: 96px !important; }
+}
+/* Reports filters: folded behind a button on a phone, always shown on wider screens */
+.rp-filter-toggle { display: none; }
+@media (max-width: 720px) {
+  .rp-filter-toggle { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border-med); background: var(--bg-white); color: var(--text-primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .rp-filter-bar:not(.is-open) { display: none !important; }
+}
