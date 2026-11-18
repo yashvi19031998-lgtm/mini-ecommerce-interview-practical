@@ -7,7 +7,7 @@ import uuid
 import threading
 import subprocess
 import pandas as pd
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import has_request_context, Flask, render_template, request, jsonify, send_file
 from werkzeug.exceptions import HTTPException
 from settings_manager import load_settings, save_settings, format_signature, auto_send_state
 from email_service import send_smtp_email
@@ -424,78 +424,90 @@ def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms, use_ai=Fals
             daily_cap, sent_today = 50, 0
         failures_in_row = 0
         for idx, lid in enumerate(lead_ids):
-            lead = all_leads.get(lid)
-            if not lead:
-                _bulk_note(job, lid, "", False, "no_email", "Lead not found")
-                continue
-            to_email = str(lead.get("Email", "")).split(",")[0].strip()
-            if not to_email or "@" not in to_email or to_email == "N/A":
-                _bulk_note(job, lid, to_email, False, "no_email", "No valid e-mail")
-                continue
-            if job["stopped_reason"]:
-                _bulk_note(job, lid, to_email, False, "stopped", job["stopped_reason"])
-                continue
-            if sent_today + job["sent"] >= daily_cap:
-                job["stopped_reason"] = f"Daily limit of {daily_cap} e-mails reached - the rest can go tomorrow."
-                _bulk_note(job, lid, to_email, False, "daily_limit", job["stopped_reason"])
-                continue
-
-            comp = str(lead.get("Company Name") or "")
-            # A job-post title is never used as a name in the e-mail text (see followup_sequence.outreach_names)
-            name, msg_company = followup_sequence.outreach_names(comp)
-            loc = str(lead.get("Address") or "").strip() or "your region"
-
-            # Requirement-tailored AI personalized email when requested
-            if use_ai:
-                try:
-                    from ai_email_generator import generate_personalized_email
-                    draft = generate_personalized_email(lead)
-                    sub = draft["subject"]
-                    body = draft["body"]
-                except Exception:
-                    sub = subject_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
-                    body = message_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
-            else:
-                sub = subject_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
-                body = message_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
-
-            if sig and sig.strip()[:20] not in body:
-                body = f"{body}\n\n---\n{sig.strip()}"
-
-            res = send_smtp_email(to_email, sub, body, company_name=comp)
-            if res.get("success"):
-                failures_in_row = 0
-                update_lead_record(lid, {"Email Status": "SENT", "Email Sent At": time.strftime("%Y-%m-%d %H:%M:%S"),
-                                         "Status": "EMAIL_SENT"})
-                followup_store.safe_log(lid, "email_sent", f"Email sent: {sub}", details=body,
-                                        source="bulk email", lead_name=comp, lead_email=to_email)
-                _bulk_note(job, lid, to_email, True, "sent")
-                if idx < len(lead_ids) - 1 and delay_ms > 0:
-                    time.sleep(delay_ms / 1000.0)
-            elif res.get("verify"):
-                if res.get("invalid"):
-                    update_lead_record(lid, {"Email Status": "INVALID"})   # would bounce: never try again
-                _bulk_note(job, lid, to_email, False, "not_verified", res.get("error", ""))
-                if "port 25" in str(res.get("error", "")):
-                    job["stopped_reason"] = "This computer cannot check mailboxes (port 25 blocked), so nothing is sent."
-            elif res.get("already_sent"):
-                update_lead_record(lid, {"Email Status": "SENT", "Status": "EMAIL_SENT"})
-                _bulk_note(job, lid, to_email, False, "already_sent", res.get("error", ""))
-            elif res.get("excluded"):
-                update_lead_record(lid, {"Email Status": "EXCLUDED_COMPANY"})
-                _bulk_note(job, lid, to_email, False, "excluded", res.get("error", ""))
-            else:
-                failures_in_row += 1
-                _bulk_note(job, lid, to_email, False, "error", res.get("error", "SMTP send failed"))
-                if failures_in_row >= BULK_MAX_FAILURES_IN_ROW:
-                    job["stopped_reason"] = (f"Stopped after {failures_in_row} failed sends in a row - check the Gmail "
-                                             f"login (Settings -> Send Test Verification Email).")
+            try:
+                failures_in_row = _bulk_one(job, idx, lid, lead_ids, all_leads, sig, subject_tpl, message_tpl,
+                                            delay_ms, use_ai, daily_cap, sent_today, failures_in_row)
+            except Exception as err:  # one bad lead (bad data, AI or file error) never stops the others
+                _bulk_note(job, lid, "", False, "error", f"Could not send to this lead: {err}")
     except Exception as err:  # never leave a job "running" forever
         job["stopped_reason"] = f"Bulk e-mail stopped: {err}"
     finally:
         with _bulk_lock:
             job["done"] = True
             job["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _bulk_one(job, idx, lid, lead_ids, all_leads, sig, subject_tpl, message_tpl, delay_ms, use_ai, daily_cap,
+              sent_today, failures_in_row):
+    """Sends to one lead of a bulk job; returns the updated count of failed sends in a row."""
+    lead = all_leads.get(lid)
+    if not lead:
+        _bulk_note(job, lid, "", False, "no_email", "Lead not found")
+        return failures_in_row
+    to_email = str(lead.get("Email", "")).split(",")[0].strip()
+    if not to_email or "@" not in to_email or to_email == "N/A":
+        _bulk_note(job, lid, to_email, False, "no_email", "No valid e-mail")
+        return failures_in_row
+    if job["stopped_reason"]:
+        _bulk_note(job, lid, to_email, False, "stopped", job["stopped_reason"])
+        return failures_in_row
+    if sent_today + job["sent"] >= daily_cap:
+        job["stopped_reason"] = f"Daily limit of {daily_cap} e-mails reached - the rest can go tomorrow."
+        _bulk_note(job, lid, to_email, False, "daily_limit", job["stopped_reason"])
+        return failures_in_row
+
+    comp = str(lead.get("Company Name") or "")
+    # A job-post title is never used as a name in the e-mail text (see followup_sequence.outreach_names)
+    name, msg_company = followup_sequence.outreach_names(comp)
+    loc = str(lead.get("Address") or "").strip() or "your region"
+
+    # Requirement-tailored AI personalized email when requested
+    if use_ai:
+        try:
+            from ai_email_generator import generate_personalized_email
+            draft = generate_personalized_email(lead)
+            sub = draft["subject"]
+            body = draft["body"]
+        except Exception:
+            sub = subject_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+            body = message_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+    else:
+        sub = subject_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+        body = message_tpl.replace("{company}", msg_company).replace("{name}", name).replace("{location}", loc)
+
+    if sig and sig.strip()[:20] not in body:
+        body = f"{body}\n\n---\n{sig.strip()}"
+
+    res = send_smtp_email(to_email, sub, body, company_name=comp)
+    if res.get("success"):
+        failures_in_row = 0
+        update_lead_record(lid, {"Email Status": "SENT", "Email Sent At": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                 "Status": "EMAIL_SENT"})
+        followup_store.safe_log(lid, "email_sent", f"Email sent: {sub}", details=body,
+                                source="bulk email", lead_name=comp, lead_email=to_email)
+        _bulk_note(job, lid, to_email, True, "sent")
+        if idx < len(lead_ids) - 1 and delay_ms > 0:
+            time.sleep(delay_ms / 1000.0)
+    elif res.get("verify"):
+        if res.get("invalid"):
+            update_lead_record(lid, {"Email Status": "INVALID"})   # would bounce: never try again
+        _bulk_note(job, lid, to_email, False, "not_verified", res.get("error", ""))
+        if "port 25" in str(res.get("error", "")):
+            job["stopped_reason"] = "This computer cannot check mailboxes (port 25 blocked), so nothing is sent."
+    elif res.get("already_sent"):
+        update_lead_record(lid, {"Email Status": "SENT", "Status": "EMAIL_SENT"})
+        _bulk_note(job, lid, to_email, False, "already_sent", res.get("error", ""))
+    elif res.get("excluded"):
+        update_lead_record(lid, {"Email Status": "EXCLUDED_COMPANY"})
+        _bulk_note(job, lid, to_email, False, "excluded", res.get("error", ""))
+    else:
+        failures_in_row += 1
+        _bulk_note(job, lid, to_email, False, "error", res.get("error", "SMTP send failed"))
+        if failures_in_row >= BULK_MAX_FAILURES_IN_ROW:
+            job["stopped_reason"] = (f"Stopped after {failures_in_row} failed sends in a row - check the Gmail "
+                                     f"login (Settings -> Send Test Verification Email).")
+    return failures_in_row
+
 
 @app.route("/api/scraper/status", methods=["GET"])
 def get_scraper_status():
@@ -711,10 +723,15 @@ _scheduler_thread = None
 @app.route("/api/scheduler/trigger", methods=["POST"])
 def trigger_scheduler_run():
     global _scheduler_thread
-    lock_file = os.path.join(BASE_DIR, ".scraper_runner.lock")
     # The lock file appears a moment after the script starts: also refuse while our own thread is
-    # alive, or two quick clicks would start two runs (and e-mail the same leads twice).
-    if os.path.exists(lock_file) or (_scheduler_thread is not None and _scheduler_thread.is_alive()):
+    # alive, or two quick clicks would start two runs (and e-mail the same leads twice). A lock left behind
+    # by a crashed run (its process is gone) does not block a new run.
+    try:
+        from run_all_scrapers import run_lock_active
+        locked = run_lock_active()
+    except Exception:
+        locked = os.path.exists(os.path.join(BASE_DIR, ".scraper_runner.lock"))
+    if locked or (_scheduler_thread is not None and _scheduler_thread.is_alive()):
         return jsonify({"success": False, "error": "A 1-hour scraper job is already executing right now."}), 409
 
     def _run_bg():
@@ -2121,8 +2138,53 @@ import reports_engine
 import daily_leads_report
 import lead_status
 
+REPORT_EXTRA_KEYS = ("client_type", "temp", "city", "pending", "next_step")
+
+
+def report_lead_filter(leads, sent, acts, args):
+    """Extra report filters, applied to the leads before a report runs:
+    client_type (it_project, hiring, digital, prospect, other), temp (hot, warm, cold, unscored), city (text in
+    the location), pending (email, call, whatsapp: that channel not used yet), next_step (a lead_status stage),
+    source with several families separated by commas. Raises ValueError on an unknown value."""
+    import report_summary
+    ctype, band = (args.get("client_type") or "").strip(), (args.get("temp") or "").strip()  # "band" is taken by Daily Leads
+    city = (args.get("city") or "").strip().lower()
+    pending, step = (args.get("pending") or "").strip(), (args.get("next_step") or "").strip()
+    sources = [x.strip().lower() for x in (args.get("source") or "").split(",") if x.strip()]
+    sources = sources if len(sources) > 1 else []  # one source: the report's own source filter handles it
+    if ctype and ctype not in report_summary.CLIENT_TYPES:
+        raise ValueError(f"Unknown client type '{ctype}'.")
+    if band and band not in ("hot", "warm", "cold", "unscored"):
+        raise ValueError(f"Unknown temperature '{band}'.")
+    if pending and pending not in ("email", "call", "whatsapp"):
+        raise ValueError("pending must be email, call or whatsapp.")
+    if step and step not in lead_status.STAGE_INFO:
+        raise ValueError(f"Unknown next step '{step}'.")
+    if not any((ctype, band, city, pending, step, sources)):
+        return leads
+    if pending or step:
+        leads = lead_status.annotate(leads, sent, acts)
+    out = []
+    for l in leads:
+        if ctype and report_summary.client_type(l) != ctype:
+            continue
+        if band and lead_status.band_of(l) != band:
+            continue
+        if city and city not in str(l.get("location") or l.get("Address") or "").lower():
+            continue
+        if pending and pending not in l.get("pending", []):
+            continue
+        if step and l.get("next_action") != step:
+            continue
+        if sources and report_summary.source_family(l).lower() not in sources:
+            continue
+        out.append(l)
+    return out
+
+
 def _report_context():
-    """Helper to load data files using BASE_DIR without writing anything."""
+    """Helper to load data files using BASE_DIR without writing anything. Inside a report request the extra
+    filters in the query string (report_lead_filter) are applied to the leads."""
     leads = read_leads()
     runs_path = os.path.join(BASE_DIR, "logs", "scraper_runs.csv")
     sent_path = os.path.join(BASE_DIR, "logs", "sent_emails.csv")
@@ -2130,14 +2192,21 @@ def _report_context():
     runs = reports_engine.load_runs(runs_path)
     sent = reports_engine.load_sent(sent_path)
     acts = reports_engine.load_activities(act_path)
+    try:
+        if has_request_context() and request.path.startswith("/api/reports/") and \
+                (any(request.args.get(k) for k in REPORT_EXTRA_KEYS) or "," in (request.args.get("source") or "")):
+            leads = report_lead_filter(leads, sent, acts, request.args)
+    except ValueError:
+        raise
     return leads, runs, sent, acts
 
 def _report_filters():
+    src = request.args.get("source")
     return {
         "preset": request.args.get("preset"),
         "date_from": request.args.get("date_from"),
         "date_to": request.args.get("date_to"),
-        "source": request.args.get("source"),
+        "source": "all" if src and "," in src else src,  # several sources: already applied to the leads
         "status": request.args.get("status"),
     }
 

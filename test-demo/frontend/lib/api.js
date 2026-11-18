@@ -665,6 +665,8 @@ function toReportQueryString(filters = {}) {
   if (filters.date_to) params.set('date_to', filters.date_to);
   if (filters.source && filters.source !== 'all') params.set('source', filters.source);
   if (filters.status && filters.status.toUpperCase() !== 'ALL') params.set('status', filters.status);
+  // Extra report filters (app.report_lead_filter)
+  ['client_type', 'temp', 'city', 'pending', 'next_step'].forEach(k => { if (filters[k]) params.set(k, filters[k]); });
   const q = params.toString();
   return q ? `?${q}` : '';
 }

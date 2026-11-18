@@ -126,6 +126,7 @@ def build_context(sent: List[Dict[str, str]], activities: List[Dict[str, str]]) 
             continue
         if not when:
             continue
+        st.setdefault("types", set()).add(t)  # every kind of contact this lead ever had
         if t in ("call", "whatsapp", "meeting") and when > st.get("phone", datetime.datetime.min):
             st["phone"] = when  # reached by phone: needed before a mailed lead counts as fully contacted
         if t in OUTBOUND and when > st.get("out", datetime.datetime.min):
@@ -280,14 +281,43 @@ def band_of(lead: Dict[str, Any]) -> str:
     return next(b for b, lo, hi in BANDS if lo <= score <= hi)
 
 
+# Leads that are not worth contacting on any channel
+_NO_CONTACT_STAGES = {"closed", "not_fit", "replied"}
+
+
+def pending_channels(lead: Dict[str, Any], ctx: Dict[str, Any], stage: str) -> List[str]:
+    """Channels not used yet for this lead: 'email' (usable address, never mailed), 'call' (phone, never
+    called), 'whatsapp' (mobile number, never WhatsApped). Empty for closed / not-a-fit / replied leads."""
+    if stage in _NO_CONTACT_STAGES:
+        return []
+    email = _first_email(lead)
+    info = {**ctx["by_email"].get(email, {}), **ctx["by_id"].get(lead_id_of(lead), {})} if email else \
+        dict(ctx["by_id"].get(lead_id_of(lead), {}))
+    types = info.get("types", set())
+    em_stat = _s(lead.get("email_status") or lead.get("Email Status")).upper()
+    status = _s(lead.get("status") or lead.get("Status")).upper()
+    out = []
+    mailed = (email and email in ctx["sent_at"]) or em_stat == "SENT" or status == "EMAIL_SENT" or \
+        bool(types & {"email_sent", "email"})
+    if email and not mailed and em_stat not in NOT_MAILABLE and not info.get("bounce"):
+        out.append("email")
+    phone = phone_of(lead)
+    if phone and not types & {"call", "meeting"}:
+        out.append("call")
+    if phone and whatsapp_link(phone) and "whatsapp" not in types:
+        out.append("whatsapp")
+    return out
+
+
 def annotate(leads, sent, activities, now=None) -> List[Dict[str, Any]]:
-    """Copies of the leads with next_action (a stage id), band and last_contact added, for the lead list."""
+    """Copies of the leads with next_action (a stage id), band, last_contact and pending channels added."""
     ctx = build_context(sent, activities)
     out = []
     for lead in leads:
         st = stage_of(lead, ctx, now)
         out.append({**lead, "next_action": st["stage"], "band": band_of(lead),
-                    "last_contact": st["last_contact"], "followup_due": st["due"]})
+                    "last_contact": st["last_contact"], "followup_due": st["due"],
+                    "pending": pending_channels(lead, ctx, st["stage"])})
     return out
 
 

@@ -259,7 +259,7 @@ function DashboardContent() {
       // Only leads the server really e-mailed are marked as sent. Before, every selected lead was shown
       // as EMAIL_SENT and the message counted all of them, even when some (or all) were refused.
       const sentIds = new Set((res.results || []).filter(r => r.success).map(r => String(r.id)));
-      const alreadySentIds = new Set((res.results || []).filter(r => r.already_sent).map(r => String(r.id)));
+      const alreadySentIds = new Set((res.results || []).filter(r => r.reason === 'already_sent' || r.already_sent).map(r => String(r.id)));
       const sentCount = Number.isFinite(Number(res.sent)) ? Number(res.sent) : sentIds.size;
       const failedCount = Number(res.failed) || 0;
       setLeads(prev => prev.map(l => {
@@ -283,7 +283,10 @@ function DashboardContent() {
       }));
       const notSent = (Number(res.not_verified) || 0) + (Number(res.skipped) || 0) + failedCount;
       const firstError = res.stopped_reason || (res.results || []).find(r => !r.success)?.error;
-      const allAlreadySent = alreadySentIds.size > 0 && sentCount === 0 && (res.results || []).every(r => r.already_sent || !r.email);
+      const allAlreadySent = alreadySentIds.size > 0 && sentCount === 0 && (res.results || []).every(r => r.reason === 'already_sent' || r.already_sent || !r.email);
+      // Next step and pending channels are worked out on the server: reload so mailed leads leave "Email pending"
+      loadLeads(true);
+      setTodayReload(n => n + 1);
       if (sentCount === 0) {
         if (allAlreadySent) {
           showToast(`Selected leads were already contacted previously (Spam-prevention protected).`, 'info');

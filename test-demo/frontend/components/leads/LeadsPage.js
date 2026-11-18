@@ -15,7 +15,7 @@ import {
   leadPhone, postUrl, leadScore, leadOutcome, leadSource, foundDate, niceDate
 } from '../../lib/leadMeta';
 
-export const DEFAULT_FILTERS = { q: '', action: '', band: '', source: '', found: '', outcome: '', contact: '', sort: 'score', view: 'table', group: 'action' };
+export const DEFAULT_FILTERS = { q: '', action: '', pending: '', band: '', source: '', found: '', outcome: '', contact: '', sort: 'score', view: 'table', group: 'action', size: '50' };
 
 const FOUND = [
   { id: '', label: 'Any time' }, { id: 'today', label: 'Today' }, { id: '7d', label: 'Last 7 days' },
@@ -28,7 +28,14 @@ const CONTACT = [
 const SORTS = [
   { id: 'score', label: 'Best score first' }, { id: 'newest', label: 'Newest first' }, { id: 'contact', label: 'Last contacted first' },
 ];
-const PAGE = 50;
+const PAGE_SIZES = [25, 50, 100, 200, 500];
+const MAX_BULK = 200; // the server sends at most 200 mails per batch
+const PENDING = [
+  { id: 'email', label: 'Email pending', hint: 'Has an e-mail, never mailed' },
+  { id: 'call', label: 'Call pending', hint: 'Has a phone, never called' },
+  { id: 'whatsapp', label: 'WhatsApp pending', hint: 'Has a mobile number, no WhatsApp yet' },
+];
+const isPending = (l, ch) => Array.isArray(l.pending) && l.pending.includes(ch);
 const SKIPPED = ['old_post', 'no_contact', 'not_fit', 'closed'];
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -45,6 +52,7 @@ function foundFrom(id) {
 
 function matches(l, f, q) {
   if (f.action === 'todo' ? !TODO_ACTIONS.includes(l.next_action) : f.action === 'skipped' ? !SKIPPED.includes(l.next_action) : (f.action && l.next_action !== f.action)) return false;
+  if (f.pending && !isPending(l, f.pending)) return false;
   if (f.band && l.band !== f.band) return false;
   if (f.source && leadSource(l) !== f.source) return false;
   if (f.outcome && leadOutcome(l) !== f.outcome) return false;
@@ -142,21 +150,30 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
   const q = f.q.toLowerCase();
   const base = useMemo(() => leads.filter(l => matches(l, { ...f, action: '' }, q)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [leads, f.band, f.source, f.found, f.outcome, f.contact, q]);
+    [leads, f.pending, f.band, f.source, f.found, f.outcome, f.contact, q]);
   const counts = useMemo(() => {
     const c = {};
     base.forEach(l => { c[l.next_action] = (c[l.next_action] || 0) + 1; });
     return c;
   }, [base]);
   const todoCount = TODO_ACTIONS.reduce((n, a) => n + (counts[a] || 0), 0);
+  const pendingCounts = useMemo(() => {
+    const pool = leads.filter(l => matches(l, { ...f, pending: '' }, q));
+    return Object.fromEntries(PENDING.map(p => [p.id, pool.filter(l => isPending(l, p.id)).length]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leads, f.action, f.band, f.source, f.found, f.outcome, f.contact, q]);
+  const pageSize = PAGE_SIZES.includes(Number(f.size)) ? Number(f.size) : 50;
   const skippedCount = SKIPPED.reduce((n, a) => n + (counts[a] || 0), 0);
 
   const rows = useMemo(() => sortLeads(base.filter(l => matches(l, { action: f.action }, '')), f.sort), [base, f.action, f.sort]);
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE));
-  const pageRows = rows.slice((page - 1) * PAGE, page * PAGE);
+  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const pageRows = rows.slice((page - 1) * pageSize, page * pageSize);
+  const selectedRows = rows.filter(l => selected.has(l.id));
+  const mailable = selectedRows.filter(l => isPending(l, 'email'));
+  const selectAllMatching = () => setSelected(new Set(rows.map(l => l.id)));
 
-  const activeExtra = ['band', 'source', 'found', 'outcome', 'contact'].filter(k => f[k]).length + (f.q ? 1 : 0);
-  const clearAll = () => { setQInput(''); onFiltersChange({ ...DEFAULT_FILTERS, view: f.view, group: f.group, sort: f.sort }); setPage(1); };
+  const activeExtra = ['pending', 'band', 'source', 'found', 'outcome', 'contact'].filter(k => f[k]).length + (f.q ? 1 : 0);
+  const clearAll = () => { setQInput(''); onFiltersChange({ ...DEFAULT_FILTERS, view: f.view, group: f.group, sort: f.sort, size: f.size }); setPage(1); };
 
   const toggle = (id) => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const allOnPage = pageRows.length > 0 && pageRows.every(l => selected.has(l.id));
@@ -186,6 +203,14 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
           <p className="lv-sub">{rows.length.toLocaleString()} of {leads.length.toLocaleString()} leads{loading ? ' · updating…' : ''}</p>
         </div>
         <div className="lv-head-actions">
+          {f.view === 'table' && (
+            <label className="lv-size">Show
+              <select value={pageSize} onChange={e => set({ size: e.target.value })} aria-label="Leads per page">
+                {PAGE_SIZES.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+              per page
+            </label>
+          )}
           <div className="seg-group" role="group" aria-label="View">
             <button type="button" className={`seg ${f.view === 'table' ? 'on' : ''}`} onClick={() => set({ view: 'table' })} aria-pressed={f.view === 'table'}><LayoutList size={15} /> Table</button>
             <button type="button" className={`seg ${f.view === 'board' ? 'on' : ''}`} onClick={() => set({ view: 'board' })} aria-pressed={f.view === 'board'}><Columns3 size={15} /> Board</button>
@@ -260,9 +285,20 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
           {chip('skipped', 'Skipped', skippedCount)}
         </div>
 
+        <div className="lv-chips" role="group" aria-label="Pending contact">
+          <span className="lv-chip-label">Pending:</span>
+          {PENDING.map(p => (
+            <button key={p.id} type="button" title={p.hint} className={`fchip ${f.pending === p.id ? 'on tone-blue' : ''}`}
+              onClick={() => set({ pending: f.pending === p.id ? '' : p.id })} aria-pressed={f.pending === p.id}>
+              {p.label}<span className="fchip-n">{(pendingCounts[p.id] || 0).toLocaleString()}</span>
+            </button>
+          ))}
+        </div>
+
         {activeExtra > 0 && (
           <div className="lv-active">
             {f.q && <span className="tag">“{f.q}” <button type="button" onClick={() => { setQInput(''); set({ q: '' }); }} aria-label="Remove search"><X size={12} /></button></span>}
+            {f.pending && <span className="tag">{PENDING.find(p => p.id === f.pending)?.label} <button type="button" onClick={() => set({ pending: '' })} aria-label="Remove pending filter"><X size={12} /></button></span>}
             {f.band && <span className="tag">{BANDS[f.band].label} <button type="button" onClick={() => set({ band: '' })} aria-label="Remove temperature filter"><X size={12} /></button></span>}
             {f.source && <span className="tag">{f.source} <button type="button" onClick={() => set({ source: '' })} aria-label="Remove source filter"><X size={12} /></button></span>}
             {f.found && <span className="tag">Found: {FOUND.find(o => o.id === f.found)?.label} <button type="button" onClick={() => set({ found: '' })} aria-label="Remove date filter"><X size={12} /></button></span>}
@@ -274,10 +310,23 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
       </div>
 
       {/* Bulk bar */}
+      {f.view === 'table' && allOnPage && rows.length > pageRows.length && selected.size < rows.length && (
+        <div className="lv-selectall">
+          All {pageRows.length} leads on this page are selected.{' '}
+          <button type="button" onClick={selectAllMatching}>Select all {rows.length.toLocaleString()} leads that match</button>
+        </div>
+      )}
       {selected.size > 0 && (
         <div className="lv-bulk" role="region" aria-label="Selected leads">
-          <strong>{selected.size} selected</strong>
-          {onBulkEmail && <button type="button" className="btn btn-primary sm" onClick={() => onBulkEmail([...selected])}><Mail size={14} /> Send mail</button>}
+          <strong>{selected.size.toLocaleString()} selected</strong>
+          <span className="lv-bulk-note">{mailable.length.toLocaleString()} with an e-mail not sent yet{mailable.length > MAX_BULK ? ` · the first ${MAX_BULK} go in this batch` : ''}</span>
+          {onBulkEmail && (
+            <button type="button" className="btn btn-primary sm" disabled={!mailable.length}
+              title={mailable.length ? 'Leads already mailed or without an e-mail are left out' : 'None of the selected leads has an e-mail waiting'}
+              onClick={() => onBulkEmail(mailable.slice(0, MAX_BULK).map(l => l.id))}>
+              <Mail size={14} /> Send mail to {Math.min(mailable.length, MAX_BULK).toLocaleString()}
+            </button>
+          )}
           {onStatusChange && <button type="button" className="btn btn-ghost sm" onClick={() => { [...selected].forEach(id => onStatusChange(id, 'LOST')); setSelected(new Set()); }}><Ban size={14} /> Not interested</button>}
           <button type="button" className="btn btn-ghost sm" onClick={() => setSelected(new Set())}>Clear selection</button>
         </div>
@@ -366,7 +415,7 @@ export default function LeadsPage({ leads = [], filters, onFiltersChange, onOpen
             </table>
           </div>
           <nav className="lv-pager" aria-label="Pages">
-            <span>{((page - 1) * PAGE + 1).toLocaleString()}–{Math.min(page * PAGE, rows.length).toLocaleString()} of {rows.length.toLocaleString()}</span>
+            <span>{((page - 1) * pageSize + 1).toLocaleString()}–{Math.min(page * pageSize, rows.length).toLocaleString()} of {rows.length.toLocaleString()}</span>
             <button type="button" className="icon-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)} aria-label="Previous page"><ChevronLeft size={16} /></button>
             <span>Page {page} of {pages}</span>
             <button type="button" className="icon-btn" disabled={page >= pages} onClick={() => setPage(p => p + 1)} aria-label="Next page"><ChevronRight size={16} /></button>

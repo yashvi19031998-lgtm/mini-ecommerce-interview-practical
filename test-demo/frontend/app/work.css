@@ -345,3 +345,21 @@
 .ca-rate button:hover { color: var(--primary-blue); border-color: var(--primary-blue); }
 .ca-tip { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .sm-ai-off { margin: 12px 0 0; font-size: 13px; color: var(--text-muted); }
+
+/* Leads: page size, pending chips, select-all banner */
+.lv-size { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+.lv-size select { height: 34px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--border-med); background: var(--bg-white); font: inherit; font-size: 13px; }
+.lv-chip-label { font-size: 12px; font-weight: 700; color: var(--text-muted); align-self: center; margin-right: 2px; }
+.lv-selectall { padding: 8px 14px; border-radius: 10px; background: var(--primary-blue-subtle); color: var(--text-primary); font-size: 13px; }
+.lv-selectall button { border: 0; background: none; color: var(--primary-blue); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; }
+.lv-bulk-note { font-size: 12.5px; opacity: .8; }
+
+/* Reports: several sources, city, clear */
+.rp-multi { position: relative; }
+.rp-multi-btn { min-width: 150px; text-align: left; cursor: pointer; }
+.rp-multi-menu { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 240px; max-height: 320px; overflow-y: auto; background: var(--bg-white); border: 1px solid var(--border-med); border-radius: 12px; box-shadow: 0 8px 24px rgba(16, 24, 40, .12); padding: 6px; }
+.rp-multi-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary); }
+.rp-multi-item:hover { background: var(--bg-subtle); }
+.rp-multi-all { width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--primary-blue); cursor: pointer; }
+.rp-city { width: 140px; }
+.rp-clear-filters { border: 0; background: none; color: var(--primary-blue); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; align-self: center; }

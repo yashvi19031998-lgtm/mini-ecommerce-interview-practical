@@ -45,6 +45,49 @@ import DailyLogTab from './reports/DailyLogTab';
 import DailyLeadsTab from './reports/DailyLeadsTab';
 import LeadStatusTab from './reports/LeadStatusTab';
 import SummaryTab from './reports/SummaryTab';
+import { ACTIONS, ACTION_ORDER, OUTCOME_LABEL } from '../lib/leadMeta';
+
+
+// Several sources at once: a dropdown of check boxes
+function SourcePicker({ all = [], value = [], onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+  const toggle = (s) => onChange(value.includes(s) ? value.filter(x => x !== s) : [...value, s]);
+  const label = value.length === 0 ? 'All sources' : value.length === 1 ? value[0] : `${value.length} sources`;
+  return (
+    <div className="rp-multi" ref={ref}>
+      <button type="button" className="rp-select rp-multi-btn" aria-expanded={open} onClick={() => setOpen(o => !o)}>{label}</button>
+      {open && (
+        <div className="rp-multi-menu" role="listbox" aria-multiselectable="true">
+          <button type="button" className="rp-multi-all" onClick={() => onChange([])}>All sources</button>
+          {all.map(s => (
+            <label key={s} className="rp-multi-item">
+              <input type="checkbox" checked={value.includes(s)} onChange={() => toggle(s)} /> {s}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// City: applied when typing stops
+function CityInput({ value, onChange }) {
+  const [text, setText] = useState(value);
+  useEffect(() => { setText(value); }, [value]);
+  useEffect(() => {
+    const t = setTimeout(() => { if (text.trim() !== value) onChange(text.trim()); }, 500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+  return <input id="rp-city-input" className="rp-select rp-city" value={text} onChange={e => setText(e.target.value)} placeholder="e.g. Ahmedabad" />;
+}
 
 // Report sections. Shown as the Reports submenu in the sidebar (Sidebar.js imports this list).
 export const REPORT_SECTIONS = [
@@ -334,41 +377,78 @@ export default function Reports({ onOpenLeads, onOpenLeadsFiltered = null, onOpe
           </div>
         )}
 
-        {/* Source Dropdown */}
+        {/* Sources: pick one or several */}
         <div className="rp-filter-group">
-          <label className="rp-filter-label" htmlFor="rp-source-select">Source:</label>
-          <select
-            id="rp-source-select"
-            className="rp-select"
-            value={filters.source || 'all'}
-            onChange={(e) => updateFilters({ source: e.target.value })}
-          >
-            <option value="all">All Sources</option>
-            {options.source_families.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          <span className="rp-filter-label">Source:</span>
+          <SourcePicker
+            all={options.source_families}
+            value={filters.source && filters.source !== 'all' ? filters.source.split(',') : []}
+            onChange={(list) => updateFilters({ source: list.length ? list.join(',') : 'all' })}
+          />
         </div>
 
-        {/* Status Dropdown */}
+        {/* Stage: pending channel, next step or outcome (one at a time) */}
         <div className="rp-filter-group">
           <label className="rp-filter-label" htmlFor="rp-status-select">Stage:</label>
           <select
             id="rp-status-select"
             className="rp-select"
-            value={filters.status || 'all'}
-            onChange={(e) => updateFilters({ status: e.target.value })}
+            value={filters.pending ? `p:${filters.pending}` : filters.next_step ? `n:${filters.next_step}` : (filters.status && filters.status !== 'all' ? `o:${filters.status}` : 'all')}
+            onChange={(e) => {
+              const [kind, val] = e.target.value.split(':');
+              updateFilters({ pending: kind === 'p' ? val : '', next_step: kind === 'n' ? val : '', status: kind === 'o' ? val : 'all' });
+            }}
           >
-            <option value="all">All Stages</option>
-            {options.statuses.map((st) => (
-              <option key={st} value={st}>
-                {st}
-              </option>
-            ))}
+            <option value="all">All stages</option>
+            <optgroup label="Pending">
+              <option value="p:email">Email pending</option>
+              <option value="p:call">Call pending</option>
+              <option value="p:whatsapp">WhatsApp pending</option>
+            </optgroup>
+            <optgroup label="Next step">
+              {ACTION_ORDER.map(a => <option key={a} value={`n:${a}`}>{ACTIONS[a].label}</option>)}
+            </optgroup>
+            <optgroup label="Outcome">
+              {options.statuses.map((st) => (
+                <option key={st} value={`o:${st}`}>{OUTCOME_LABEL[st] || st}</option>
+              ))}
+            </optgroup>
           </select>
         </div>
+
+        <div className="rp-filter-group">
+          <label className="rp-filter-label" htmlFor="rp-type-select">Client type:</label>
+          <select id="rp-type-select" className="rp-select" value={filters.client_type || ''} onChange={(e) => updateFilters({ client_type: e.target.value })}>
+            <option value="">All client types</option>
+            <option value="it_project">IT project</option>
+            <option value="hiring">Hiring developers</option>
+            <option value="digital">Digital marketing</option>
+            <option value="prospect">Business prospect</option>
+            <option value="other">Not a fit / unknown</option>
+          </select>
+        </div>
+
+        <div className="rp-filter-group">
+          <label className="rp-filter-label" htmlFor="rp-band-select">Temperature:</label>
+          <select id="rp-band-select" className="rp-select" value={filters.temp || ''} onChange={(e) => updateFilters({ temp: e.target.value })}>
+            <option value="">Hot, warm and cold</option>
+            <option value="hot">Hot (7-10)</option>
+            <option value="warm">Warm (4-6)</option>
+            <option value="cold">Cold (0-3)</option>
+            <option value="unscored">Not scored</option>
+          </select>
+        </div>
+
+        <div className="rp-filter-group">
+          <label className="rp-filter-label" htmlFor="rp-city-input">City:</label>
+          <CityInput value={filters.city || ''} onChange={(city) => updateFilters({ city })} />
+        </div>
+
+        {['source', 'pending', 'next_step', 'client_type', 'temp', 'city'].some(k => filters[k] && filters[k] !== 'all') || (filters.status && filters.status !== 'all') ? (
+          <button type="button" className="rp-clear-filters" onClick={() => updateFilters({ source: 'all', status: 'all', pending: '', next_step: '', client_type: '', temp: '', city: '' })}>
+            Clear filters
+          </button>
+        ) : null}
       </div>
       )}
 
