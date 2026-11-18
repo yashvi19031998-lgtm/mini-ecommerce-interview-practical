@@ -134,7 +134,8 @@ def detect_tech_and_intent(lead: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, Any],
-                              loc: str, sender_settings: Dict[str, Any]) -> Tuple[str, str]:
+                              loc: str, sender_settings: Dict[str, Any],
+                              is_competitor_client: bool = False) -> Tuple[str, str]:
     """
     Intelligent requirement-aware fallback synthesizer that crafts human,
     high-converting B2B emails tailored to the company and their exact tech need.
@@ -145,6 +146,20 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
     is_ecommerce = intent_info["is_ecommerce"]
 
     greeting = f"Hi Team {company}" if company not in ("your team", "your company") else "Hello"
+
+    # Category 0: Active Competitor Agency Client (Team Augmentation & Capacity Hook)
+    if is_competitor_client:
+        subject = f"Engineering Capacity & Roadmap Acceleration for {company}"
+        body = (
+            f"{greeting},\n\n"
+            f"I came across **{company}**'s software platform and digital presence. "
+            f"We help product and operations leaders add senior full-stack engineering capacity quickly for defined workstreams—"
+            f"such as customer portals, mobile apps, integrations, and backlog acceleration—without disrupting your existing team or vendor setup.\n\n"
+            f"At **Sangeeta Infotech**, our dedicated developers operate as high-velocity parallel pods starting from just **₹450/- INR / hour**, "
+            f"integrating directly into your sprints for immediate delivery.\n\n"
+            f"Would you be open to a brief **10-minute discovery call** this week to see if our developers could support your upcoming roadmap?"
+        )
+        return subject, body
 
     # Category 1: Developer Hiring / Technical Talent
     if is_hiring:
@@ -335,7 +350,8 @@ def generate_personalized_email(lead: Dict[str, Any], settings: Optional[Dict[st
 
     # 3. Use intelligent requirement-aware synthesizer fallback
     if not body:
-        subject, body = synthesize_tailored_email(clean_company, role, intent_info, loc, settings)
+        is_comp = "competitor" in str(lead.get("source", "")).lower()
+        subject, body = synthesize_tailored_email(clean_company, role, intent_info, loc, settings, is_competitor_client=is_comp)
 
     # 4. STRICT SIGNATURE GUARANTEE: Never let an email leave without the signature!
     clean_body = body.rstrip()

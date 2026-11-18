@@ -70,7 +70,9 @@ FOOTPRINTS = [
     "Website Designed by",
     "Developed by",
     "Web Design by",
-    "Crafted by"
+    "Crafted by",
+    "Powered by",
+    "Built by"
 ]
 
 # Domains that are platforms, dictionaries, directories, or competitor self-domains (NOT client sites)
