@@ -12,6 +12,7 @@ Stage order (the first one that matches wins):
   no_reply        contacted earlier, no answer                           -> follow up
   mail_pending    has a usable e-mail, never contacted                   -> auto-mail sends it
   call_pending    no usable e-mail but a phone number                    -> call / WhatsApp
+  (call_after_mail sits before waiting: mailed, has a phone, never called -> call / WhatsApp)
   message_pending only reachable on the platform (Reddit, Freelancer...) -> message there
   old_post        only reachable on a post older than POST_FRESH_DAYS    -> too late, skip
   no_contact      nothing to contact them with
@@ -33,6 +34,7 @@ STAGES = [
     ("replied", "Replied", "They answered - write back today", "todo"),
     ("followup_due", "Follow-up due", "A follow-up you planned is due", "todo"),
     ("call_pending", "Call / WhatsApp pending", "No e-mail - call or WhatsApp them", "todo"),
+    ("call_after_mail", "Mailed - now call", "Mail sent; a call or WhatsApp makes sure it is read", "todo"),
     ("message_pending", "Message pending", "Reply on their post (Reddit, Freelancer, HN...)", "todo"),
     ("no_reply", "No reply - follow up", f"Contacted over {WAIT_DAYS} days ago, no answer", "todo"),
     ("mail_pending", "Mail pending", "Has an e-mail - auto-mail will send it", "auto"),
@@ -89,6 +91,14 @@ def post_link(lead: Dict[str, Any]) -> str:
     return url if url.startswith("http") else ""
 
 
+def _wa_with_text(lead, phone, mailed):
+    """wa.me link with a ready message (template, no AI call, so lists stay fast)."""
+    if not phone:
+        return ""
+    import phone_kit
+    return phone_kit.whatsapp_link(phone, phone_kit.template_kit(lead, mailed)["whatsapp"])
+
+
 def build_context(sent: List[Dict[str, str]], activities: List[Dict[str, str]]) -> Dict[str, Any]:
     """Per lead: last outbound contact, last reply, pending follow-up due dates, asked-to-stop."""
     by_id: Dict[str, Dict[str, Any]] = {}
@@ -116,6 +126,8 @@ def build_context(sent: List[Dict[str, str]], activities: List[Dict[str, str]]) 
             continue
         if not when:
             continue
+        if t in ("call", "whatsapp", "meeting") and when > st.get("phone", datetime.datetime.min):
+            st["phone"] = when  # reached by phone: needed before a mailed lead counts as fully contacted
         if t in OUTBOUND and when > st.get("out", datetime.datetime.min):
             st["out"], st["out_type"] = when, t
         elif t == "reply" and when > st.get("reply", datetime.datetime.min):
@@ -156,6 +168,10 @@ def stage_of(lead: Dict[str, Any], ctx: Dict[str, Any], now: Optional[datetime.d
     end_of_today = now.replace(hour=23, minute=59, second=59)
     if info.get("due") and info["due"] <= end_of_today:
         return {**res, "stage": "followup_due"}
+    # A mail alone is often never read: a mailed lead with a phone number is only fully contacted after a
+    # call or WhatsApp as well.
+    if out and out_type in ("email_sent", "email") and phone_of(lead) and not info.get("phone")             and _s(lead.get("ai_category")).lower() not in NOT_FIT:
+        return {**res, "stage": "call_after_mail"}
     if out:
         if out.year > 2000 and (now - out).days < WAIT_DAYS:
             return {**res, "stage": "waiting"}
@@ -238,7 +254,8 @@ def stage_list(leads, sent, activities, stage, band="all", source="", q="", limi
             "name": (_s(lead.get("company_name")) or _s(lead.get("full_name")) or "(no name)")[:160],
             "person": _s(lead.get("full_name"))[:80],
             "about": (_s(lead.get("ai_requirement")) or _s(lead.get("ai_summary")) or _s(lead.get("description")))[:220],
-            "email": _first_email(lead), "phone": phone, "whatsapp": whatsapp_link(phone),
+            "email": _first_email(lead), "phone": phone,
+            "whatsapp": _wa_with_text(lead, phone, stage == "call_after_mail"),
             "link": post_link(lead), "website": _s(lead.get("website"))[:200],
             "platform": PLATFORMS.get(channel, ""),
             "score": lead_score(lead), "source": _s(lead.get("source"))[:80],

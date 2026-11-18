@@ -38,7 +38,7 @@ function Delta({ value, prev }) {
 
 // The one button that does the lane's job for this lead
 function PrimaryAction({ stage, item }) {
-  if (stage === 'call_pending' && item.phone) {
+  if ((stage === 'call_pending' || stage === 'call_after_mail') && item.phone) {
     return (
       <>
         <a className="btn btn-primary sm" href={`tel:${item.phone.replace(/[^\d+]/g, '')}`}><Phone size={14} /> Call</a>
@@ -59,7 +59,7 @@ function PrimaryAction({ stage, item }) {
   return null;
 }
 
-const DONE_FOR = { call_pending: 'called', message_pending: 'messaged', replied: 'mailed', followup_due: 'mailed', no_reply: 'mailed' };
+const DONE_FOR = { call_pending: 'called', call_after_mail: 'called', message_pending: 'messaged', replied: 'mailed', followup_due: 'mailed', no_reply: 'mailed' };
 const DONE_TEXT = { called: 'Done', messaged: 'Done', mailed: 'Done' };
 
 export default function TodayPage({ userName = '', onOpenLead, onOpenLeads, onFindLeads, notify = () => {}, reloadKey = 0 }) {

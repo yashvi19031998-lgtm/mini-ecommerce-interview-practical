@@ -9,7 +9,7 @@ import {
   X, Mail, Phone, MessageCircle, ExternalLink, Globe, Link2, Check, Copy, CalendarPlus, Loader2,
   Clock, Send, PhoneCall, StickyNote, Reply, Ban, ArrowRightLeft, Sparkles
 } from 'lucide-react';
-import { fetchLeadTimeline, markLeadContacted, patchLeadStatus, scheduleFollowup } from '../../lib/api';
+import { fetchLeadTimeline, fetchPhoneKit, markLeadContacted, patchLeadStatus, scheduleFollowup } from '../../lib/api';
 import {
   ACTIONS, BANDS, OUTCOMES, OUTCOME_LABEL, leadName, leadAbout, leadEmail, leadPhone, whatsappUrl,
   postUrl, websiteUrl, leadScore, leadOutcome, leadSource, niceDate
@@ -19,6 +19,7 @@ const DONE_BY_ACTION = {
   replied: ['mailed', 'called', 'whatsapp'],
   followup_due: ['called', 'whatsapp', 'mailed'],
   call_pending: ['called', 'whatsapp'],
+  call_after_mail: ['called', 'whatsapp'],
   message_pending: ['messaged'],
   no_reply: ['called', 'whatsapp', 'mailed'],
   mail_pending: ['mailed'],
@@ -40,6 +41,73 @@ const EVENT = {
   bounce: { icon: Ban, label: 'Bounced' },
   opted_out: { icon: Ban, label: 'Asked to stop' },
 };
+
+// What to say on the phone or WhatsApp: instant template first, AI version on request.
+function PhoneHelper({ leadId, phone, onSent }) {
+  const [kit, setKit] = useState(null);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const load = async (ai) => {
+    setBusy(true);
+    try {
+      const res = await fetchPhoneKit(leadId, ai);
+      setKit(res);
+      setText(res.whatsapp || '');
+    } catch {
+      /* keep what is shown */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  useEffect(() => { setKit(null); setText(''); setOpen(false); load(false); }, [leadId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const wa = whatsappUrl(phone);
+  const waHref = wa ? `${wa}?text=${encodeURIComponent(text)}` : '';
+
+  return (
+    <section className="lp-section lp-phone">
+      <div className="lp-phone-head">
+        <h3 className="lp-h">WhatsApp message</h3>
+        <button type="button" className="td-link" onClick={() => load(true)} disabled={busy}>
+          {busy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} {kit?.by === 'ai' ? 'Write again with AI' : 'Write with AI'}
+        </button>
+      </div>
+      <textarea className="lp-wa-text" value={text} onChange={e => setText(e.target.value)} rows={4} aria-label="WhatsApp message" />
+      <div className="lp-links">
+        {waHref && (
+          <a className="btn btn-wa sm" href={waHref} target="_blank" rel="noopener noreferrer" onClick={() => onSent && setTimeout(onSent, 400)}>
+            <MessageCircle size={14} /> Send on WhatsApp
+          </a>
+        )}
+        <button type="button" className="btn btn-ghost sm" onClick={() => { navigator.clipboard?.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
+          {copied ? <Check size={14} /> : <Copy size={14} />} Copy
+        </button>
+        <button type="button" className="btn btn-ghost sm" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+          <PhoneCall size={14} /> {open ? 'Hide call script' : 'Call script'}
+        </button>
+      </div>
+      {kit?.note && <p className="lp-note muted">AI was not available, so this is the standard text.</p>}
+      {open && kit && (
+        <div className="lp-script">
+          <p><strong>Open with:</strong> {kit.call_opening}</p>
+          <p><strong>Ask:</strong></p>
+          <ol>{(kit.questions || []).map(q => <li key={q}>{q}</li>)}</ol>
+          <p><strong>If they say…</strong></p>
+          <dl>
+            {Object.entries(kit.objections || {}).map(([k, v]) => (
+              <React.Fragment key={k}><dt>“{k}”</dt><dd>{v}</dd></React.Fragment>
+            ))}
+          </dl>
+          <p><strong>Voicemail:</strong> {kit.voicemail}</p>
+        </div>
+      )}
+    </section>
+  );
+}
 
 const inDays = (n) => {
   const d = new Date();
@@ -183,6 +251,8 @@ export default function LeadPanel({ lead, onClose, onChanged = () => {}, onEmail
               </div>
             </div>
           </section>
+
+          {phone && <PhoneHelper leadId={id} phone={phone} />}
 
           {/* What they need */}
           {(about || facts.length > 0) && (

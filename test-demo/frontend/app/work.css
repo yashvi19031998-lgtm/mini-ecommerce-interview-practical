@@ -263,3 +263,14 @@
 .lv-mobile-step { display: none; margin-top: 4px; }
 @media (max-width: 720px) { .lv-mobile-step { display: block; } }
 .lp-foot { padding-right: 92px; }
+
+/* Lead panel: WhatsApp message + call script */
+.lp-phone { background: #f3fbf6; border-radius: 14px; padding: 12px 14px; }
+.lp-phone-head { display: flex; justify-content: space-between; align-items: baseline; }
+.lp-wa-text { width: 100%; box-sizing: border-box; border: 1px solid var(--border-med); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 13.5px; line-height: 1.45; resize: vertical; background: var(--bg-white); color: var(--text-primary); }
+.lp-script { font-size: 13px; line-height: 1.5; color: var(--text-primary); background: var(--bg-white); border-radius: 10px; padding: 10px 12px; }
+.lp-script p { margin: 6px 0; }
+.lp-script ol { margin: 0 0 6px; padding-left: 20px; }
+.lp-script dl { margin: 0; }
+.lp-script dt { font-weight: 600; margin-top: 6px; }
+.lp-script dd { margin: 2px 0 0; color: var(--text-secondary); }

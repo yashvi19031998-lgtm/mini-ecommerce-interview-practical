@@ -72,7 +72,8 @@ class Stages(unittest.TestCase):
         self.assertEqual(res["todo"], 2)
         self.assertEqual(ls.summary(leads, [], [], band="high", now=NOW)["total"], 2)
         item = ls.stage_list(leads, [], [], "call_pending", now=NOW)["items"][0]
-        self.assertEqual((item["id"], item["whatsapp"]), ("B", "https://wa.me/919825012345"))
+        self.assertEqual(item["id"], "B")
+        self.assertTrue(item["whatsapp"].startswith("https://wa.me/919825012345?text="))
         self.assertEqual(ls.stage_list(leads, [], [], "message_pending", now=NOW)["items"][0]["platform"], "Freelancer.com")
         with self.assertRaises(ValueError):
             ls.stage_list(leads, [], [], "nope")

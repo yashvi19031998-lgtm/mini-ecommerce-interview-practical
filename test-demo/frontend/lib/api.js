@@ -749,3 +749,8 @@ export async function markLeadContacted(leadId, action, note = '') {
 export async function fetchToday(perLane = 5) {
   return await apiFetch(`/api/today?per_lane=${perLane}`);
 }
+
+// Call script + WhatsApp message for one lead (phone_kit.py). ai=false gives the instant template.
+export async function fetchPhoneKit(leadId, ai = true) {
+  return await apiFetch(`/api/leads/${encodeURIComponent(leadId)}/phone-kit`, { method: 'POST', body: JSON.stringify({ ai }) });
+}

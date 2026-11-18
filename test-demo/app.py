@@ -2256,6 +2256,24 @@ def report_lead_status_list_endpoint():
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
 
+@app.route("/api/leads/<lead_id>/phone-kit", methods=["POST"])
+def lead_phone_kit(lead_id):
+    """WhatsApp message + call script for one lead. AI writes it when a key is set, else a filled-in template.
+    {ai: true|false}"""
+    import phone_kit
+    lead = next((l for l in read_leads() if str(l.get("id")) == str(lead_id)), None)
+    if not lead:
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+    leads, _, sent, acts = _report_context()
+    ctx = lead_status.build_context(sent, acts)
+    stage = lead_status.stage_of(lead, ctx)
+    mailed = stage["last_contact_type"] in ("email_sent", "email")
+    use_ai = bool((request.get_json(silent=True) or {}).get("ai", True))
+    kit = phone_kit.phone_kit(lead, mailed=mailed, use_ai=use_ai)
+    phone = lead_status.phone_of(lead)
+    return jsonify({"success": True, **kit, "phone": phone, "mailed": mailed,
+                    "whatsapp_url": phone_kit.whatsapp_link(phone, kit.get("whatsapp", ""))})
+
 @app.route("/api/reports/lead-status/done", methods=["POST"])
 def report_lead_status_done_endpoint():
     """Log that you contacted a lead by hand. {lead_id, action: called|whatsapp|messaged|mailed, note?}"""

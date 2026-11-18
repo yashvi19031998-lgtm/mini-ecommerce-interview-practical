@@ -5,6 +5,7 @@ export const ACTIONS = {
   replied:         { label: 'Reply now',         short: 'Reply',     verb: 'Reply',       tone: 'green', group: 'todo', hint: 'They answered your message' },
   followup_due:    { label: 'Follow-up due',     short: 'Follow-up', verb: 'Follow up',   tone: 'red',   group: 'todo', hint: 'A follow-up you planned is due' },
   call_pending:    { label: 'Call or WhatsApp',  short: 'Call',      verb: 'Call',        tone: 'amber', group: 'todo', hint: 'No e-mail, but a phone number' },
+  call_after_mail: { label: 'Mailed – now call', short: 'Call',     verb: 'Call',        tone: 'amber', group: 'todo', hint: 'Mail sent; a call or WhatsApp makes sure it is read' },
   message_pending: { label: 'Reply on post',     short: 'Message',   verb: 'Reply on post', tone: 'amber', group: 'todo', hint: 'Only reachable on Reddit, Freelancer or HN' },
   no_reply:        { label: 'No reply yet',      short: 'Chase',     verb: 'Follow up',   tone: 'amber', group: 'todo', hint: 'Contacted 4+ days ago, no answer' },
   mail_pending:    { label: 'In mail queue',     short: 'Queued',    verb: 'Send now',    tone: 'blue',  group: 'auto', hint: 'Auto-mail sends it in office hours' },
