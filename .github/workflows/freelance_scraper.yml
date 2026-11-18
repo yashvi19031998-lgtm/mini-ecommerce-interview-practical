@@ -48,6 +48,16 @@ jobs:
       - name: Load data from the database
         run: python datastore.py sync --required
 
+      - name: Send scraper start email notification
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM_EMAIL: ${{ secrets.SMTP_FROM_EMAIL }}
+        run: python scraper_notifier.py start "Freelance & Project Leads Scraper"
+        continue-on-error: true
+
       - name: Run freelance & project scrapers (no e-mail)
         env:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
@@ -67,4 +77,15 @@ jobs:
       - name: Save data to the database
         if: ${{ !cancelled() }}
         run: python datastore.py sync --required
+
+      - name: Send scraper completion email notification
+        if: ${{ !cancelled() }}
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM_EMAIL: ${{ secrets.SMTP_FROM_EMAIL }}
+        run: python scraper_notifier.py finish "Freelance & Project Leads Scraper"
+        continue-on-error: true
 
