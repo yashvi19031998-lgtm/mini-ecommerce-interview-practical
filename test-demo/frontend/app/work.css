@@ -276,7 +276,7 @@
 .lp-script dd { margin: 2px 0 0; color: var(--text-secondary); }
 
 /* ---------- Reports > Summary (components/reports/SummaryTab.js) ---------- */
-.sm { display: flex; flex-direction: column; gap: 1rem; font-variant-numeric: tabular-nums; }
+.sm-root { display: flex; flex-direction: column; gap: 1rem; font-variant-numeric: tabular-nums; }
 .sm-filters { display: flex; flex-direction: column; gap: 10px; background: var(--bg-white); border: 1px solid var(--border-light); border-radius: var(--radius-card); padding: 14px; }
 .sm-presets { flex-wrap: wrap; align-self: flex-start; }
 .sm-dates { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -344,3 +344,4 @@
 .ca-rate button { display: inline-flex; border: 1px solid var(--border-light); background: var(--bg-white); color: var(--text-muted); border-radius: 8px; padding: 3px 6px; cursor: pointer; }
 .ca-rate button:hover { color: var(--primary-blue); border-color: var(--primary-blue); }
 .ca-tip { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.sm-ai-off { margin: 12px 0 0; font-size: 13px; color: var(--text-muted); }

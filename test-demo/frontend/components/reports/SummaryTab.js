@@ -140,7 +140,7 @@ export default function SummaryTab({ onOpenLeads, onNotice = () => {} }) {
   const periodText = data ? `${new Date(`${data.period.from}T00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} – ${new Date(`${data.period.to}T00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
 
   return (
-    <div className="sm">
+    <div className="sm-root">
       {/* Filters */}
       <div className="sm-filters" role="group" aria-label="Report filters">
         <div className="seg-group sm-presets">
@@ -194,11 +194,14 @@ export default function SummaryTab({ onOpenLeads, onNotice = () => {} }) {
               </button>
             </div>
             <ul className="sm-points">{data.highlights.map(h => <li key={h}>{h}</li>)}</ul>
-            {ai && (
+            {ai && ai.by === 'ai' && (
               <div className="sm-ai">
-                <div className="sm-ai-label">{ai.by === 'ai' ? 'AI analysis' : 'AI is not available, so these are the standard findings'}</div>
+                <div className="sm-ai-label">AI analysis</div>
                 {ai.text.split('\n').filter(Boolean).map((line, i) => <p key={i}>{line.replace(/^[-*•]\s*/, '')}</p>)}
               </div>
+            )}
+            {ai && ai.by !== 'ai' && (
+              <p className="sm-ai-off">AI advice needs an AI key (GEMINI_API_KEY is free) in the backend .env file. The findings above work without it.</p>
             )}
           </section>
 
