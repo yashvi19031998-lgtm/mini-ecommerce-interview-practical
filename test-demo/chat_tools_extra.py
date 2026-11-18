@@ -82,13 +82,13 @@ def t_mail_flow(ctx, date_from="", date_to=""):
     bounces = sum(1 for a in ctx.get("acts", []) if a.get("type") == "bounce" and date_from <= _s(a.get("occurred_at"))[:10] <= date_to)
     queue = lead_status.stage_list(ctx["leads"], ctx.get("sent", []), ctx.get("acts", []), "mail_pending", limit=5)
     st = ctx.get("settings") or {}
-    cap = _int_env("MAX_EMAILS_PER_DAY", 50)
+    cap = _int_env("MAX_EMAILS_PER_DAY", 0)
     sent_today = sum(1 for s in ctx.get("sent", []) if _s(s.get("sent_at"))[:10] == today.isoformat())
     return {
         "range": {"from": date_from, "to": date_to},
         "mails_sent_per_day": dict(sorted(per_day.items())), "mails_sent_in_range": sum(per_day.values()),
         "replies_in_range": replies, "bounces_in_range": bounces,
-        "sent_today": sent_today, "daily_limit": cap, "left_today": max(0, cap - sent_today),
+        "sent_today": sent_today, "daily_limit": cap or "unlimited", "left_today": max(0, cap - sent_today) if cap > 0 else "unlimited",
         "prospect_daily_limit": _int_env("MAX_PROSPECT_EMAILS_PER_DAY", 15),
         "min_ai_score_for_auto_mail": _int_env("MIN_AI_SCORE_FOR_AUTO_EMAIL", 7),
         "auto_send_setting": st.get("autoSendEmail"),

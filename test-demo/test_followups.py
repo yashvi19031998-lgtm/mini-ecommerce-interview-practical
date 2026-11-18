@@ -192,6 +192,7 @@ class Api(StoreTestCase):
         super().setUp()
         import app as app_module
         self.app = app_module
+        app_module.app.config["TESTING"] = True
         self.client = app_module.app.test_client()
         ok = SimpleNamespace(status_code=200, json=lambda: {"email": "owner@example.com"})
         self.patches = [

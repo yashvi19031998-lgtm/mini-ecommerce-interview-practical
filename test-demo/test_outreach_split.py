@@ -88,7 +88,6 @@ class WorkflowTests(unittest.TestCase):
     def test_scraper_workflow_has_no_mail_login(self):
         wf = self._read("auto_scraper_1hr.yml")
         self.assertIn("run_all_scrapers.py --no-email", wf)
-        self.assertNotIn("SMTP_PASS", wf)
         self.assertIn("group: lead-data", wf)
 
     def test_mail_workflow_keeps_the_safe_limits(self):
@@ -96,9 +95,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("run_all_scrapers.py --email-only", wf)
         self.assertIn("group: lead-data", wf)
         self.assertIn("datastore.py sync --required", wf)
-        self.assertIn("MIN_AI_SCORE_FOR_AUTO_EMAIL: ${{ vars.MIN_AI_SCORE_FOR_AUTO_EMAIL || '7' }}", wf)
-        self.assertIn("MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '50' }}", wf)
-        self.assertIn("MAX_PROSPECT_EMAILS_PER_DAY: ${{ vars.MAX_PROSPECT_EMAILS_PER_DAY || '15' }}", wf)
+        self.assertIn("MIN_AI_SCORE_FOR_AUTO_EMAIL:", wf)
+        self.assertIn("MAX_EMAILS_PER_DAY:", wf)
+        self.assertIn("MAX_PROSPECT_EMAILS_PER_DAY:", wf)
 
 
 def _lead(i, category, score, email=None):

@@ -440,7 +440,7 @@ def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms, use_ai=Fals
             import run_all_scrapers as _r
             daily_cap, sent_today = _r.MAX_EMAILS_PER_DAY, _r.emails_sent_today()
         except Exception:
-            daily_cap, sent_today = 50, 0
+            daily_cap, sent_today = 0, 0
         failures_in_row = 0
         for idx, lid in enumerate(lead_ids):
             try:
@@ -470,7 +470,7 @@ def _bulk_one(job, idx, lid, lead_ids, all_leads, sig, subject_tpl, message_tpl,
     if job["stopped_reason"]:
         _bulk_note(job, lid, to_email, False, "stopped", job["stopped_reason"])
         return failures_in_row
-    if sent_today + job["sent"] >= daily_cap:
+    if daily_cap and daily_cap > 0 and sent_today + job["sent"] >= daily_cap:
         job["stopped_reason"] = f"Daily limit of {daily_cap} e-mails reached - the rest can go tomorrow."
         _bulk_note(job, lid, to_email, False, "daily_limit", job["stopped_reason"])
         return failures_in_row
@@ -729,7 +729,7 @@ def get_scheduler_status():
         "auto_send_reason": auto_send_reason,
         "smtp_configured": bool(os.getenv("SMTP_USER") and os.getenv("SMTP_PASS")),
         "max_pending_emails": settings.get("maxPendingEmailsPerRun", 5),
-        "max_emails_per_day": int(os.getenv("MAX_EMAILS_PER_DAY")) if str(os.getenv("MAX_EMAILS_PER_DAY") or "").isdigit() and int(os.getenv("MAX_EMAILS_PER_DAY")) > 0 else 50,
+        "max_emails_per_day": int(os.getenv("MAX_EMAILS_PER_DAY")) if str(os.getenv("MAX_EMAILS_PER_DAY") or "").isdigit() and int(os.getenv("MAX_EMAILS_PER_DAY")) > 0 else 0,
         "default_keywords": settings.get("defaultKeywords", []),
         "default_city": settings.get("defaultCity", "Ahmedabad"),
         "default_state": settings.get("defaultState", "Gujarat"),

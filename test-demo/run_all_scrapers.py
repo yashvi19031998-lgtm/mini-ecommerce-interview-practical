@@ -59,13 +59,13 @@ def _int_or(value, default):
 _per_run_setting = _initial_settings.get("maxPendingEmailsPerRun")
 MAX_PENDING_EMAILS_PER_RUN = max(0, _int_or(
     _per_run_setting if _per_run_setting not in (None, "") else os.getenv("MAX_PENDING_EMAILS_PER_RUN"), 5))
-# Gmail suspends sending for ~24 h above about 500 recipients a day (free accounts). Stay well below it,
-# counting every mail the app sent today (manual, bulk, follow-ups and this run).
-# 2026-11-13: two Gmail accounts were blocked, so the default is low; raise it slowly as the account ages.
-MAX_EMAILS_PER_DAY = max(1, _int_or(os.getenv("MAX_EMAILS_PER_DAY"), 50))
+# Daily email cap validation: default 0 (unlimited - daily 50 cap validation removed).
+_daily_setting = _initial_settings.get("maxEmailsPerDay")
+MAX_EMAILS_PER_DAY = max(0, _int_or(
+    _daily_setting if _daily_setting not in (None, "") else os.getenv("MAX_EMAILS_PER_DAY"), 0))
 # Prospects (companies with no request yet, AUTO_EMAIL_PROSPECT_SIGNALS=true) get their own, smaller daily
 # limit inside MAX_EMAILS_PER_DAY, and are e-mailed only after every ready real buyer.
-MAX_PROSPECT_EMAILS_PER_DAY = max(0, _int_or(os.getenv("MAX_PROSPECT_EMAILS_PER_DAY"), 15))
+MAX_PROSPECT_EMAILS_PER_DAY = max(0, _int_or(os.getenv("MAX_PROSPECT_EMAILS_PER_DAY"), 0))
 PROSPECT_SOURCE = "auto outreach (prospect)"
 # Short intro for prospects, used when the AI e-mail writer is not available.
 PROSPECT_SUBJECT = "Software help for {company}"
@@ -481,7 +481,7 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
               f"No automatic e-mail until that settles, to protect the Gmail account.")
         return 0
 
-    if sent_today >= daily_cap:
+    if daily_cap and daily_cap > 0 and sent_today >= daily_cap:
         print(f"       [AUTO-MAIL-PENDING] Daily limit reached ({sent_today}/{daily_cap} e-mails today). "
               f"The rest are sent on the next run after midnight.")
         return 0
@@ -498,7 +498,7 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
         if max_batch and dispatched >= max_batch:
             print(f"       [AUTO-MAIL-PENDING] Per-run limit of {max_batch} reached; the rest go in the next run.")
             break
-        if sent_today + dispatched >= daily_cap:
+        if daily_cap and daily_cap > 0 and sent_today + dispatched >= daily_cap:
             print(f"       [AUTO-MAIL-PENDING] Daily limit of {daily_cap} e-mails reached; the rest go tomorrow.")
             break
         if failures_in_row >= MAX_CONSECUTIVE_SEND_FAILURES:
@@ -514,7 +514,7 @@ def dispatch_pending_outreach_emails(registry: MasterLeadRegistry, max_batch: in
         if not is_outreach_ready(lead_obj):
             continue
         prospect = bool(is_prospect_lead(lead_obj))
-        if prospect and prospects_today + prospects_sent >= prospect_cap:
+        if prospect and prospect_cap and prospect_cap > 0 and prospects_today + prospects_sent >= prospect_cap:
             continue  # prospect limit for today reached; real buyers were already handled above
 
         raw_emails = str(lead_obj.get("email", "")).split(",")
@@ -697,7 +697,8 @@ def run_email_steps(registry: MasterLeadRegistry) -> int:
         return 0
     registry.load_master()  # the follow-up step may have saved reply statuses
     per_run = MAX_PENDING_EMAILS_PER_RUN or "none - every qualified lead"
-    print(f"\n[*] Emailing AI-qualified leads (per-run limit: {per_run}; daily limit: {MAX_EMAILS_PER_DAY})...")
+    daily_disp = f"{MAX_EMAILS_PER_DAY}" if MAX_EMAILS_PER_DAY > 0 else "unlimited (daily 50 cap removed)"
+    print(f"\n[*] Emailing AI-qualified leads (per-run limit: {per_run}; daily limit: {daily_disp})...")
     sent = dispatch_pending_outreach_emails(registry, max_batch=MAX_PENDING_EMAILS_PER_RUN)
     print(f"[*] Outreach emails sent this run: {sent}")
     if not registry.save_master_safely():
@@ -756,6 +757,8 @@ def run_outreach_only():
             os.environ["EMAIL_VERIFY_MODE"] = "dns_only"
         min_score = str(settings.get("min_lead_score", 4))
         os.environ["MIN_AI_SCORE_FOR_AUTO_EMAIL"] = min_score
+        if "MAX_EMAILS_PER_DAY" not in os.environ:
+            os.environ["MAX_EMAILS_PER_DAY"] = "0"
 
         run_email_steps(registry)
         sync_database()
