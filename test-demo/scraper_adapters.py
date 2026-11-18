@@ -32,16 +32,38 @@ except ImportError:
 # 1. SCRAPER.PY ADAPTER (Dynamic Search Discovery & Deep Website Crawler)
 # ==============================================================================
 DYNAMIC_SEARCH_QUERIES = [
+    # 1. Active RFPs & Vendor Selection
+    '("request for proposal" OR RFP) ("custom software development" OR "web application development" OR "mobile app development")',
+    # 2. Budget-Approved Project Posts
+    '("budget approved" OR "budget allocated") ("need a developer" OR "looking for developer" OR "hire development agency")',
+    # 3. Founder & Startup Direct Needs
+    '("looking for" OR "need") ("development agency" OR "development team" OR "full stack developer") ("MVP" OR "SaaS" OR "web app")',
+    # 4. Legacy-System Modernization & Replacement
+    '("legacy system" OR "outdated software" OR "old software") ("custom development" OR "software development company") ("upgrade" OR "modernize")',
+    # 5. Software-Vendor Switching Signals
+    '("switching software vendors" OR "changing development agency" OR "looking for new development partner") ("software" OR "app" OR "platform")',
+    # 6. Healthcare & Medical Custom Portals
+    '("healthcare" OR "clinic" OR "medical practice") ("need" OR "looking for") ("patient portal" OR "appointment booking" OR "custom software")',
+    # 7. Real Estate Portal & CRM Demand
+    '("real estate" OR "property management" OR "brokerage") ("need" OR "looking for") ("property portal" OR "CRM" OR "custom software")',
+    # 8. Logistics & Supply Chain Systems
+    '("logistics" OR "freight" OR "trucking" OR "3PL") ("need" OR "looking for") ("custom software" OR "dispatch system" OR "fleet management" OR "tracking portal")',
+    # 9. Manufacturing & Industrial Digitization
+    '("manufacturing" OR "factory" OR "industrial") ("need" OR "looking for") ("custom software" OR "ERP" OR "inventory system" OR "production dashboard")',
+    # 10. E-commerce & DTC Custom Development
+    '("ecommerce" OR "DTC brand" OR "Shopify") ("need" OR "looking for") ("custom development" OR "custom app" OR "web app" OR "integration")',
+    # 11. Non-Technical Businesses Needing an App/Portal
+    '("we need an app" OR "we need a website" OR "we need a portal") ("for our business" OR "for our company") ("looking for developer" OR "development agency")',
+    # 12. Integration & API Automation Gaps
+    '("need integration" OR "need automation" OR "connect our systems" OR "API integration") ("CRM" OR "ERP" OR "Salesforce" OR "Shopify" OR "HubSpot")',
+    # 13. Metros & Indian Commercial Hubs
+    '("looking for software development company" OR "need software developer") ("Mumbai" OR "Delhi" OR "Bengaluru" OR "Pune" OR "Hyderabad" OR "Ahmedabad") ("RFP" OR "budget" OR "hire")',
+    # 14. Global High-Ticket Outreach (US, UK, UAE, Canada, Australia)
     'looking for software development agency US UK India',
-    'need custom web development company Mumbai Bangalore Delhi',
     'hire dedicated React Python developers remote',
-    'looking for mobile app development agency Dubai USA',
     'startup MVP software development agency remote',
     'ecommerce web development company Australia Canada',
-    'need full stack development team remote',
-    'custom CRM portal developer company India',
-    'looking for Flutter mobile app developers',
-    'hire remote dedicated developers startup'
+    'custom CRM portal developer company India'
 ]
 
 def run_scraper_adapter() -> List[Dict[str, Any]]:
