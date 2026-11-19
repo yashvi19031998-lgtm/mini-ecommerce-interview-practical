@@ -2628,6 +2628,27 @@ def widget_demo():
             "at the bottom right.</p><script src='/widget/chatbot.js' defer></script></body></html>")
 
 
+# ==============================================================================
+# WHATSAPP CLOUD API AUTOMATION WEBHOOKS
+# ==============================================================================
+@app.route("/webhook", methods=["GET", "POST"])
+@app.route("/api/whatsapp/webhook", methods=["GET", "POST"])
+def whatsapp_webhook_endpoint():
+    """Meta WhatsApp Cloud API Webhook (GET verification & POST messages)."""
+    import whatsapp_webhook
+    if request.method == "GET":
+        challenge, code = whatsapp_webhook.verify_meta_webhook(request)
+        return challenge, code
+
+    payload = request.get_json(silent=True) or {}
+    try:
+        res = whatsapp_webhook.process_webhook_payload(payload)
+        return jsonify(res), 200
+    except Exception as e:
+        app.logger.exception(f"WhatsApp webhook processing failed: {e}")
+        return jsonify({"status": "error", "error": str(e)}), 200
+
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)
