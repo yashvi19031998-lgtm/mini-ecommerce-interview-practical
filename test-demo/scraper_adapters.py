@@ -914,6 +914,16 @@ def run_ecommerce_sources_adapter() -> List[Dict[str, Any]]:
     return leads
 
 
+def run_ecommerce_speed_adapter() -> List[Dict[str, Any]]:
+    """Runs ecommerce_speed_harvester to identify Shopify/WooCommerce stores with speed issues."""
+    try:
+        import ecommerce_speed_harvester
+        return ecommerce_speed_harvester.harvest_slow_stores(max_results=4)
+    except Exception as e:
+        print(f"  [ecommerce_speed adapter notice] {e}")
+        return []
+
+
 # ==============================================================================
 # 17. QUORA_SCRAPER ADAPTER (Buyer Intent & Tech Recommendations Harvester)
 # ==============================================================================

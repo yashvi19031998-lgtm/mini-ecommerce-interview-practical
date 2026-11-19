@@ -9,6 +9,7 @@ try:
     from duckduckgo_search import DDGS
 except ImportError:
     try:
+        # pyrefly: ignore[missing-import]
         from ddgs import DDGS
     except ImportError:
         DDGS = None

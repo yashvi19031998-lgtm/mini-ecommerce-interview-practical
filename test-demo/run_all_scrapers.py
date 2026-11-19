@@ -276,6 +276,12 @@ SCRAPERS_CONFIG = [
         "category": "E-Commerce"
     },
     {
+        "name": "ecommerce_speed_harvester.py (Slow Shopify/WooCommerce Speed & AMC Audits)",
+        "func": scraper_adapters.run_ecommerce_speed_adapter,
+        "enabled": True,
+        "category": "E-Commerce Speed Issues"
+    },
+    {
         "name": "quora_scraper (Quora Buyer Intent & Tech Recommendation Harvester)",
         "func": scraper_adapters.run_quora_scraper_adapter,
         "enabled": True,
