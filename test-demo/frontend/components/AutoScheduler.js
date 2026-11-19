@@ -181,7 +181,7 @@ ${emailNote}`)) return;
             <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Scraper Engine Status
             </div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: data?.is_running ? '#3b82f6' : '#10b981', marginTop: '4px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: data?.is_running ? 'var(--primary-blue)' : 'var(--success-green)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: 6 }}>
               <Terminal size={16} />
               {data?.is_running ? 'Executing Jobs…' : 'Idle & Ready'}
             </div>

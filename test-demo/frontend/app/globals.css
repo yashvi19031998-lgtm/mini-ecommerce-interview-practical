@@ -1,6 +1,6 @@
 /* ==============================================================================
    CLEAN MINIMALIST DESIGN SYSTEM (MATCHING THE HTML THEME EXACTLY)
-   Base: #ffffff, Neutral fills: #f7f7f8, #f2f2f3, Accent: #1a6dff, Dark: #111214
+   Base: #ffffff, Neutral fills: #f7f7f8, #f2f2f3, Accent: var(--primary-blue), Dark: #111214
    ============================================================================== */
 
 :root {
@@ -979,8 +979,8 @@ input, button, select, textarea {
 }
 .theme-page-btn:hover:not(:disabled) {
   background: var(--bg-subtle, #f8fafc);
-  border-color: var(--primary-blue, #2563eb);
-  color: var(--primary-blue, #2563eb);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
 }
 .theme-page-btn:disabled {
   opacity: 0.35;
@@ -1004,12 +1004,12 @@ input, button, select, textarea {
 }
 .theme-page-num-btn:hover:not(.active) {
   background: var(--bg-subtle, #f8fafc);
-  border-color: var(--primary-blue, #2563eb);
-  color: var(--primary-blue, #2563eb);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
 }
 .theme-page-num-btn.active {
-  background: var(--primary-blue, #2563eb);
-  border-color: var(--primary-blue, #2563eb);
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
   color: #fff;
   font-weight: 700;
 }
@@ -1366,7 +1366,7 @@ input, button, select, textarea {
 /* KPI Card Enhancements */
 .theme-kpi-card.active-filter {
   outline: 2px solid var(--primary-blue);
-  box-shadow: 0 4px 16px rgba(26, 109, 255, 0.12);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--primary-blue) 12%, transparent);
 }
 .theme-kpi-header-row {
   display: flex;
@@ -1382,7 +1382,7 @@ input, button, select, textarea {
   align-items: center;
   justify-content: center;
 }
-.theme-kpi-icon-wrap.icon-blue { background: #dbeafe; color: #1d4ed8; }
+.theme-kpi-icon-wrap.icon-blue { background: var(--primary-blue-subtle); color: var(--primary-blue-hover); }
 .theme-kpi-icon-wrap.icon-peach { background: #ffedd5; color: #c2410c; }
 .theme-kpi-icon-wrap.icon-lavender { background: #ede9fe; color: #6d28d9; }
 .theme-kpi-icon-wrap.icon-green { background: #dcfce7; color: #15803d; }
@@ -1716,13 +1716,13 @@ input, button, select, textarea {
   cursor: not-allowed;
 }
 .leadsgen-action-btn.dossier {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1d4ed8;
+  background: var(--primary-blue-subtle);
+  border-color: color-mix(in srgb, var(--primary-blue) 28%, #ffffff);
+  color: var(--primary-blue-hover);
   font-weight: 600;
 }
 .leadsgen-action-btn.dossier:hover {
-  background: #dbeafe;
+  background: var(--primary-blue-subtle);
 }
 .leadsgen-action-btn.email.sent {
   background: #f0fdf4;
@@ -1781,8 +1781,8 @@ input, button, select, textarea {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #1e40af;
-  background: #dbeafe;
+  color: var(--primary-blue-hover);
+  background: var(--primary-blue-subtle);
   padding: 3px 10px;
   border-radius: 999px;
 }
@@ -1903,11 +1903,11 @@ input, button, select, textarea {
   cursor: not-allowed;
 }
 .dossier-action-btn.primary {
-  background: #2563eb;
+  background: var(--primary-blue);
   color: #ffffff;
 }
 .dossier-action-btn.primary:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--primary-blue-hover);
 }
 .dossier-action-btn.whatsapp {
   background: #10b981;
@@ -1975,7 +1975,7 @@ input, button, select, textarea {
   font-weight: 700;
   margin-top: 3px;
 }
-.metric-val.highlight-blue { color: #1d4ed8; }
+.metric-val.highlight-blue { color: var(--primary-blue-hover); }
 .metric-val.highlight-green { color: #047857; }
 
 .dossier-field-row {
@@ -1996,8 +1996,8 @@ input, button, select, textarea {
 .dossier-category-pill {
   font-size: 10px;
   font-weight: 700;
-  background: #eff6ff;
-  color: #1e40af;
+  background: var(--primary-blue-subtle);
+  color: var(--primary-blue-hover);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -2117,9 +2117,9 @@ input, button, select, textarea {
   background: var(--bg-subtle-2);
 }
 .dossier-stage-pill.active {
-  background: #2563eb;
+  background: var(--primary-blue);
   color: #ffffff;
-  border-color: #2563eb;
+  border-color: var(--primary-blue);
 }
 
 
@@ -2180,7 +2180,7 @@ input, button, select, textarea {
   padding: 2px;
   border-radius: 50%;
 }
-.jp-chip button:hover { background: rgba(26, 109, 255, 0.12); }
+.jp-chip button:hover { background: color-mix(in srgb, var(--primary-blue) 12%, transparent); }
 .jp-multiselect {
   display: flex;
   align-items: center;
@@ -2593,7 +2593,7 @@ input, button, select, textarea {
 }
 .form-input::placeholder { color: var(--text-dim); }
 .form-input:hover { border-color: #cfd1d6; }
-.form-input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(26, 109, 255, 0.14); }
+.form-input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-blue) 14%, transparent); }
 .form-input:disabled { background: var(--bg-subtle); color: var(--text-muted); cursor: not-allowed; }
 textarea.form-input { resize: vertical; min-height: 84px; }
 .settings-note {
@@ -2852,7 +2852,7 @@ main input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; flex-s
 .rp-tab-btn.active {
   background: var(--primary-blue-subtle);
   color: var(--primary-blue);
-  border-color: rgba(26, 109, 255, 0.2);
+  border-color: color-mix(in srgb, var(--primary-blue) 20%, transparent);
 }
 
 .rp-tab-badge {
@@ -3209,7 +3209,7 @@ main input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; flex-s
 
 /* Tabs */
 .rp-tabs-nav { display: flex; flex-wrap: wrap; gap: 0.4rem; border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem; }
-.rp-tab-btn.rp-tab-btn-active { background: var(--primary-blue-subtle); color: var(--primary-blue); border-color: rgba(26, 109, 255, 0.2); }
+.rp-tab-btn.rp-tab-btn-active { background: var(--primary-blue-subtle); color: var(--primary-blue); border-color: color-mix(in srgb, var(--primary-blue) 20%, transparent); }
 .rp-tab-btn.rp-tab-btn-active .rp-tab-badge { background: var(--primary-blue); color: #fff; }
 .rp-tab-badge-alert { background: var(--danger-bg); color: var(--danger-red); }
 .rp-tab-content-wrapper { min-width: 0; }
@@ -3294,7 +3294,7 @@ main input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; flex-s
 .ca-launcher {
   position: fixed; right: 24px; bottom: 24px; z-index: 200; width: 52px; height: 52px; border-radius: 50%;
   border: 0; background: var(--primary-blue); color: #fff; display: inline-flex; align-items: center; justify-content: center;
-  cursor: pointer; box-shadow: 0 10px 28px rgba(26, 109, 255, 0.35);
+  cursor: pointer; box-shadow: 0 10px 28px color-mix(in srgb, var(--primary-blue) 35%, transparent);
 }
 .ca-launcher:hover { background: var(--primary-blue-hover); }
 .ca-launcher:focus-visible, .ca-chip:focus-visible, .ca-send:focus-visible, .ca-close:focus-visible { outline: 2px solid var(--primary-blue); outline-offset: 2px; }
@@ -3325,7 +3325,7 @@ main input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; flex-s
 .ca-table td { padding: 6px 8px; border-top: 1px solid var(--border-light); color: var(--text-secondary); white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .ca-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border-light); }
 .ca-input { flex: 1; min-width: 0; height: 38px; padding: 0 12px; border: 1px solid var(--border-med); border-radius: 999px; font: inherit; font-size: 13px; outline: none; }
-.ca-input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(26, 109, 255, 0.14); }
+.ca-input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-blue) 14%, transparent); }
 .ca-send { width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--primary-blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .ca-send:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 600px) {

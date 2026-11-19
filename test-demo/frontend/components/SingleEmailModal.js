@@ -228,7 +228,7 @@ export default function SingleEmailModal({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '4px',
-                  background: 'rgba(99, 102, 241, 0.08)',
+                  background: 'color-mix(in srgb, var(--primary-blue) 8%, transparent)',
                   border: '1px solid var(--primary-lavender, #6366f1)',
                   color: 'var(--primary-lavender, #6366f1)',
                   borderRadius: '6px',

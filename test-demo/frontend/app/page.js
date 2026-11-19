@@ -218,7 +218,7 @@ function DashboardContent() {
   if (authLoading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: '#1a6dff' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: 'var(--primary-blue)' }}>
           <Loader2 size={32} className="animate-spin" />
           <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#5b5f67' }}>Connecting to Workspace...</span>
         </div>

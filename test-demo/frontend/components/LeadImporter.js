@@ -160,8 +160,8 @@ export default function LeadImporter({ onImportSuccess, onLeadsImported, showToa
         <div className="glass-panel">
           {/* Informational Workflow Card */}
           <div style={{
-            background: 'rgba(99, 102, 241, 0.05)',
-            border: '1px solid rgba(99, 102, 241, 0.2)',
+            background: 'color-mix(in srgb, var(--primary-blue) 5%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--primary-blue) 20%, transparent)',
             borderRadius: '8px',
             padding: '12px 14px',
             marginBottom: '1.25rem',
@@ -191,7 +191,7 @@ export default function LeadImporter({ onImportSuccess, onLeadsImported, showToa
                 borderRadius: '8px',
                 padding: '1.25rem',
                 textAlign: 'center',
-                background: selectedChatFile ? 'rgba(99, 102, 241, 0.04)' : 'var(--bg-subtle, #f8fafc)',
+                background: selectedChatFile ? 'color-mix(in srgb, var(--primary-blue) 4%, transparent)' : 'var(--bg-subtle, #f8fafc)',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
@@ -333,7 +333,7 @@ SleekApps Corp - Looking for Next.js engineers"
                   color: sendOutreachUponImport ? 'var(--primary-lavender, #6366f1)' : 'var(--text-secondary)',
                   fontWeight: sendOutreachUponImport ? 600 : 400,
                   cursor: 'pointer',
-                  background: sendOutreachUponImport ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                  background: sendOutreachUponImport ? 'color-mix(in srgb, var(--primary-blue) 8%, transparent)' : 'transparent',
                   padding: '4px 8px',
                   borderRadius: '6px',
                   border: sendOutreachUponImport ? '1px solid var(--primary-lavender)' : '1px solid transparent',

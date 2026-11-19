@@ -213,7 +213,7 @@ export default function BulkEmailModal({
               alignItems: 'flex-start',
               gap: '10px',
               padding: '10px 12px',
-              background: useAi ? 'rgba(99, 102, 241, 0.06)' : 'var(--bg-subtle, #f7f7f8)',
+              background: useAi ? 'color-mix(in srgb, var(--primary-blue) 6%, transparent)' : 'var(--bg-subtle, #f7f7f8)',
               border: useAi ? '1px solid var(--primary-lavender, #6366f1)' : '1px solid var(--border-light, #e5e7eb)',
               borderRadius: '8px',
               marginBottom: '1rem',

@@ -89,7 +89,7 @@ export default function FileUploads({ onLeadsSaved }) {
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); handle(e.dataTransfer.files?.[0]); }}
           style={{ border: `2px dashed ${drag ? 'var(--accent, #2563eb)' : 'var(--border-light, #d6d9de)'}`, borderRadius: 12, padding: '28px 16px',
-            textAlign: 'center', cursor: busy ? 'progress' : 'pointer', background: drag ? 'rgba(37,99,235,0.05)' : 'transparent' }}>
+            textAlign: 'center', cursor: busy ? 'progress' : 'pointer', background: drag ? 'color-mix(in srgb, var(--primary-blue) 5%, transparent)' : 'transparent' }}>
           {busy ? <Loader2 size={22} className="animate-spin" /> : <Upload size={22} />}
           <div style={{ marginTop: 8, fontWeight: 600 }}>{busy ? 'Reading the file…' : parsed ? `Loaded ${parsed.file} — choose another file` : 'Drop a file here or click to choose'}</div>
           <div className="jp-hint">{accept || '.xlsx .vcf .docx .eml .mbox .pdf .txt .html .jpg .png'}</div>
