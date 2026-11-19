@@ -26,6 +26,7 @@ import LeadEnrichment from '../components/LeadEnrichment';
 import LeadsPage, { DEFAULT_FILTERS } from '../components/leads/LeadsPage';
 import LeadPanel from '../components/leads/LeadPanel';
 import TodayPage from '../components/today/TodayPage';
+import WhatsAppDesk from '../components/whatsapp/WhatsAppDesk';
 import ThemePicker, { applyPalette, rememberPalette, savedPalette } from '../components/ThemePicker';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
@@ -402,6 +403,10 @@ function DashboardContent() {
 
         <div className="theme-scrollable-content">
           <div className="theme-content-padding">
+            {activeTab === 'whatsapp' && (
+              <WhatsAppDesk onOpenLead={(id) => setPanelLeadId(id)} notify={showToast} />
+            )}
+
             {/* Today: the landing page */}
             {activeTab === 'today' && (
               <TodayPage

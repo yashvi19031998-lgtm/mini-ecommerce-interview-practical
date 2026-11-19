@@ -245,6 +245,14 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             html_styled
         )
 
+        # The wa.me link from the signature becomes a green "Chat on WhatsApp" button
+        html_styled = re.sub(
+            r'💬 Chat on WhatsApp: (https://wa\.me/[^\s<]+)',
+            r'<a href="\1" style="display:inline-block;margin-top:6px;padding:8px 16px;border-radius:999px;'
+            r'background:#1fa855;color:#ffffff;text-decoration:none;font-weight:600;">💬 Chat on WhatsApp</a>',
+            html_styled
+        )
+
         html_content = f"""<html>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #222; max-width: 650px; margin: 0 auto; padding: 20px;">
   <div style="font-size: 14px; white-space: pre-wrap;">{html_styled}</div>

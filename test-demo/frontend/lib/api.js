@@ -748,6 +748,14 @@ export async function markLeadContacted(leadId, action, note = '') {
 }
 
 // Today page: to-do lanes + this month (lead_status.today)
+// WhatsApp desk (whatsapp_desk.py)
+export async function fetchWhatsAppDesk(limit = 40) {
+  return await apiFetch(`/api/whatsapp/desk?limit=${limit}`);
+}
+export async function markWhatsAppSent(leadId, text, kind = 'new') {
+  return await apiFetch('/api/whatsapp/sent', { method: 'POST', body: JSON.stringify({ lead_id: leadId, text, kind }) });
+}
+
 export async function fetchToday(perLane = 5) {
   return await apiFetch(`/api/today?per_lane=${perLane}`);
 }

@@ -206,8 +206,16 @@ def not_software_role(lead: dict) -> bool:
         return False
     role = _role_text(lead)
     full = f"{role} {lead.get('description') or ''}"
+    # Gig posts that pay people for their time (recordings, "content partners", "earn up to") are never our work
+    if _GIG_WORK.search(role) and not _DEV_PERSON.search(role):
+        return True
     return bool(_NON_IT_ROLE.search(role)) and not _DEV_PERSON.search(role) and not _DEV_ROLE.search(full) \
         and not _OUR_WORK.search(full)
+
+
+_GIG_WORK = re.compile(r"\b(record\w* (casual |short |paid )?(conversations?|lines|audio|calls?|voice)|"
+                       r"conversation recordings?|content partners?|earn up ?to|\$\d+(\.\d+)?\s*(/|per )\s*(hr|hour)\b.*"
+                       r"(record|talk|chat|speak)|paid (study|survey|focus group)|survey takers?)", re.I)
 
 
 def _env_int(name, default):

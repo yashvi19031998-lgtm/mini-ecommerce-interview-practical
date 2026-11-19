@@ -2426,6 +2426,33 @@ def lead_phone_kit(lead_id):
     return jsonify({"success": True, **kit, "phone": phone, "mailed": mailed,
                     "whatsapp_url": phone_kit.whatsapp_link(phone, kit.get("whatsapp", ""))})
 
+@app.route("/api/whatsapp/desk", methods=["GET"])
+def whatsapp_desk_endpoint():
+    """The day's WhatsApp list (new + follow-up), with ready texts, today's count and the daily limit."""
+    import whatsapp_desk
+    leads, _, sent, acts = _report_context()
+    return jsonify({"success": True, **whatsapp_desk.queue(leads, sent, acts, limit=request.args.get("limit", 25, type=int))})
+
+
+@app.route("/api/whatsapp/sent", methods=["POST"])
+def whatsapp_sent_endpoint():
+    """Log a WhatsApp you just sent from the desk. {lead_id, text, kind: new|followup}"""
+    import whatsapp_desk
+    data = _json_body()
+    lead = _lead_info(data.get("lead_id"))
+    if not lead:
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+    kind = "followup" if data.get("kind") == "followup" else "new"
+    _, _, _, acts = _report_context()
+    try:
+        act = whatsapp_desk.mark_sent(lead, str(data.get("text") or ""), kind, acts)
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 409
+    except followup_store.FollowupError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    return jsonify({"success": True, "activity": act, "sent_today": whatsapp_desk.sent_today(acts) + 1,
+                    "daily_limit": whatsapp_desk.DAILY_LIMIT})
+
 @app.route("/api/reports/lead-status/done", methods=["POST"])
 def report_lead_status_done_endpoint():
     """Log that you contacted a lead by hand. {lead_id, action: called|whatsapp|messaged|mailed, note?}"""

@@ -186,7 +186,7 @@ def stage_of(lead: Dict[str, Any], ctx: Dict[str, Any], now: Optional[datetime.d
         return {**res, "stage": "followup_due"}
     # A mail alone is often never read: a mailed lead with a phone number is only fully contacted after a
     # call or WhatsApp as well.
-    if out and out_type in ("email_sent", "email") and phone_of(lead) and not info.get("phone")             and _s(lead.get("ai_category")).lower() not in NOT_FIT:
+    if out and out_type in ("email_sent", "email") and phone_of(lead) and not info.get("phone")             and _s(lead.get("ai_category")).lower() not in NOT_FIT and not _not_software(lead):
         return {**res, "stage": "call_after_mail"}
     if out:
         if out.year > 2000 and (now - out).days < WAIT_DAYS:

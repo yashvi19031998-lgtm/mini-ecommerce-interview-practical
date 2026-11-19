@@ -139,10 +139,30 @@ def auto_send_state(settings=None):
         return False, "Turned off in Settings"
     return True, "On"
 
+def whatsapp_cta(settings=None) -> str:
+    """'Chat on WhatsApp' line with a wa.me link to our number (empty when no number or switched off with
+    whatsappCta = false). A lead who clicks it starts the chat, so we may answer on WhatsApp."""
+    if settings is None:
+        settings = load_settings()
+    if str(settings.get("whatsappCta", True)).lower() in ("false", "0", "no", "off"):
+        return ""
+    digits = re.sub(r"\D", "", str(settings.get("whatsapp") or settings.get("phone") or ""))
+    if len(digits) == 10:
+        digits = "91" + digits
+    if len(digits) < 11:
+        return ""
+    from urllib.parse import quote
+    hello = quote(f"Hi {settings.get('companyName') or ''}, I got your e-mail and would like to talk.".replace("  ", " "))
+    return f"💬 Chat on WhatsApp: https://wa.me/{digits}?text={hello}"
+
+
 def format_signature(settings=None):
     if settings is None:
         settings = load_settings()
     tpl = settings.get("signatureTemplate", DEFAULT_SETTINGS["signatureTemplate"])
+    cta = whatsapp_cta(settings)
+    if cta and "wa.me/" not in tpl:
+        tpl = tpl + "\n" + cta
     return (
         tpl.replace("{senderName}", settings.get("senderName", ""))
            .replace("{senderRole}", settings.get("senderRole", ""))
