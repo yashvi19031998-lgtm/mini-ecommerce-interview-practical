@@ -30,5 +30,6 @@ followup_templates.json
 # Local run logs: they hold lead e-mails, phone numbers and mail texts - never push them (public repo)
 logs/cron/
 logs/daily_reports/
+logs/whatsapp_session/
 logs/*.before_test_cleanup.csv
 testing_cron.txt

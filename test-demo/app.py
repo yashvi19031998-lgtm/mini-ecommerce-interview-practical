@@ -2649,6 +2649,74 @@ def whatsapp_webhook_endpoint():
         return jsonify({"status": "error", "error": str(e)}), 200
 
 
+# ==============================================================================
+# AUTONOMOUS AI BDE (BUSINESS DEVELOPMENT EXECUTIVE) AGENT ENDPOINTS
+# ==============================================================================
+@app.route("/api/bde/briefing", methods=["GET"])
+def bde_daily_briefing():
+    """Provides executive morning pipeline briefing and top action plan from AI BDE."""
+    import ai_bde_agent
+    try:
+        data = ai_bde_agent.get_daily_bde_briefing()
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/bde/pitch", methods=["POST"])
+def bde_generate_pitch():
+    """Generates tailored email & WhatsApp outreach pitches for a lead."""
+    import ai_bde_agent
+    req_data = request.get_json(silent=True) or {}
+    lead_id = req_data.get("lead_id")
+    lead_info = req_data.get("lead")
+
+    # If lead_id provided, lookup from master database
+    if lead_id and not lead_info:
+        try:
+            leads = get_all_leads() or []
+            for l in leads:
+                if str(l.get("id") or l.get("lead_id")) == str(lead_id):
+                    lead_info = l
+                    break
+        except Exception:
+            pass
+
+    if not lead_info:
+        lead_info = req_data
+
+    pitch = ai_bde_agent.generate_lead_pitch(lead_info)
+    return jsonify(pitch), 200
+
+
+@app.route("/api/bde/negotiate", methods=["POST"])
+def bde_handle_negotiation():
+    """Handles prospect replies and provides objection handling & retainer options."""
+    import ai_bde_agent
+    req_data = request.get_json(silent=True) or {}
+    client_msg = req_data.get("client_message", "")
+    comp_name = req_data.get("company_name", "your company")
+    contact = req_data.get("contact_name", "there")
+    need = req_data.get("specific_need", "software and web operations")
+
+    response_data = ai_bde_agent.handle_inbound_negotiation(
+        client_message=client_msg,
+        contact_name=contact,
+        company_name=comp_name,
+        specific_need=need
+    )
+    return jsonify(response_data), 200
+
+
+@app.route("/api/bde/qualify", methods=["POST"])
+def bde_qualify_lead():
+    """Evaluates lead fit, assigns BDE score, and recommends sales action."""
+    import ai_bde_agent
+    lead_info = request.get_json(silent=True) or {}
+    res = ai_bde_agent.qualify_lead(lead_info)
+    return jsonify(res), 200
+
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)
