@@ -121,3 +121,46 @@
 .tp-mini-main b { display: block; width: 44%; height: 12px; border-radius: 6px; margin-top: auto; }
 .tp-name { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .tp-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.35; }
+
+/* =====================================================================================
+   Premium (default): obsidian sidebar, ink buttons, champagne-gold used sparingly
+   (active menu item, key numbers, progress), soft card shadows.
+   ===================================================================================== */
+:root[data-palette="premium"] {
+  --primary-blue: #111827;          /* buttons, links, active chips: deep ink */
+  --primary-blue-hover: #000000;
+  --primary-blue-subtle: #f3efe4;   /* champagne wash for selected / soft buttons */
+  --accent-strong: #c9a24d;
+  --gold: #c9a24d;
+  --gold-deep: #9a7629;             /* gold for text on light backgrounds */
+  --app-bg: #f6f6f4;
+  --sidebar-bg: linear-gradient(180deg, #0c0c11 0%, #16161e 100%);
+  --sidebar-active-bg: rgba(201, 162, 77, 0.13);
+  --sidebar-active-text: #f0d899;
+  --sidebar-accent: #c9a24d;
+}
+:root[data-palette="premium"] .theme-sidebar .theme-quick-btn.primary { background: linear-gradient(135deg, #d8b562, #b38a35); border-color: transparent; color: #17130a; font-weight: 700; }
+:root[data-palette="premium"] .theme-sidebar .theme-business-active { background: rgba(201, 162, 77, 0.10); border: 1px solid rgba(201, 162, 77, 0.22); }
+:root[data-palette="premium"] .theme-sidebar .theme-business-name { color: #f0d899; }
+:root[data-palette="premium"] .btn-primary { background: #111827; border-color: #111827; }
+:root[data-palette="premium"] .btn-primary:hover { background: #000; border-color: #000; }
+:root[data-palette="premium"] .btn-soft { background: var(--primary-blue-subtle); color: #5c4512; }
+:root[data-palette="premium"] .td-title strong,
+:root[data-palette="premium"] .td-auto-val { color: var(--gold-deep); }
+:root[data-palette="premium"] .td-goal-bar span,
+:root[data-palette="premium"] .sm-funnel-bar span { background: linear-gradient(90deg, #b38a35, #d8b562); }
+:root[data-palette="premium"] .td-goal-bar span.met { background: var(--success-green); }
+:root[data-palette="premium"] .td-card, :root[data-palette="premium"] .td-lane,
+:root[data-palette="premium"] .lv-filters, :root[data-palette="premium"] .lv-table-wrap,
+:root[data-palette="premium"] .sm-card, :root[data-palette="premium"] .sm-filters,
+:root[data-palette="premium"] .tp, :root[data-palette="premium"] .rp-table-card {
+  border-color: #ebe9e3;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04), 0 6px 18px rgba(17, 24, 39, 0.05);
+}
+:root[data-palette="premium"] .lv-table th { background: #faf9f6; }
+:root[data-palette="premium"] .tag { background: var(--primary-blue-subtle); color: #5c4512; }
+:root[data-palette="premium"] .fchip.on { background: #111827; border-color: #111827; }
+:root[data-palette="premium"] .ca-launcher { background: linear-gradient(135deg, #1f2937, #0b0b10); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(201, 162, 77, 0.45); color: #f0d899; }
+/* Brand bolt in the sidebar follows the theme (lucide draws it with its colour prop as the stroke) */
+:root[data-palette] .theme-sidebar .theme-business-active svg,
+:root[data-palette] .theme-sidebar .theme-footer-brand svg { stroke: var(--sidebar-accent); color: var(--sidebar-accent); }

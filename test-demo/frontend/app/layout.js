@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
         {/* Apply the saved colour theme before the first paint, so the page never flashes the old colours */}
         <script
           dangerouslySetInnerHTML={{
-            __html: "try{var p=localStorage.getItem('ui-palette');if(p&&p!=='classic')document.documentElement.setAttribute('data-palette',p)}catch(e){}",
+            __html: "var p='premium';try{p=localStorage.getItem('ui-palette')||'premium'}catch(e){}if(p!=='classic')document.documentElement.setAttribute('data-palette',p)",
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

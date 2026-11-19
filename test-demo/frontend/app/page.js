@@ -87,7 +87,7 @@ function DashboardContent() {
   const [leadFilters, setLeadFilters] = useState(DEFAULT_FILTERS);
   const [panelLeadId, setPanelLeadId] = useState(null);
   const [todayReload, setTodayReload] = useState(0);
-  const [palette, setPalette] = useState('classic');
+  const [palette, setPalette] = useState('premium'); // default theme until one is chosen
   const setActiveTab = useCallback((tab) => setActiveTabRaw(TAB_ALIASES[tab] || tab), []);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);

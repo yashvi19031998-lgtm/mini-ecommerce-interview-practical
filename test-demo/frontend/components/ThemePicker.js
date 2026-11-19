@@ -8,6 +8,7 @@ import React from 'react';
 import { Check } from 'lucide-react';
 
 export const PALETTES = [
+  { id: 'premium', name: 'Premium', desc: 'Obsidian, ink and gold - premium (default)', side: '#0c0c11', accent: '#c9a24d', bg: '#f6f6f4' },
   { id: 'classic', name: 'Classic', desc: 'White with blue - the original look', side: '#ffffff', sideLine: '#e5e7eb', accent: '#1a6dff', bg: '#ffffff' },
   { id: 'midnight', name: 'Midnight', desc: 'Navy sidebar, indigo - calm, corporate', side: '#0f172a', accent: '#4f46e5', bg: '#f5f6fb' },
   { id: 'emerald', name: 'Emerald', desc: 'Deep green, green accent - growth', side: '#0b2e24', accent: '#047857', bg: '#f4f8f6' },
@@ -18,11 +19,14 @@ export const PALETTES = [
 const IDS = PALETTES.map(p => p.id);
 const STORE = 'ui-palette';
 
+export const DEFAULT_PALETTE = 'premium';
+
 export function applyPalette(id) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  if (!id || id === 'classic' || !IDS.includes(id)) root.removeAttribute('data-palette');
-  else root.setAttribute('data-palette', id);
+  const pick = IDS.includes(id) ? id : DEFAULT_PALETTE;
+  if (pick === 'classic') root.removeAttribute('data-palette');
+  else root.setAttribute('data-palette', pick);
 }
 
 export function savedPalette() {
@@ -34,7 +38,7 @@ export function rememberPalette(id) {
   applyPalette(id);
 }
 
-export default function ThemePicker({ value = 'classic', onChange }) {
+export default function ThemePicker({ value = DEFAULT_PALETTE, onChange }) {
   return (
     <section className="tp" aria-labelledby="tp-title">
       <div className="tp-head">
