@@ -39,6 +39,11 @@ FEEDLY_ACCESS_TOKEN = os.getenv("FEEDLY_ACCESS_TOKEN", "").strip()
 FEEDLY_STREAM_IDS = [s.strip() for s in os.getenv("FEEDLY_STREAM_IDS", "").split(",") if s.strip()]
 FEEDLY_OPML_FILE = os.getenv("FEEDLY_OPML_FILE", "feedly_feeds.opml")
 FEEDLY_FEEDS = [s.strip() for s in os.getenv("FEEDLY_FEEDS", "").split(",") if s.strip()]
+DEFAULT_FREE_FEEDS = [
+    "https://news.crunchbase.com/feed/",
+    "https://techcrunch.com/feed/",
+    "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+]
 FEEDLY_MAX_AGE_DAYS = min(int(os.getenv("FEEDLY_MAX_AGE_DAYS", "7")), 31)  # API refuses newerThan > 31 days
 FEEDLY_MAX_PAGES = int(os.getenv("FEEDLY_MAX_PAGES", "3"))  # x100 articles per stream per run
 
@@ -50,6 +55,10 @@ DEFAULT_INTENT_KEYWORDS = [
     "need developer", "need a website", "need an app", "hiring", "[hiring]", "seeking developer",
     "looking for an agency", "looking for agency", "development partner", "rfp", "request for proposal",
     "tender", "freelancer needed", "build an app", "build a website", "mvp", "outsource",
+    "website maintenance", "website support", "wordpress maintenance", "website amc",
+    "wordpress broken", "wordpress hacked", "wordpress slow", "site speed fix",
+    "php migration", "laravel migration", "codeigniter migration", "node.js migration",
+    "crm integration", "custom dashboard", "need reels", "short form video", "festival creatives",
 ]
 _custom_feedly_keywords = [k.strip().lower() for k in os.getenv("FEEDLY_KEYWORDS", "").split(",") if k.strip()]
 INTENT_KEYWORDS = list(dict.fromkeys(DEFAULT_INTENT_KEYWORDS + _custom_feedly_keywords))
@@ -233,11 +242,8 @@ def run_feedly_adapter() -> List[Dict[str, Any]]:
                 print(f"       [Feedly] {sid[:70]}: {e}")
         return leads
 
-    feeds = list(dict.fromkeys(FEEDLY_FEEDS + read_opml(FEEDLY_OPML_FILE)))  # dedupe, keep order
-    if not feeds:
-        print("       [Feedly] Not configured: set FEEDLY_ACCESS_TOKEN + FEEDLY_STREAM_IDS, "
-              f"or export OPML to {FEEDLY_OPML_FILE}, or set FEEDLY_FEEDS.")
-        return leads
+    configured_feeds = list(dict.fromkeys(FEEDLY_FEEDS + read_opml(FEEDLY_OPML_FILE)))  # dedupe, keep order
+    feeds = configured_feeds if configured_feeds else DEFAULT_FREE_FEEDS
 
     print(f"       [Feedly] RSS mode: {len(feeds)} feed(s)")
     for url in feeds:

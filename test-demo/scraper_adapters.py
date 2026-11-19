@@ -68,15 +68,20 @@ DYNAMIC_SEARCH_QUERIES = [
     '("need Angular developer" OR "hire Angular developer" OR "looking for Angular agency")',
     '("need Nextjs developer" OR "hire Next.js developer" OR "looking for React Nextjs")',
     '("need Nodejs developer" OR "hire Node.js backend developer" OR "Nodejs development company")',
-    # 17. Website Maintenance & 24/7 AMC Support
+    # 17. Website Maintenance, Urgent Fixes & 24/7 AMC Support
     '("website maintenance required" OR "looking for website maintenance" OR "need website support" OR "website AMC services")',
     '("fix WordPress website" OR "website bug fixing support" OR "monthly website maintenance contract")',
+    '("WordPress broken" OR "WordPress hacked" OR "WordPress slow" OR "WordPress error" OR "website down") ("need developer" OR "looking for developer" OR "need help" OR "urgent")',
+    '("website speed optimization" OR "Core Web Vitals" OR "website performance audit" OR "site speed fix") ("need" OR "looking for" OR "hire") ("developer" OR "agency")',
+    '("PHP migration" OR "Laravel migration" OR "CodeIgniter migration" OR "legacy PHP" OR "PHP upgrade") ("looking for" OR "need" OR "hire") ("developer" OR "agency")',
     # 18. Custom CRM & Business Portals
     '("need custom CRM" OR "custom CRM development" OR "looking for CRM developer") ("portal" OR "business" OR "agency")',
     '("custom ERP development company" OR "need ERP software developer" OR "custom business portal")',
+    '("need CRM integration" OR "CRM integration project" OR "HubSpot integration" OR "Salesforce integration" OR "Zoho CRM integration") ("looking for" OR "need" OR "hire")',
     # 19. Social Media Reels & Festival Creative Design
     '("looking for social media agency" OR "need reels creator" OR "video reels for business") ("Instagram" OR "marketing" OR "branding")',
     '("graphic designer for festival posts" OR "festival creative design agency" OR "social media post maker" OR "digital branding")',
+    '("need social media content" OR "looking for content creator" OR "need reels" OR "need short form video" OR "social media creatives") ("business" OR "brand" OR "company")',
     # 20. Mobile Apps (Flutter, iOS, Android)
     '("need Flutter developer" OR "hire Flutter developer" OR "cross platform mobile app") ("need" OR "looking for")',
     '("iOS developer needed" OR "Android app developer needed" OR "hire mobile app agency")',
