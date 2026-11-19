@@ -20,10 +20,10 @@ from typing import List, Dict, Any, Tuple
 from lead_normalizer import MAX_DESCRIPTION_CHARS
 
 try:
-    from ddgs import DDGS
+    from duckduckgo_search import DDGS
 except ImportError:
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
     except ImportError:
         DDGS = None
 

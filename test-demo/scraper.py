@@ -55,10 +55,10 @@ except ImportError:
 
 # DuckDuckGo import
 try:
-    from ddgs import DDGS
+    from duckduckgo_search import DDGS
 except ImportError:
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
     except ImportError:
         DDGS = None
 

@@ -6,9 +6,12 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 try:
-    from ddgs import DDGS
-except ImportError:
     from duckduckgo_search import DDGS
+except ImportError:
+    try:
+        from ddgs import DDGS
+    except ImportError:
+        DDGS = None
 
 # 1. CONFIGURATION
 # ==============================================================================
