@@ -26,6 +26,7 @@ import LeadEnrichment from '../components/LeadEnrichment';
 import LeadsPage, { DEFAULT_FILTERS } from '../components/leads/LeadsPage';
 import LeadPanel from '../components/leads/LeadPanel';
 import TodayPage from '../components/today/TodayPage';
+import ThemePicker, { applyPalette, rememberPalette, savedPalette } from '../components/ThemePicker';
 import SingleEmailModal from '../components/SingleEmailModal';
 import BulkEmailModal from '../components/BulkEmailModal';
 import WhatsAppModal from '../components/WhatsAppModal';
@@ -51,6 +52,7 @@ import {
   startScraper,
   stopScraper,
   fetchSettings,
+  saveSettings,
   triggerSupabaseSync
 } from '../lib/api';
 
@@ -85,6 +87,7 @@ function DashboardContent() {
   const [leadFilters, setLeadFilters] = useState(DEFAULT_FILTERS);
   const [panelLeadId, setPanelLeadId] = useState(null);
   const [todayReload, setTodayReload] = useState(0);
+  const [palette, setPalette] = useState('classic');
   const setActiveTab = useCallback((tab) => setActiveTabRaw(TAB_ALIASES[tab] || tab), []);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -139,9 +142,18 @@ function DashboardContent() {
   // Load settings & signature
   useEffect(() => {
     if (user) {
+      const local = savedPalette();
+      if (local) setPalette(local);
       fetchSettings().then(res => {
         if (res && res.formattedSignature) {
           setSignature(res.formattedSignature);
+        }
+        // The theme saved in the settings wins, so every browser opens with the same colours
+        if (res && res.uiPalette) {
+          setPalette(res.uiPalette);
+          rememberPalette(res.uiPalette);
+        } else if (local) {
+          applyPalette(local);
         }
       });
       loadLeads();
@@ -544,6 +556,16 @@ function DashboardContent() {
             )}
 
             {/* TAB 4: Settings & SMTP */}
+            {activeTab === 'settings' && (
+              <ThemePicker
+                value={palette}
+                onChange={(id) => {
+                  setPalette(id);
+                  rememberPalette(id);
+                  saveSettings({ uiPalette: id }).catch(() => showToast('Theme changed here, but could not be saved for other browsers', 'info'));
+                }}
+              />
+            )}
             {activeTab === 'settings' && (
               <SettingsView
                 onSettingsSaved={() => {

@@ -1,0 +1,123 @@
+/* =====================================================================================
+   Colour themes. <html data-palette="..."> picks one (Settings > Appearance, components/ThemePicker.js).
+   Each theme sets the accent, the page background and the sidebar; everything else follows the shared
+   tokens in globals.css. "classic" = no attribute = the original blue on white.
+   Accent colours keep at least 4.5:1 contrast with white text on buttons.
+   ===================================================================================== */
+
+/* Shared mechanics for the dark-sidebar themes: the sidebar re-scopes the text / surface tokens, so every
+   item inside it (nav, badges, quick actions, footer) turns light-on-dark without per-item rules. */
+:root[data-palette] .theme-app-wrapper,
+:root[data-palette] .theme-main-pane,
+:root[data-palette] .theme-scrollable-content { background: var(--app-bg); }
+:root[data-palette] .theme-header { background: var(--app-bg); border-bottom-color: var(--border-light); }
+
+:root[data-palette] .theme-sidebar {
+  background: var(--sidebar-bg);
+  border-right-color: transparent;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.78);
+  --text-muted: rgba(255, 255, 255, 0.52);
+  --text-dim: rgba(255, 255, 255, 0.4);
+  --border-light: rgba(255, 255, 255, 0.09);
+  --border-med: rgba(255, 255, 255, 0.16);
+  --bg-subtle: rgba(255, 255, 255, 0.06);
+  --bg-subtle-2: rgba(255, 255, 255, 0.09);
+  --primary-blue-subtle: var(--sidebar-active-bg);
+  --primary-blue: var(--sidebar-active-text);
+  color: #fff;
+}
+:root[data-palette] .theme-sidebar .theme-nav-item:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+:root[data-palette] .theme-sidebar .theme-nav-item.active { box-shadow: inset 3px 0 0 var(--sidebar-accent); }
+:root[data-palette] .theme-sidebar .theme-business-active { background: rgba(255, 255, 255, 0.08); }
+:root[data-palette] .theme-sidebar .theme-quick-btn { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.14); color: #fff; }
+:root[data-palette] .theme-sidebar .theme-quick-btn.primary { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+:root[data-palette] .theme-sidebar .theme-user-avatar { background: rgba(255, 255, 255, 0.14); }
+:root[data-palette] .theme-sidebar svg[color="#2563eb"], :root[data-palette] .theme-sidebar svg[color="#1a6dff"] { color: var(--sidebar-accent); }
+:root[data-palette] .theme-sidebar-footer { border-top-color: rgba(255, 255, 255, 0.09); }
+:root[data-palette] .theme-nav-sub { border-left-color: rgba(255, 255, 255, 0.12); }
+
+/* Midnight: navy sidebar, indigo accent - calm and corporate */
+:root[data-palette="midnight"] {
+  --primary-blue: #4f46e5;
+  --primary-blue-hover: #4338ca;
+  --primary-blue-subtle: #eef0ff;
+  --accent-strong: #4f46e5;
+  --app-bg: #f5f6fb;
+  --sidebar-bg: #0f172a;
+  --sidebar-active-bg: rgba(129, 140, 248, 0.18);
+  --sidebar-active-text: #c7d2fe;
+  --sidebar-accent: #818cf8;
+}
+
+/* Emerald: deep green sidebar, green accent - growth, money */
+:root[data-palette="emerald"] {
+  --primary-blue: #047857;
+  --primary-blue-hover: #065f46;
+  --primary-blue-subtle: #e6f5ee;
+  --accent-strong: #059669;
+  --app-bg: #f4f8f6;
+  --sidebar-bg: #0b2e24;
+  --sidebar-active-bg: rgba(52, 211, 153, 0.16);
+  --sidebar-active-text: #a7f3d0;
+  --sidebar-accent: #34d399;
+}
+
+/* Royal: dark plum sidebar, violet accent - modern SaaS */
+:root[data-palette="royal"] {
+  --primary-blue: #6d28d9;
+  --primary-blue-hover: #5b21b6;
+  --primary-blue-subtle: #f1ebfe;
+  --accent-strong: #7c3aed;
+  --app-bg: #f7f6fc;
+  --sidebar-bg: #1c1533;
+  --sidebar-active-bg: rgba(167, 139, 250, 0.18);
+  --sidebar-active-text: #ddd6fe;
+  --sidebar-accent: #a78bfa;
+}
+
+/* Ember: charcoal sidebar, burnt-orange accent - warm and bold */
+:root[data-palette="ember"] {
+  --primary-blue: #c2410c;
+  --primary-blue-hover: #9a3412;
+  --primary-blue-subtle: #fff1e7;
+  --accent-strong: #c2410c;
+  --app-bg: #faf8f5;
+  --sidebar-bg: #1c1917;
+  --sidebar-active-bg: rgba(251, 146, 60, 0.16);
+  --sidebar-active-text: #fed7aa;
+  --sidebar-accent: #fb923c;
+}
+
+/* Ocean: dark teal sidebar, teal accent - fresh and clean */
+:root[data-palette="ocean"] {
+  --primary-blue: #0f766e;
+  --primary-blue-hover: #115e59;
+  --primary-blue-subtle: #e6f6f4;
+  --accent-strong: #0d9488;
+  --app-bg: #f4f8f8;
+  --sidebar-bg: #0b2a2e;
+  --sidebar-active-bg: rgba(45, 212, 191, 0.16);
+  --sidebar-active-text: #99f6e4;
+  --sidebar-accent: #2dd4bf;
+}
+
+/* ---- Theme picker (Settings > Appearance) ---- */
+.tp { background: var(--bg-white); border: 1px solid var(--border-light); border-radius: var(--radius-card); padding: 16px 18px; margin-bottom: 1rem; }
+.tp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.tp-title { margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.tp-sub { margin: 2px 0 12px; font-size: 13px; color: var(--text-muted); }
+.tp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.tp-card { display: flex; flex-direction: column; gap: 8px; padding: 8px; border-radius: 12px; border: 2px solid var(--border-light); background: var(--bg-white); cursor: pointer; font: inherit; text-align: left; color: var(--text-primary); }
+.tp-card:hover { border-color: var(--border-med); }
+.tp-card.on { border-color: var(--primary-blue); box-shadow: 0 0 0 3px var(--primary-blue-subtle); }
+.tp-card:focus-visible { outline: 2px solid var(--primary-blue); outline-offset: 2px; }
+.tp-mini { display: flex; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0, 0, 0, 0.06); }
+.tp-mini-side { width: 30%; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; }
+.tp-mini-side i { display: block; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.25); }
+.tp-mini-side i.on { opacity: 1; }
+.tp-mini-main { flex: 1; padding: 7px; display: flex; flex-direction: column; gap: 5px; }
+.tp-mini-main i { display: block; height: 6px; border-radius: 3px; background: #e5e7eb; }
+.tp-mini-main b { display: block; width: 44%; height: 12px; border-radius: 6px; margin-top: auto; }
+.tp-name { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.tp-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.35; }

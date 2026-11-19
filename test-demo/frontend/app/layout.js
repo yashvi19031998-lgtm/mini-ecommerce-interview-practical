@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./work.css";
+import "./themes.css";
 
 export const metadata = {
   title: "test-demo",
@@ -8,8 +9,14 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Apply the saved colour theme before the first paint, so the page never flashes the old colours */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{var p=localStorage.getItem('ui-palette');if(p&&p!=='classic')document.documentElement.setAttribute('data-palette',p)}catch(e){}",
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
