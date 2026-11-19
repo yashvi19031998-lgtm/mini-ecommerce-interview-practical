@@ -15,3 +15,4 @@ gunicorn>=21.2.0
 # Visiting-card OCR (File Uploads): also needs the Tesseract OCR program installed on the machine
 pytesseract>=0.3.10,<0.4
 Pillow>=10,<13
+playwright>=1.40.0

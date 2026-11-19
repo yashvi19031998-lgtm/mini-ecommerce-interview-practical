@@ -61,7 +61,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install Playwright Browsers (for Google Maps & Justdial)
-        run: python -m playwright install --with-deps chromium
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+        continue-on-error: true
 
       # Leads, sent-mail log, follow-ups and settings come from the database. If it cannot be read,
       # stop here: without the sent-mail log the run could e-mail people a second time.
