@@ -39,27 +39,32 @@ DEFAULT_TEMPLATES = [
     {
         "subject": "Re: {original_subject}",
         "body": ("Hi {name},\n\n"
-                 "Just following up on my email from {first_date} with something more useful than a generic pitch.\n\n"
-                 "For a team scaling operations or managing delivery bottlenecks, we typically start with a one-page technical roadmap: "
-                 "current bottlenecks, recommended architecture, delivery sequence, and a fixed-price first milestone.\n\n"
-                 "We can prepare a similar 1-page roadmap for {company}—no obligation. Would a short 10-minute call this week be useful?"),
+                 "Just following up on my email from {first_date} with a practical idea for **{company}**. "
+                 "Instead of adding a permanent hire for a bounded backlog, our engineering team at **Sangeeta Infotech** "
+                 "provides dedicated senior full-stack capacity for your web, mobile, or integration workflows.\n\n"
+                 "With **5+ years of delivery experience**, **80+ completed projects**, and **latest AI-assisted development tools**, "
+                 "we begin with a clearly scoped roadmap and fixed-price first milestone. Our dedicated developer packages start from just **₹450/- INR / hour**, "
+                 "with transparent scope, weekly demos, and complete source-code ownership.\n\n"
+                 "Would a one-page technical roadmap for **{company}** be useful?"),
     },
     {
         "subject": "Re: {original_subject}",
         "body": ("Hi {name},\n\n"
-                 "Checking in once more. If you have projects on hold or need extra engineering bandwidth without hiring overhead, "
-                 "we offer a low-risk 20-hour Discovery & Delivery Sprint.\n\n"
-                 "You get a working proof of concept, source code in your repository, and a technical roadmap. "
-                 "If the communication or delivery speed isn't what you expected, you can stop after the sprint with no further commitment.\n\n"
-                 "Happy to share a few relevant examples of our work - just reply to this email."),
+                 "Checking in once more with a relevant example for **{company}**: A client needed to optimize slow web portal load times, "
+                 "migrate a legacy backend API, and automate custom CRM workflows. We delivered the entire sprint within 3 weeks, significantly reducing page latency "
+                 "and eliminating manual data entry.\n\n"
+                 "For **{company}**, a similar starting point could be a **one-page architecture review** or a **fixed-scope 7-day trial sprint**. "
+                 "Our dedicated developers start from just **₹450/- INR / hour**, backed by **5+ years of experience** and **80+ clients** across modern frameworks.\n\n"
+                 "Would you like me to prepare that one-page architecture review for **{company}**?"),
     },
     {
         "subject": "Re: {original_subject}",
         "body": ("Hi {name},\n\n"
-                 "I don't want to fill your inbox, so this is my last note. I'll assume software engineering capacity isn't a priority "
-                 "for {company} right now, so I'll stop following up.\n\n"
-                 "Before I close the file: we currently have availability to begin a dedicated sprint engagement in the next two weeks. "
-                 "If this becomes relevant later on, simply reply 'later' and I'll check back at a better time.\n\n"
+                 "This is my last note as I don't want to clutter your inbox. I'll assume that adding senior full-stack engineering capacity "
+                 "is not a current priority for **{company}**, so I'll stop following up.\n\n"
+                 "Before I close the file: we have limited capacity to begin a **fixed-scope 7-day trial sprint** in the next two weeks. "
+                 "After that, I may not be able to hold the same senior team or delivery slot.\n\n"
+                 "If this becomes relevant later on, simply reply **'later'** and I'll check back at a better time. If not relevant at all, reply **'no'** and I will not contact you again.\n\n"
                  "Wishing {company} all the best."),
     },
 ]
