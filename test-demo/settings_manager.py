@@ -52,37 +52,27 @@ DEFAULT_SETTINGS = {
     "min_lead_score": 4,
     "signatureTemplate": (
         "Warm regards,\n"
-        "**{senderName}** | {senderRole}\n"
-        "**{companyName}** — {tagline}\n"
-        "💡 Dedicated Developers Starting from **₹450/- INR / hour**\n"
-        "📧 **Email:** {email}\n"
-        "📞 **Phone/WhatsApp:** {phone}\n"
-        "🌐 **Website:** {website}\n"
-        "📍 **Location:** {address}"
+        "{senderName} | {senderRole}\n"
+        "{companyName} — {tagline}\n"
+        "Phone/WhatsApp: {phone}\n"
+        "Email: {email} | {website}\n"
+        "Location: {address}"
     ),
-    "defaultSubject": "Web & Software Engineering Collaboration - Sangeeta Infotech",
-    "default_subject": "Web & Software Engineering Collaboration - Sangeeta Infotech",
+    "defaultSubject": "Senior full-stack capacity for {company}",
+    "default_subject": "Senior full-stack capacity for {company}",
     "defaultMessage": (
         "Hi {name},\n\n"
-        "I came across **{company}** and your business presence in {location}.\n\n"
-        "At **Sangeeta Infotech**, we specialize in high-performance web applications, mobile apps, and custom software systems. "
-        "We help ambitious companies scale engineering velocity with dedicated developers starting from just **₹450/- INR / hour**.\n\n"
-        "Key expertise we offer:\n"
-        "• Full-Stack Web Development & Modern Portals (React, Node, Python)\n"
-        "• Mobile Apps (Flutter, iOS & Android)\n"
-        "• AI Integrations & Automation Workflows\n\n"
-        "Would you be open to a brief **10-minute discovery call** this week to explore how we can support your tech needs?"
+        "I noticed {company}'s digital products and technical operations.\n\n"
+        "We help product and engineering leaders add senior full-stack capacity for bounded workstreams—"
+        "such as customer portals, internal tools, integrations, and mobile releases—without disrupting your existing team or internal workflow.\n\n"
+        "If you have delivery backlogs or upcoming roadmap items, would a brief 15-minute conversation be useful?"
     ),
     "default_template": (
         "Hi {name},\n\n"
-        "I came across **{company}** and your business presence in {location}.\n\n"
-        "At **Sangeeta Infotech**, we specialize in high-performance web applications, mobile apps, and custom software systems. "
-        "We help ambitious companies scale engineering velocity with dedicated developers starting from just **₹450/- INR / hour**.\n\n"
-        "Key expertise we offer:\n"
-        "• Full-Stack Web Development & Modern Portals (React, Node, Python)\n"
-        "• Mobile Apps (Flutter, iOS & Android)\n"
-        "• AI Integrations & Automation Workflows\n\n"
-        "Would you be open to a brief **10-minute discovery call** this week to explore how we can support your tech needs?"
+        "I noticed {company}'s digital products and technical operations.\n\n"
+        "We help product and engineering leaders add senior full-stack capacity for bounded workstreams—"
+        "such as customer portals, internal tools, integrations, and mobile releases—without disrupting your existing team or internal workflow.\n\n"
+        "If you have delivery backlogs or upcoming roadmap items, would a brief 15-minute conversation be useful?"
     ),
     "delayBetweenEmailsMs": 1500
 }
