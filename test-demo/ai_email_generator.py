@@ -21,12 +21,12 @@ from typing import Dict, Any, Tuple, Optional
 from settings_manager import load_settings, format_signature, DEFAULT_SETTINGS
 
 DEFAULT_SIGNATURE = """Warm regards,
-Business Development Team | Client Solutions
-Sangeeta Infotech — Engineering Intelligent Web & Mobile Solutions
+Business Development Team | Client Solutions Specialist
+**Sangeeta Infotech** — Engineering Intelligent Web & Mobile Solutions
+💡 Dedicated Developers Starting from **₹450/- INR / hour**
 Phone/WhatsApp: +91 9106060400
-Email: info@sangeetainfotech.co.in
-Website: https://sangeetainfotech.co.in
-Ahmedabad, Gujarat, India"""
+Email: info@sangeetainfotech.co.in | https://sangeetainfotech.co.in
+Location: Ahmedabad, Gujarat, India"""
 
 
 def clean_company_and_role(title: str, comp_hint: str = "") -> Tuple[str, str]:
@@ -168,17 +168,18 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
     is_ecommerce = intent_info["is_ecommerce"]
     tech_lower = primary_tech.lower()
 
-    greeting = f"Hi Team {company}" if company not in ("your team", "your company") else "Hello"
+    greeting = f"Hi Team **{company}**" if company not in ("your team", "your company") else "Hello"
 
     # Category 0: Active Competitor Agency Client
     if is_competitor_client:
         subject = f"Software development help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s digital products and software operations.\n\n"
-            f"At Sangeeta Infotech, our engineering team in Ahmedabad has 5+ years of experience building and maintaining web and mobile software for 80+ clients. "
-            f"We help teams get development work done faster without the overhead of hiring or disrupting your existing setup.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
+            f"I noticed **{company}**'s software operations and digital products.\n\n"
+            f"At **Sangeeta Infotech**, our engineering team in Ahmedabad brings **5+ years of experience** building high-performance web and mobile software for **80+ clients**. "
+            f"We build with the **latest AI tools and modern technologies** to deliver clean, fast, and scalable code.\n\n"
+            f"Our dedicated developer packages start from just **₹450/- INR / hour**, helping you get development work done quickly without the overhead of full-time hiring.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
@@ -187,10 +188,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Creative reels & design for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s brand presence.\n\n"
-            f"At Sangeeta Infotech, our creative team has 5+ years of experience producing high-engagement video Reels, festival campaigns, and branded social posts for 80+ growing businesses. "
-            f"We deliver ready-to-post creatives on predictable weekly schedules.\n\n"
-            f"Are you open to a brief chat this week, or would you like to see a few live examples of our recent work?"
+            f"I came across **{company}**'s brand presence.\n\n"
+            f"At **Sangeeta Infotech**, our creative media team brings **5+ years of experience** producing high-engagement video Reels, festival campaigns, and branded social posts for **80+ growing businesses**. "
+            f"We leverage the **latest AI design tools and video production workflows** to deliver ready-to-post creatives on predictable weekly schedules.\n\n"
+            f"Our creative and design packages start from just **₹450/- INR / hour**, giving you high-impact visual branding without agency overhead.\n\n"
+            f"Are you open to a brief **10-minute chat** this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
@@ -199,10 +201,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Website maintenance & support for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s website.\n\n"
-            f"At Sangeeta Infotech, our team has 5+ years of experience handling website uptime, speed, security patches, and regular bug fixes for 80+ businesses. "
-            f"We take care of technical maintenance so your team can focus on business without hiring full-time developers.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see how we handle website maintenance?"
+            f"I came across **{company}**'s website.\n\n"
+            f"At **Sangeeta Infotech**, our team brings **5+ years of experience** managing website uptime, speed, security patches, and regular bug fixes for **80+ businesses**. "
+            f"We use the **latest AI monitoring and modern development tools** to keep your web presence fast, secure, and always online.\n\n"
+            f"Our dedicated maintenance support starts from just **₹450/- INR / hour**, so your team can focus on business without hiring full-time developers.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see how we handle website maintenance?"
         )
         return subject, body
 
@@ -211,10 +214,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"WordPress help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed your work on WordPress and WooCommerce.\n\n"
-            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building and maintaining custom WordPress stores for 80+ clients. "
-            f"We help teams get development and site updates done quickly without the hassle of hiring.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live links of our recent work?"
+            f"I noticed your work on **WordPress** and **WooCommerce**.\n\n"
+            f"At **Sangeeta Infotech**, our engineering team brings **5+ years of experience** building and maintaining custom WordPress stores for **80+ clients**. "
+            f"We build using the **latest AI development tools and modern technologies** to deliver fast page speeds, custom plugins, and seamless checkout flows.\n\n"
+            f"Our dedicated developer packages start from just **₹450/- INR / hour**, helping you get store updates done quickly without the hassle of hiring.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see a few live links of our recent work?"
         )
         return subject, body
 
@@ -223,10 +227,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Laravel & PHP development for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s backend systems and software platform.\n\n"
-            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building and scaling Laravel and PHP systems for 80+ clients. "
-            f"We work directly inside your Git repositories to ship features and bug fixes quickly without hiring delays.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
+            f"I came across **{company}**'s backend systems and software platform.\n\n"
+            f"At **Sangeeta Infotech**, our engineering team brings **5+ years of experience** building and scaling Laravel, PHP, and CodeIgniter systems for **80+ clients**. "
+            f"We build with the **latest AI tools and modern backend frameworks**, working directly inside your Git repositories to ship features and APIs with zero delay.\n\n"
+            f"Our dedicated backend developers start from just **₹450/- INR / hour**, giving you senior engineering speed without recruitment overhead.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
@@ -235,10 +240,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Next.js & frontend help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s web applications and product frontend.\n\n"
-            f"At Sangeeta Infotech, our team has 5+ years of experience building fast, clean Next.js, React, and Angular web apps for 80+ clients. "
-            f"We help teams clear their frontend backlog and ship new features without hiring delays.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live links of our recent work?"
+            f"I noticed **{company}**'s web applications and product frontend.\n\n"
+            f"At **Sangeeta Infotech**, our team brings **5+ years of experience** building reactive Next.js, React, and Angular web apps for **80+ clients**. "
+            f"We leverage the **latest AI tools and modern frontend architectures** to build modular design systems and lightning-fast portals.\n\n"
+            f"Our dedicated frontend developers start from just **₹450/- INR / hour**, helping you clear backlogs and release new features twice as fast.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see a few live links of our recent work?"
         )
         return subject, body
 
@@ -247,10 +253,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Custom CRM & portal help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s growing business operations.\n\n"
-            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building custom CRMs, internal portals, and workflow automations for 80+ businesses. "
-            f"We help teams connect their tools and eliminate manual data entry.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
+            f"I noticed **{company}**'s growing business operations.\n\n"
+            f"At **Sangeeta Infotech**, our engineering team brings **5+ years of experience** building custom CRMs, internal portals, and automated workflows for **80+ businesses**. "
+            f"We connect fragmented tools and build with the **latest AI automation and modern cloud technologies** to eliminate manual data entry.\n\n"
+            f"Our dedicated full-stack developers start from just **₹450/- INR / hour**, helping you automate operations at a fraction of standard cost.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
@@ -259,10 +266,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Mobile app development for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s mobile presence and digital products.\n\n"
-            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building smooth Flutter, iOS, and Android mobile apps for 80+ clients. "
-            f"We handle everything from UI to App Store launches without recruiting overhead.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live app examples we have built?"
+            f"I came across **{company}**'s mobile presence and digital products.\n\n"
+            f"At **Sangeeta Infotech**, our engineering team brings **5+ years of experience** building smooth Flutter, iOS, and Android mobile apps for **80+ clients**. "
+            f"We build with the **latest AI developer tools and native mobile frameworks** to deliver smooth animations, secure APIs, and top App Store ratings.\n\n"
+            f"Our dedicated mobile developers start from just **₹450/- INR / hour**, managing your app from design to store launch without hiring overhead.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see a few live app examples we have built?"
         )
         return subject, body
 
@@ -272,10 +280,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"{tech_mention} talent for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company} has an active requirement for {tech_mention}.\n\n"
-            f"At Sangeeta Infotech, our team in Ahmedabad has 5+ years of experience providing dedicated software developers to 80+ clients. "
-            f"Our engineers plug directly into your daily standups and Git repositories from Day 1, with zero recruiting delays.\n\n"
-            f"Are you open to a quick 10-minute chat this week to see if our developers could help with your current roadmap?"
+            f"I noticed **{company}** has an active requirement for **{tech_mention}**.\n\n"
+            f"At **Sangeeta Infotech**, our team in Ahmedabad brings **5+ years of experience** providing dedicated software engineers to **80+ clients**. "
+            f"We build with the **latest AI tools and modern technologies**, plugging directly into your daily standups and Git repositories from Day 1.\n\n"
+            f"Our dedicated developers start from just **₹450/- INR / hour**, letting you scale velocity immediately with zero recruiting delays.\n\n"
+            f"Are you open to a quick **10-minute chat** this week to see if our developers could support your current roadmap?"
         )
         return subject, body
 
@@ -284,10 +293,11 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"E-commerce development help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s online store.\n\n"
-            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building and optimizing custom e-commerce stores, checkout flows, and API integrations for 80+ brands. "
-            f"We help businesses improve site speed and add custom features without hiring delays.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
+            f"I came across **{company}**'s online store.\n\n"
+            f"At **Sangeeta Infotech**, our engineering team brings **5+ years of experience** building and optimizing custom e-commerce stores for **80+ brands**. "
+            f"We build using the **latest AI tools and modern e-commerce technologies** to boost page speeds, automate workflows, and increase conversions.\n\n"
+            f"Our dedicated e-commerce developers start from just **₹450/- INR / hour**, helping you ship features and updates without hiring delays.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
@@ -296,36 +306,43 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
         subject = f"Software development help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s business presence in {loc or 'India'}.\n\n"
-            f"At Sangeeta Infotech, our engineering team in Ahmedabad has 5+ years of experience building custom web and mobile software for 80+ clients. "
-            f"We help teams get their development work done quickly and reliably without hiring delays.\n\n"
-            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
+            f"I noticed **{company}**'s business presence in {loc or 'India'}.\n\n"
+            f"At **Sangeeta Infotech**, our engineering team in Ahmedabad brings **5+ years of experience** building custom web and mobile software for **80+ clients**. "
+            f"We develop using the **latest AI tools and modern technologies** to deliver clean, fast, and scalable software.\n\n"
+            f"Our dedicated developer packages start from just **₹450/- INR / hour**, helping you get work done reliably without the cost of full-time hiring.\n\n"
+            f"Are you open to a quick **10-minute chat** this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
 
 def generate_with_claude(lead_data: Dict[str, Any], company: str, requirement: str,
                          tech_stack: str, loc: str, api_key: str) -> Optional[Tuple[str, str]]:
-    """Generates a personalized outreach email via Anthropic Claude API using simple, straightforward human language."""
+    """Generates a personalized outreach email via Anthropic Claude API."""
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
         prompt = f"""You are a software developer writing on behalf of Sangeeta Infotech (Ahmedabad, India).
-Write a very short, simple, and straightforward cold outreach email to {company}.
+Write a very clear, straightforward cold outreach email to {company}.
 Their need / interest: {requirement} ({tech_stack}).
 Location: {loc}.
 Context: {lead_data.get('description', '')[:300]}
 
-Clear and Straightforward Rules:
-1. Language: Use simple, plain, everyday words. Avoid complicated corporate buzzwords (no "bounded workstreams", "operational velocity", etc.).
-2. Subject line: Short and direct (e.g. '{tech_stack} help for {company}' or '{tech_stack} development for {company}').
-3. Opening: Greet naturally ('Hi Team {company}'). Directly mention you noticed their work or need for {tech_stack}.
-4. Body:
-   - State clearly that Sangeeta Infotech is an engineering team in Ahmedabad with 5+ years of experience building and maintaining {tech_stack} websites and applications for 80+ clients.
-   - Mention we help teams get development work done quickly and reliably without the hiring hassle.
-5. Soft CTA: Ask if they are open to a quick 10-minute chat this week, or if they would like to see a few live links/examples of our recent work.
-6. Plain text only: NO asterisks (**), NO markdown bolding, NO pricing/rates in this introductory note.
-7. Length: 50 to 75 words total. Do NOT include signature.
+Strict Formatting & Content Rules:
+1. Spacing: You MUST separate paragraphs with an empty blank line (double newline \n\n). Organize the email into exactly 3 short paragraphs.
+2. Bold Key Highlights: Use markdown bold (**keyword**) on key terms:
+   - Prospect company name (**{company}**)
+   - Their tech/requirement (**{tech_stack}**)
+   - Our company (**Sangeeta Infotech**)
+   - Experience (**5+ years of experience**) and client proof (**80+ clients**)
+   - Modern technology (**latest AI tools and modern technologies**)
+   - Starting rate (**₹450/- INR / hour**)
+   - Call to action (**10-minute chat**)
+3. Body Structure:
+   - Paragraph 1: Greet naturally ('Hi Team **{company}**,\n\n'). Mention directly that you noticed their work or need for **{tech_stack}**.
+   - Paragraph 2: State that at **Sangeeta Infotech**, our engineering team in Ahmedabad brings **5+ years of experience** building software for **80+ clients**. We build using the **latest AI tools and modern technologies** to deliver clean, fast, and reliable software. Mention our dedicated developer packages start from just **₹450/- INR / hour** without the hassle or overhead of full-time hiring.
+   - Paragraph 3: Ask if they are open to a quick **10-minute chat** this week, or if they would like to see a few live links/examples of our recent work.
+4. Simple Words: Use plain, straightforward English. Avoid complex corporate jargon.
+5. Length: 60 to 80 words total. Do NOT include signature.
 
 Respond ONLY with valid JSON in this exact structure:
 {{"subject": "...", "body": "..."}}"""
@@ -347,7 +364,7 @@ Respond ONLY with valid JSON in this exact structure:
 
 def generate_with_gemini(lead_data: Dict[str, Any], company: str, requirement: str,
                          tech_stack: str, loc: str, api_key: str) -> Optional[Tuple[str, str]]:
-    """Generates a personalized outreach email via Google Gemini API using simple, straightforward human language."""
+    """Generates a personalized outreach email via Google Gemini API."""
     try:
         import requests
         primary_model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
@@ -355,21 +372,27 @@ def generate_with_gemini(lead_data: Dict[str, Any], company: str, requirement: s
             "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"
         ]
         prompt = f"""You are a software developer writing on behalf of Sangeeta Infotech (Ahmedabad, India).
-Write a very short, simple, and straightforward cold outreach email to {company}.
+Write a very clear, straightforward cold outreach email to {company}.
 Their need / interest: {requirement} ({tech_stack}).
 Location: {loc}.
 Context: {lead_data.get('description', '')[:300]}
 
-Clear and Straightforward Rules:
-1. Language: Use simple, plain, everyday words. Avoid complicated corporate buzzwords (no "bounded workstreams", "operational velocity", etc.).
-2. Subject line: Short and direct (e.g. '{tech_stack} help for {company}' or '{tech_stack} development for {company}').
-3. Opening: Greet naturally ('Hi Team {company}'). Directly mention you noticed their work or need for {tech_stack}.
-4. Body:
-   - State clearly that Sangeeta Infotech is an engineering team in Ahmedabad with 5+ years of experience building and maintaining {tech_stack} websites and applications for 80+ clients.
-   - Mention we help teams get development work done quickly and reliably without the hiring hassle.
-5. Soft CTA: Ask if they are open to a quick 10-minute chat this week, or if they would like to see a few live links/examples of our recent work.
-6. Plain text only: NO asterisks (**), NO markdown bolding, NO pricing/rates in this introductory note.
-7. Length: 50 to 75 words total. Do NOT include signature.
+Strict Formatting & Content Rules:
+1. Spacing: You MUST separate paragraphs with an empty blank line (double newline \n\n). Organize the email into exactly 3 short paragraphs.
+2. Bold Key Highlights: Use markdown bold (**keyword**) on key terms:
+   - Prospect company name (**{company}**)
+   - Their tech/requirement (**{tech_stack}**)
+   - Our company (**Sangeeta Infotech**)
+   - Experience (**5+ years of experience**) and client proof (**80+ clients**)
+   - Modern technology (**latest AI tools and modern technologies**)
+   - Starting rate (**₹450/- INR / hour**)
+   - Call to action (**10-minute chat**)
+3. Body Structure:
+   - Paragraph 1: Greet naturally ('Hi Team **{company}**,\n\n'). Mention directly that you noticed their work or need for **{tech_stack}**.
+   - Paragraph 2: State that at **Sangeeta Infotech**, our engineering team in Ahmedabad brings **5+ years of experience** building software for **80+ clients**. We build using the **latest AI tools and modern technologies** to deliver clean, fast, and reliable software. Mention our dedicated developer packages start from just **₹450/- INR / hour** without the hassle or overhead of full-time hiring.
+   - Paragraph 3: Ask if they are open to a quick **10-minute chat** this week, or if they would like to see a few live links/examples of our recent work.
+4. Simple Words: Use plain, straightforward English. Avoid complex corporate jargon.
+5. Length: 60 to 80 words total. Do NOT include signature.
 
 Respond ONLY with valid JSON: {{"subject": "...", "body": "..."}}"""
 

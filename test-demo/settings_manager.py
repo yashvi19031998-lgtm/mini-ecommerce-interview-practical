@@ -53,26 +53,29 @@ DEFAULT_SETTINGS = {
     "signatureTemplate": (
         "Warm regards,\n"
         "{senderName} | {senderRole}\n"
-        "{companyName} — {tagline}\n"
+        "**{companyName}** — {tagline}\n"
+        "💡 Dedicated Developers Starting from **₹450/- INR / hour**\n"
         "Phone/WhatsApp: {phone}\n"
         "Email: {email} | {website}\n"
         "Location: {address}"
     ),
-    "defaultSubject": "Senior full-stack capacity for {company}",
-    "default_subject": "Senior full-stack capacity for {company}",
+    "defaultSubject": "Software development help for {company}",
+    "default_subject": "Software development help for {company}",
     "defaultMessage": (
-        "Hi {name},\n\n"
-        "I noticed {company}'s digital products and technical operations.\n\n"
-        "We help product and engineering leaders add senior full-stack capacity for bounded workstreams—"
-        "such as customer portals, internal tools, integrations, and mobile releases—without disrupting your existing team or internal workflow.\n\n"
-        "If you have delivery backlogs or upcoming roadmap items, would a brief 15-minute conversation be useful?"
+        "Hi Team **{company}**,\n\n"
+        "I noticed **{company}**'s software operations and digital presence.\n\n"
+        "At **Sangeeta Infotech**, our engineering team in Ahmedabad brings **5+ years of experience** building software for **80+ clients**. "
+        "We build using the **latest AI tools and modern technologies** to deliver clean, fast, and scalable software.\n\n"
+        "Our dedicated developer packages start from just **₹450/- INR / hour**, helping you get work done reliably without full-time hiring overhead.\n\n"
+        "Are you open to a quick **10-minute chat** this week, or would you like to see a few live examples of our recent work?"
     ),
     "default_template": (
-        "Hi {name},\n\n"
-        "I noticed {company}'s digital products and technical operations.\n\n"
-        "We help product and engineering leaders add senior full-stack capacity for bounded workstreams—"
-        "such as customer portals, internal tools, integrations, and mobile releases—without disrupting your existing team or internal workflow.\n\n"
-        "If you have delivery backlogs or upcoming roadmap items, would a brief 15-minute conversation be useful?"
+        "Hi Team **{company}**,\n\n"
+        "I noticed **{company}**'s software operations and digital presence.\n\n"
+        "At **Sangeeta Infotech**, our engineering team in Ahmedabad brings **5+ years of experience** building software for **80+ clients**. "
+        "We build using the **latest AI tools and modern technologies** to deliver clean, fast, and scalable software.\n\n"
+        "Our dedicated developer packages start from just **₹450/- INR / hour**, helping you get work done reliably without full-time hiring overhead.\n\n"
+        "Are you open to a quick **10-minute chat** this week, or would you like to see a few live examples of our recent work?"
     ),
     "delayBetweenEmailsMs": 1500
 }

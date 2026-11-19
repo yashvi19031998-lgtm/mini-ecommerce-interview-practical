@@ -140,16 +140,18 @@ class TestAiEmailGenerator(unittest.TestCase):
         self.assertIn('Acme', body)
 
     def test_executive_tone_and_clean_formatting(self):
-        # Verify executive, problem-first tone with zero spammy asterisks (**) in body and signature
+        # Verify paragraph spacing, bold highlights, 450 starting rate, and latest AI tools
         lead = {
             'Company Name': 'CloudPeak Software',
             'Description': 'Looking for Python and Django engineer to build enterprise API backend'
         }
         draft = generate_personalized_email(lead)
         body = draft["body"]
-        self.assertNotIn('**', body)  # No markdown bolding in raw plain-text emails
-        self.assertIn('CloudPeak Software', body)
-        self.assertIn('Sangeeta Infotech', body)
+        self.assertIn('\n\n', body)  # Space between paragraphs
+        self.assertIn('**Sangeeta Infotech**', body)
+        self.assertIn('**₹450/- INR / hour**', body)
+        self.assertIn('5+ years of experience', body)
+        self.assertIn('latest AI', body)
         self.assertIn('Warm regards,', body)
 
 
