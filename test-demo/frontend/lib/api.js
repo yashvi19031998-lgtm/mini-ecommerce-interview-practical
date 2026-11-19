@@ -778,3 +778,22 @@ export async function apiFetchReportInsight(filters = {}) {
 export async function rateAssistantAnswer(question, answer, helpful) {
   return await apiFetch('/api/chat/feedback', { method: 'POST', body: JSON.stringify({ question, answer, helpful }) });
 }
+
+// BDE Agent APIs
+export async function fetchBdeBriefing() {
+  return await apiFetch('/api/bde/briefing');
+}
+
+export async function fetchBdePitch(lead) {
+  return await apiFetch('/api/bde/pitch', {
+    method: 'POST',
+    body: JSON.stringify({ lead })
+  });
+}
+
+export async function fetchBdeNegotiation(params) {
+  return await apiFetch('/api/bde/negotiate', {
+    method: 'POST',
+    body: JSON.stringify(params)
+  });
+}

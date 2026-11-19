@@ -72,7 +72,7 @@ def _json_body():
     return data if isinstance(data, dict) else {}
 
 
-LEAD_STATUSES = {"NEW", "CONTACTED", "EMAIL_SENT", "REPLIED", "MEETING", "WON", "LOST", "DISQUALIFIED"}
+LEAD_STATUSES = {"NEW", "CONTACTED", "EMAIL_SENT", "REPLIED", "MEETING", "PROPOSAL", "WON", "LOST", "DISQUALIFIED"}
 
 
 @app.after_request

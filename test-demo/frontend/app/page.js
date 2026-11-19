@@ -26,6 +26,7 @@ import LeadEnrichment from '../components/LeadEnrichment';
 import LeadsPage, { DEFAULT_FILTERS } from '../components/leads/LeadsPage';
 import LeadPanel from '../components/leads/LeadPanel';
 import TodayPage from '../components/today/TodayPage';
+import PipelineKanban from '../components/PipelineKanban';
 import WhatsAppDesk from '../components/whatsapp/WhatsAppDesk';
 import ThemePicker, { applyPalette, rememberPalette, savedPalette } from '../components/ThemePicker';
 import SingleEmailModal from '../components/SingleEmailModal';
@@ -405,6 +406,17 @@ function DashboardContent() {
           <div className="theme-content-padding">
             {activeTab === 'whatsapp' && (
               <WhatsAppDesk onOpenLead={(id) => setPanelLeadId(id)} notify={showToast} />
+            )}
+
+            {/* CRM Pipeline Kanban Board */}
+            {activeTab === 'pipeline' && (
+              <PipelineKanban
+                leads={leads}
+                onLeadUpdate={() => loadLeads(true)}
+                onWhatsApp={(l) => setSelectedLeadForWhatsApp(l)}
+                onEmail={(l) => setSelectedLeadForEmail(l)}
+                notify={showToast}
+              />
             )}
 
             {/* Today: the landing page */}

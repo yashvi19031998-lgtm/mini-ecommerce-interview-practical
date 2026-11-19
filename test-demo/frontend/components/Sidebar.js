@@ -101,6 +101,7 @@ function buildMenu({ totalLeads, isScraperRunning }) {
       title: 'Work',
       items: [
         { id: 'today', label: 'Today', icon: Sun },
+        { id: 'pipeline', label: 'CRM Pipeline', icon: LayoutDashboard },
         { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
         { id: 'leads', label: 'Leads', icon: Database, badge: totalLeads > 0 ? totalLeads.toLocaleString() : null },
         { id: 'followups', label: 'Follow-ups', icon: History }
