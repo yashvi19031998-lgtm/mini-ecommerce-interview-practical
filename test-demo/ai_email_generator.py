@@ -170,176 +170,162 @@ def synthesize_tailored_email(company: str, role: str, intent_info: Dict[str, An
 
     greeting = f"Hi Team {company}" if company not in ("your team", "your company") else "Hello"
 
-    # Category 0: Active Competitor Agency Client (Team Augmentation & Capacity Hook)
+    # Category 0: Active Competitor Agency Client
     if is_competitor_client:
-        subject = f"Senior full-stack capacity for {company}"
+        subject = f"Software development help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s digital products and software operations. "
-            f"We help product and operations leaders add senior full-stack engineering capacity for bounded workstreams—"
-            f"such as customer portals, internal tools, integrations, and mobile releases—without disrupting existing teams or vendor setups.\n\n"
-            f"At Sangeeta Infotech, our senior developers integrate directly into your repository and sprint cycles, "
-            f"taking delivery pressure off your core team from Day 1.\n\n"
-            f"Would a brief 15-minute review of your current delivery bottlenecks be useful?"
+            f"I noticed {company}'s digital products and software operations.\n\n"
+            f"At Sangeeta Infotech, our engineering team in Ahmedabad has 5+ years of experience building and maintaining web and mobile software for 80+ clients. "
+            f"We help teams get development work done faster without the overhead of hiring or disrupting your existing setup.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
     # Category 1: Social Media Creatives, Reels & Festival Posts
     if "reels" in tech_lower or "social media" in tech_lower:
-        subject = f"Creative media & video reels for {company}"
+        subject = f"Creative reels & design for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s brand presence. In today's digital landscape, engaging short-form video Reels, "
-            f"timely festival campaigns, and consistent visual storytelling are the highest-leverage drivers of audience trust and brand recall.\n\n"
-            f"At Sangeeta Infotech, our creative team produces high-retention video Reels, branded festival creatives, "
-            f"and social storytelling packages tailored to your brand identity with predictable weekly turnarounds.\n\n"
-            f"Would you be open to a brief conversation this week to see a sample creative roadmap for {company}?"
+            f"I came across {company}'s brand presence.\n\n"
+            f"At Sangeeta Infotech, our creative team has 5+ years of experience producing high-engagement video Reels, festival campaigns, and branded social posts for 80+ growing businesses. "
+            f"We deliver ready-to-post creatives on predictable weekly schedules.\n\n"
+            f"Are you open to a brief chat this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
     # Category 2: Website Maintenance & 24/7 Support AMC
     if "maintenance" in tech_lower or "support" in tech_lower:
-        subject = f"Proactive website maintenance & uptime for {company}"
+        subject = f"Website maintenance & support for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s website and digital infrastructure. For established businesses, ensuring continuous uptime, "
-            f"regular security patches, rapid bug resolution, and high speed is essential to protect customer trust and search rankings.\n\n"
-            f"At Sangeeta Infotech, we provide dedicated Website Maintenance and 24/7 Technical Support. Our senior engineers handle "
-            f"backups, core framework updates, speed optimization, and proactive monitoring under clear SLAs—giving your team "
-            f"peace of mind without full-time hiring overhead.\n\n"
-            f"Would a brief 15-minute review be helpful to see how we can keep {company}'s web presence running smoothly?"
+            f"I came across {company}'s website.\n\n"
+            f"At Sangeeta Infotech, our team has 5+ years of experience handling website uptime, speed, security patches, and regular bug fixes for 80+ businesses. "
+            f"We take care of technical maintenance so your team can focus on business without hiring full-time developers.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see how we handle website maintenance?"
         )
         return subject, body
 
     # Category 3: WordPress & WooCommerce
     if "wordpress" in tech_lower:
-        subject = f"Senior WordPress capacity for {company}"
+        subject = f"WordPress help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s web presence and digital commerce platform. For growing businesses, maintaining fast page speeds, "
-            f"custom plugin integrations, and zero-downtime store stability directly impacts revenue.\n\n"
-            f"At Sangeeta Infotech, our senior engineers specialize in custom WordPress & WooCommerce development, theme customizations, "
-            f"and secure API integrations. We provide vetted developers who plug directly into your sprint backlog for immediate delivery.\n\n"
-            f"Would you be open to a brief 15-minute conversation to explore whether our team could accelerate your web delivery?"
+            f"I noticed your work on WordPress and WooCommerce.\n\n"
+            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building and maintaining custom WordPress stores for 80+ clients. "
+            f"We help teams get development and site updates done quickly without the hassle of hiring.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live links of our recent work?"
         )
         return subject, body
 
     # Category 4: PHP, Laravel & CodeIgniter
     if "laravel" in tech_lower or "codeigniter" in tech_lower or "php" in tech_lower:
-        subject = f"Laravel & backend engineering capacity for {company}"
+        subject = f"Laravel & PHP development for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s backend systems and software platform. When scaling backend architectures, having clean, secure "
-            f"MVC design, optimized database queries, and resilient RESTful APIs is vital for operational velocity.\n\n"
-            f"At Sangeeta Infotech, we specialize in enterprise Laravel development, CodeIgniter modernization, and high-throughput APIs. "
-            f"Our dedicated backend engineers work directly inside your Git repositories with daily standups and complete code transparency.\n\n"
-            f"Would a 15-minute technical review be useful to see if we can take bounded features off your plate?"
+            f"I came across {company}'s backend systems and software platform.\n\n"
+            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building and scaling Laravel and PHP systems for 80+ clients. "
+            f"We work directly inside your Git repositories to ship features and bug fixes quickly without hiring delays.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
     # Category 5: Angular, Next.js & Modern Frontend
     if "angular" in tech_lower or "next.js" in tech_lower or "react" in tech_lower:
-        subject = f"Next.js & Angular frontend capacity for {company}"
+        subject = f"Next.js & frontend help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s web applications and product user experience. Delivering lightning-fast, reactive web interfaces with "
-            f"seamless state management directly impacts customer engagement and product adoption.\n\n"
-            f"At Sangeeta Infotech, our frontend engineers specialize in modern Next.js, React, and Angular architectures, building modular "
-            f"design systems and performance-optimized portals that scale with your user base.\n\n"
-            f"Would you be open to a brief 15-minute conversation to see how our developers could support your frontend backlog?"
+            f"I noticed {company}'s web applications and product frontend.\n\n"
+            f"At Sangeeta Infotech, our team has 5+ years of experience building fast, clean Next.js, React, and Angular web apps for 80+ clients. "
+            f"We help teams clear their frontend backlog and ship new features without hiring delays.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live links of our recent work?"
         )
         return subject, body
 
     # Category 6: Custom CRM & ERP Business Portals
     if "crm" in tech_lower or "erp" in tech_lower:
-        subject = f"Workflow automation & custom portal capacity for {company}"
+        subject = f"Custom CRM & portal help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s growing business operations. As organizations scale, connected CRM workflows, internal dashboards, "
-            f"and centralized lead management eliminate operational friction and double team productivity.\n\n"
-            f"At Sangeeta Infotech, we architect custom CRM solutions, workflow automations, and third-party integrations (HubSpot, Salesforce, "
-            f"Zoho, Custom Portals), turning fragmented tools into unified operational engines.\n\n"
-            f"Would a quick 15-minute review of your current workflow bottlenecks be useful?"
+            f"I noticed {company}'s growing business operations.\n\n"
+            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building custom CRMs, internal portals, and workflow automations for 80+ businesses. "
+            f"We help teams connect their tools and eliminate manual data entry.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
     # Category 7: Mobile App Development (Flutter, iOS, Android)
     if "mobile" in tech_lower or "flutter" in tech_lower or "app" in tech_lower:
-        subject = f"Mobile engineering capacity for {company}"
+        subject = f"Mobile app development for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s digital products and mobile presence. In mobile-first markets, delivering smooth, responsive mobile "
-            f"experiences across both iOS and Android is critical for user retention and brand value.\n\n"
-            f"At Sangeeta Infotech, our senior engineers build native and cross-platform apps using Flutter and React Native, with secure "
-            f"backend integrations and high App Store ratings, shipping production-ready releases with full repository transparency.\n\n"
-            f"Would a brief 15-minute review of your mobile roadmap be useful this week?"
+            f"I came across {company}'s mobile presence and digital products.\n\n"
+            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building smooth Flutter, iOS, and Android mobile apps for 80+ clients. "
+            f"We handle everything from UI to App Store launches without recruiting overhead.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live app examples we have built?"
         )
         return subject, body
 
     # Category 8: Developer Hiring / Technical Talent
     if is_hiring:
         tech_mention = role if role else (f"{primary_tech} developer" if "developer" not in primary_tech.lower() else primary_tech)
-        subject = f"Senior {tech_mention} capacity for {company}"
+        subject = f"{tech_mention} talent for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company} has an active requirement for {tech_mention}. Hiring senior talent typically takes 60-90 days, "
-            f"creating delivery delays while internal backlogs grow.\n\n"
-            f"At Sangeeta Infotech, we help engineering leaders bridge that gap immediately. We provide senior, vetted developers who plug "
-            f"directly into your sprints, repositories, and daily standups from Day 1, with zero recruiting overhead.\n\n"
-            f"Would you be open to a brief 15-minute introductory conversation to see if our developers could accelerate your current roadmap?"
+            f"I noticed {company} has an active requirement for {tech_mention}.\n\n"
+            f"At Sangeeta Infotech, our team in Ahmedabad has 5+ years of experience providing dedicated software developers to 80+ clients. "
+            f"Our engineers plug directly into your daily standups and Git repositories from Day 1, with zero recruiting delays.\n\n"
+            f"Are you open to a quick 10-minute chat this week to see if our developers could help with your current roadmap?"
         )
         return subject, body
 
     # Category 9: E-Commerce Store (Shopify / WooCommerce)
     elif is_ecommerce:
-        subject = f"Web performance & custom engineering for {company}"
+        subject = f"E-commerce development help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I came across {company}'s online storefront. In modern e-commerce, site speed, seamless checkout flows, "
-            f"and custom backend automations directly influence customer conversion and retention.\n\n"
-            f"At Sangeeta Infotech, we help growing digital brands enhance their web infrastructure—from custom "
-            f"features and API integrations to performance optimization and mobile-responsive improvements.\n\n"
-            f"Would a brief 15-minute conversation be helpful to explore how we can support {company}'s technical roadmap?"
+            f"I came across {company}'s online store.\n\n"
+            f"At Sangeeta Infotech, our engineering team has 5+ years of experience building and optimizing custom e-commerce stores, checkout flows, and API integrations for 80+ brands. "
+            f"We help businesses improve site speed and add custom features without hiring delays.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
     # Category 10: General Custom Software / Digital Engineering
     else:
-        subject = f"Senior engineering capacity for {company}"
+        subject = f"Software development help for {company}"
         body = (
             f"{greeting},\n\n"
-            f"I noticed {company}'s business presence in {loc or 'India'}. "
-            f"As companies expand, having robust, dependable web applications and scalable software systems is critical for operational velocity.\n\n"
-            f"At Sangeeta Infotech, we help product and operational leaders add senior full-stack engineering capacity for bounded workstreams—"
-            f"such as customer portals, internal tools, and integrations—without the overhead of a long hiring cycle.\n\n"
-            f"If you have technical backlog items or upcoming projects, would a 15-minute conversation be useful to see if we can help accelerate delivery?"
+            f"I noticed {company}'s business presence in {loc or 'India'}.\n\n"
+            f"At Sangeeta Infotech, our engineering team in Ahmedabad has 5+ years of experience building custom web and mobile software for 80+ clients. "
+            f"We help teams get their development work done quickly and reliably without hiring delays.\n\n"
+            f"Are you open to a quick 10-minute chat this week, or would you like to see a few live examples of our recent work?"
         )
         return subject, body
 
 
 def generate_with_claude(lead_data: Dict[str, Any], company: str, requirement: str,
                          tech_stack: str, loc: str, api_key: str) -> Optional[Tuple[str, str]]:
-    """Generates a personalized outreach email via Anthropic Claude API using problem-first executive tone."""
+    """Generates a personalized outreach email via Anthropic Claude API using simple, straightforward human language."""
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
-        prompt = f"""You are an elite B2B sales copywriter writing on behalf of Sangeeta Infotech (a software engineering firm in Ahmedabad, India).
-Draft a concise, executive-level, professional cold outreach email to:
-- Company Name: {company}
-- Prospect Requirement / Need: {requirement}
-- Tech Stack / Role: {tech_stack}
-- Location: {loc}
-- Additional Context: {lead_data.get('description', '')[:400]}
+        prompt = f"""You are a software developer writing on behalf of Sangeeta Infotech (Ahmedabad, India).
+Write a very short, simple, and straightforward cold outreach email to {company}.
+Their need / interest: {requirement} ({tech_stack}).
+Location: {loc}.
+Context: {lead_data.get('description', '')[:300]}
 
-Strict Professional Copywriting Rules:
-1. Tone: Peer-to-peer executive tone (like a VP of Engineering speaking with a peer CTO or product founder). Warm, direct, professional, zero promotional hype.
-2. Subject line: 4-7 words, crisp and low-friction (e.g. 'Senior full-stack capacity for {company}' or 'Next.js capacity for {company}').
-3. Opening: Greet naturally ('Hi Team {company}'). Directly acknowledge their technical operations or specific requirement in the first sentence without flattery.
-4. Problem & Capacity Focus: Frame the email around delivery velocity, operational bottlenecks, or adding senior capacity for bounded workstreams (customer portals, integrations, mobile apps) without disrupting existing teams.
-5. NO Hourly Rates or Pricing: Do NOT mention ₹450/hr or hourly pricing in this cold introduction. Focus on senior delivery capacity and risk-free delivery pilots.
-6. NO Markdown Asterisks: Output clean plain text. Do NOT use markdown bolding (**word**) anywhere in the email body.
-7. Low-Pressure CTA: Ask a low-friction question (e.g. 'Would a 15-minute review of your current delivery bottlenecks be useful?' or 'Worth a brief conversation this week?').
-8. Length: 65 to 90 words total. Do NOT include signature (appended automatically).
+Clear and Straightforward Rules:
+1. Language: Use simple, plain, everyday words. Avoid complicated corporate buzzwords (no "bounded workstreams", "operational velocity", etc.).
+2. Subject line: Short and direct (e.g. '{tech_stack} help for {company}' or '{tech_stack} development for {company}').
+3. Opening: Greet naturally ('Hi Team {company}'). Directly mention you noticed their work or need for {tech_stack}.
+4. Body:
+   - State clearly that Sangeeta Infotech is an engineering team in Ahmedabad with 5+ years of experience building and maintaining {tech_stack} websites and applications for 80+ clients.
+   - Mention we help teams get development work done quickly and reliably without the hiring hassle.
+5. Soft CTA: Ask if they are open to a quick 10-minute chat this week, or if they would like to see a few live links/examples of our recent work.
+6. Plain text only: NO asterisks (**), NO markdown bolding, NO pricing/rates in this introductory note.
+7. Length: 50 to 75 words total. Do NOT include signature.
 
 Respond ONLY with valid JSON in this exact structure:
 {{"subject": "...", "body": "..."}}"""
@@ -361,28 +347,29 @@ Respond ONLY with valid JSON in this exact structure:
 
 def generate_with_gemini(lead_data: Dict[str, Any], company: str, requirement: str,
                          tech_stack: str, loc: str, api_key: str) -> Optional[Tuple[str, str]]:
-    """Generates a personalized outreach email via Google Gemini API using problem-first executive tone."""
+    """Generates a personalized outreach email via Google Gemini API using simple, straightforward human language."""
     try:
         import requests
-        primary_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-        models_to_try = [primary_model] if primary_model != "gemini-2.5-flash" else ["gemini-2.5-flash", "gemini-1.5-flash"]
-        prompt = f"""You are an elite B2B sales copywriter writing on behalf of Sangeeta Infotech (a software engineering firm in Ahmedabad, India).
-Draft a concise, executive-level, professional cold outreach email to:
-- Company: {company}
-- Requirement: {requirement}
-- Tech Stack: {tech_stack}
-- Location: {loc}
-- Description: {lead_data.get('description', '')[:350]}
+        primary_model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+        models_to_try = [primary_model] if primary_model != "gemini-3.1-flash-lite" else [
+            "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"
+        ]
+        prompt = f"""You are a software developer writing on behalf of Sangeeta Infotech (Ahmedabad, India).
+Write a very short, simple, and straightforward cold outreach email to {company}.
+Their need / interest: {requirement} ({tech_stack}).
+Location: {loc}.
+Context: {lead_data.get('description', '')[:300]}
 
-Strict Professional Copywriting Rules:
-1. Tone: Peer-to-peer executive tone. Warm, direct, professional, zero promotional hype.
-2. Subject: 4-7 words, crisp and low-friction (e.g. 'Senior full-stack capacity for {company}' or 'Next.js capacity for {company}').
-3. Opening: Greet naturally ('Hi Team {company}'), directly mention their requirement or tech stack in the very first sentence.
-4. Problem & Capacity Focus: Frame the email around delivery velocity, operational bottlenecks, or adding senior capacity for bounded workstreams (customer portals, integrations, mobile apps) without disrupting existing teams.
-5. NO Hourly Rates or Pricing: Do NOT mention ₹450/hr or hourly pricing in this cold introduction. Focus on senior delivery capacity and risk-free delivery pilots.
-6. NO Markdown Asterisks: Output clean plain text. Do NOT use markdown bolding (**word**) anywhere in the email body.
-7. Low-Pressure CTA: Ask a low-friction question (e.g. 'Would a 15-minute review of your current delivery bottlenecks be useful?' or 'Worth a brief conversation this week?').
-8. Length: 65 to 90 words total. Zero spam cliches. Do NOT include signature.
+Clear and Straightforward Rules:
+1. Language: Use simple, plain, everyday words. Avoid complicated corporate buzzwords (no "bounded workstreams", "operational velocity", etc.).
+2. Subject line: Short and direct (e.g. '{tech_stack} help for {company}' or '{tech_stack} development for {company}').
+3. Opening: Greet naturally ('Hi Team {company}'). Directly mention you noticed their work or need for {tech_stack}.
+4. Body:
+   - State clearly that Sangeeta Infotech is an engineering team in Ahmedabad with 5+ years of experience building and maintaining {tech_stack} websites and applications for 80+ clients.
+   - Mention we help teams get development work done quickly and reliably without the hiring hassle.
+5. Soft CTA: Ask if they are open to a quick 10-minute chat this week, or if they would like to see a few live links/examples of our recent work.
+6. Plain text only: NO asterisks (**), NO markdown bolding, NO pricing/rates in this introductory note.
+7. Length: 50 to 75 words total. Do NOT include signature.
 
 Respond ONLY with valid JSON: {{"subject": "...", "body": "..."}}"""
 
