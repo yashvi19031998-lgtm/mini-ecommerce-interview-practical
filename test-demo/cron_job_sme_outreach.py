@@ -34,6 +34,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
+import warnings
+
+warnings.filterwarnings("ignore", message=r".*renamed to `ddgs`.*")   # noise from the search library
+
 import email_service
 import festival_offers_engine as offers_engine
 import settings_manager
@@ -113,12 +117,18 @@ def site_belongs_to(company, website):
     """True when the website's name is (mostly) the business name: 'akashdentalclinic' for Akash Dental
     Poly Clinic, but not 'shreysports' for Shrey Aesthetica Dental or 'nationalinsurance' for National
     Dental Supply Co. A search engine often returns a different business with one word in common."""
-    if not website or NOT_A_BUSINESS_SITE.search(settings_manager._host_of(website)):
-        return False
+    host = settings_manager._host_of(website)
+    if not website or NOT_A_BUSINESS_SITE.search(host) or re.search(r"\.org(\.|$)", host):
+        return False        # .org sites are institutes and trusts, not shops ('arti.org.in' for Arti Farsan)
     label = _site_label(website)
     words = [w for w in re.findall(r"[a-z0-9]+", str(company or "").lower()) if len(w) >= 2]
     distinctive = [w for w in words if w not in GENERIC_WORDS and len(w) >= 3]
-    if not label or not distinctive or not any(w in label for w in distinctive):
+    matched = [w for w in distinctive if w in label]
+    if not label or not matched:
+        return False
+    # One short word alone is a common name ('arti', 'vijay'): the site must also carry a second word of
+    # the business name ('akashdentalclinic') unless that word is long and unusual ('packwell').
+    if len(set(w for w in words if w in label)) < 2 and max(len(w) for w in matched) < 7:
         return False
     rest = label
     for w in sorted(set(words), key=len, reverse=True):
