@@ -838,3 +838,7 @@ export async function scheduleFestivalDispatch(clientId, festivalId, dispatchDat
     body: JSON.stringify({ client_id: clientId, festival_id: festivalId, dispatch_date: dispatchDate })
   });
 }
+
+export async function fetchBdeStrategy() {
+  return await apiFetch('/api/offers/strategy');
+}

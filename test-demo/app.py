@@ -2810,6 +2810,18 @@ def manage_festival_schedules():
     return jsonify({"success": True, "schedules": schedules}), 200
 
 
+@app.route("/api/offers/strategy", methods=["GET"])
+def get_bde_outreach_strategy():
+    """Retrieve the stored 20-Year Veteran BDE Master Playbook."""
+    strategy_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "bde_outreach_strategy.json")
+    try:
+        with open(strategy_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return jsonify({"success": True, "strategy": data}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)

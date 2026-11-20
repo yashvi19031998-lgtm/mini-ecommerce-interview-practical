@@ -30,7 +30,8 @@ import {
   fetchFestivalOfferPitch,
   fetchFestivalCreative,
   fetchFestivalSchedules,
-  scheduleFestivalDispatch
+  scheduleFestivalDispatch,
+  fetchBdeStrategy
 } from '../lib/api';
 
 export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, notify }) {
@@ -498,7 +499,8 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
           { id: 'pitch', label: '1. Outreach & Pitches', icon: Send },
           { id: 'clients', label: `2. Enrolled Clients (${clients.length})`, icon: Building },
           { id: 'studio', label: '3. AI Creative Studio & Preview', icon: ImageIcon },
-          { id: 'schedules', label: `4. Delivery Schedules (${schedules.length})`, icon: Calendar }
+          { id: 'schedules', label: `4. Delivery Schedules (${schedules.length})`, icon: Calendar },
+          { id: 'strategy', label: '5. 20-Yr BDE Strategy', icon: Sparkles }
         ].map((tab) => {
           const Icon = tab.icon;
           const active = activeSubTab === tab.id;
@@ -991,6 +993,166 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ======================= TAB 5: 20-YEAR BDE STRATEGY PLAYBOOK ======================= */}
+      {activeSubTab === 'strategy' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Core Philosophy Banner */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+              color: '#fff',
+              borderRadius: '12px',
+              padding: '24px',
+              border: '1px solid #334155'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <Sparkles size={20} color="#f59e0b" />
+              <span style={{ fontSize: '12px', fontWeight: '800', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                20-Year BDE Master Playbook
+              </span>
+            </div>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 10px 0' }}>
+              The Trojan Horse / Tripwire Acquisition Funnel
+            </h2>
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#cbd5e1', lineHeight: '1.7', maxWidth: '900px' }}>
+              <strong>The Secret:</strong> The ₹500 pack is <em>not</em> meant for direct margin profit. It is a zero-friction &quot;foot-in-the-door&quot; to convert cold strangers into paying clients with an immediate UPI payment, breaking stranger risk and establishing high trust. Once they pay ₹500, they become an active customer ready for our <strong>₹15,000 - ₹1,00,000 IT project upselling</strong> (Websites, Mobile Apps, CRM, ERP).
+            </p>
+          </div>
+
+          {/* 3 Target Tiers */}
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary)' }}>
+              🎯 Target Market Tiers (Prioritized by Conversion Speed)
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+              <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px' }}>
+                <span style={{ background: '#ffedd5', color: '#ea580c', fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '10px' }}>
+                  TIER 1 (FASTEST CLOSE)
+                </span>
+                <h4 style={{ margin: '8px 0 4px 0', fontSize: '15px', fontWeight: '700' }}>Retailers & Local Services</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                  Sweets & Farsan, Cafes, Boutiques, Jewellers, Real Estate Brokers, Clinics & Doctors.
+                </p>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                  ⚡ <strong>Speed:</strong> Closes in &lt; 4 hours. Decisions made on the spot via UPI.
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px' }}>
+                <span style={{ background: '#dbeafe', color: '#2563eb', fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '10px' }}>
+                  TIER 2 (GIDC / MSMEs)
+                </span>
+                <h4 style={{ margin: '8px 0 4px 0', fontSize: '15px', fontWeight: '700' }}>Industrial Manufacturers</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                  Packaging, Machinery Tools, Chemicals, Textiles (Vatva, Odhav, Sanand, Changodar).
+                </p>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                  🏭 <strong>Need:</strong> Professional posts for dealer/distributor WhatsApp status.
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px' }}>
+                <span style={{ background: '#ede9fe', color: '#7c3aed', fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '10px' }}>
+                  TIER 3 (AUTHORITY)
+                </span>
+                <h4 style={{ margin: '8px 0 4px 0', fontSize: '15px', fontWeight: '700' }}>Professional Consultancies</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                  Chartered Accountants, Lawyers, Architects, Interior Designers, Visa Consultants.
+                </p>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                  📈 <strong>Need:</strong> High-trust educational post designs & compliance updates.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Daily 100 Cadence & Upsell Ladder */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '16px' }}>
+            {/* Daily Cadence */}
+            <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 14px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={16} color="#ea580c" /> Daily 100 Lead Cadence (BDE Routine)
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px' }}>
+                <div style={{ borderLeft: '3px solid #2563eb', paddingLeft: '10px' }}>
+                  <strong>09:30 AM - 11:00 AM: Email Dispatch (50-100/day)</strong>
+                  <div style={{ color: 'var(--text-muted)' }}>Send automated short outreach to active master leads.</div>
+                </div>
+                <div style={{ borderLeft: '3px solid #10b981', paddingLeft: '10px' }}>
+                  <strong>11:30 AM - 01:30 PM: WhatsApp Pings (30-50/day)</strong>
+                  <div style={{ color: 'var(--text-muted)' }}>Ping WhatsApp active leads with the 2-line Gujarati/English pitch.</div>
+                </div>
+                <div style={{ borderLeft: '3px solid #f59e0b', paddingLeft: '10px' }}>
+                  <strong>02:00 PM - 04:00 PM: The &apos;Instant Sample&apos; Hammer</strong>
+                  <div style={{ color: 'var(--text-muted)' }}>When a lead replies &apos;YES&apos;, generate 1 branded sample in 30 mins to close payment.</div>
+                </div>
+                <div style={{ borderLeft: '3px solid #8b5cf6', paddingLeft: '10px' }}>
+                  <strong>04:30 PM - 06:30 PM: Enroll & Delivery Scheduling</strong>
+                  <div style={{ color: 'var(--text-muted)' }}>Collect UPI payments (₹500 / ₹1,000) and enroll into automated delivery.</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Upsell Ladder */}
+            <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 14px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={16} color="#10b981" /> The Upselling Ladder (₹500 ➔ ₹50,000)
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px' }}>
+                <div style={{ background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                  <strong>Day 0 (Acquisition):</strong> 10 Images For Posts @ ₹500. Goal: Build payment trust.
+                </div>
+                <div style={{ background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                  <strong>Day 3 (Website Audit):</strong> Pitch high-speed mobile website revamps (₹9,999 - ₹18,000).
+                </div>
+                <div style={{ background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                  <strong>Day 7-10 (Custom IT):</strong> Pitch WhatsApp Lead CRM & Billing Software (₹25,000 - ₹75,000).
+                </div>
+                <div style={{ background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                  <strong>Day 30 (Retention):</strong> Monthly retainer (₹5,000/mo) or ₹450/hr dedicated developer.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Winning Objection Handlers */}
+          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 14px 0' }}>
+              💬 Gujarati / Indian SME Objection Handling Matrix
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#ea580c', marginBottom: '4px' }}>
+                  &ldquo;Ame potey Canva par banavi laiye chiye (We make it ourselves)&rdquo;
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                  <strong>Rebuttal:</strong> &ldquo;Bilkul barabar sir! But tamaro 1 kalak no time business chalavva mate ₹2,000 thi vadhu kimti che. Fakt ₹50 per post ma tamne agency-level finishing male che vagar koi samay bagadye.&rdquo;
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#ea580c', marginBottom: '4px' }}>
+                  &ldquo;Pehle sample moklo pachi vichariyu (Send sample first)&rdquo;
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                  <strong>Rebuttal:</strong> &ldquo;Done sir! Tamara business mate 1 customised branded sample tamne 30 minute ma WhatsApp kariye chiye. Pasand aave toh j baki na 9 posts no order aapjo.&rdquo;
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#ea580c', marginBottom: '4px' }}>
+                  &ldquo;Aamathi mane client / dhandho malse? (Will this bring sales?)&rdquo;
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                  <strong>Rebuttal:</strong> &ldquo;Sir, koi pan customer tamaro contact kare tyare pehla tamaru WhatsApp Status ane Profile jove che. Professional post joi ne customer ma trust 10x vadhi jaay che ane deal jaldi close thaay che.&rdquo;
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

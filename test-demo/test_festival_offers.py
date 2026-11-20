@@ -133,5 +133,10 @@ class TestFestivalOffersEngine(unittest.TestCase):
         self.assertEqual(stats["total_revenue_inr"], 0)
         self.assertGreaterEqual(stats["upcoming_festivals_count"], 10)
 
+    def test_bde_strategy_loaded(self):
+        strat = engine.get_bde_strategy()
+        self.assertIn("Trojan Horse", strat.get("core_philosophy", {}).get("strategy_name", ""))
+        self.assertEqual(len(strat.get("target_market_tiers", [])), 3)
+
 if __name__ == "__main__":
     unittest.main()

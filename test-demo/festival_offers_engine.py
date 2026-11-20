@@ -512,3 +512,14 @@ def get_stats():
         "total_revenue_inr": total_rev,
         "upcoming_festivals_count": len(FESTIVAL_CALENDAR)
     }
+
+def get_bde_strategy():
+    for dir_path in [DATA_DIR, os.path.join(BASE_DIR, "data")]:
+        strategy_path = os.path.join(dir_path, "bde_outreach_strategy.json")
+        if os.path.exists(strategy_path):
+            try:
+                with open(strategy_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+    return {}

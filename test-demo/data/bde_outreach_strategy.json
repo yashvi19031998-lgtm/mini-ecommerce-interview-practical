@@ -1,0 +1,114 @@
+{
+  "title": "20-Year Veteran BDE Master Playbook: Sangeeta Infotech Client Acquisition & Upselling Engine",
+  "version": "1.0",
+  "last_updated": "2026-11-20",
+  "core_philosophy": {
+    "strategy_name": "The Trojan Horse / Tripwire Customer Acquisition Funnel",
+    "core_principle": "₹500 for 10 Custom Images For Posts is NOT designed for direct margin profit. It is a zero-friction 'foot-in-the-door' to convert complete strangers into paying clients with a verified UPI payment, establishing instant trust. Once they pay ₹500, they are in the active client ecosystem and ripe for ₹15,000 to ₹1,00,000 IT project upselling."
+  },
+  "offer_specs": {
+    "entry_offer": {
+      "title": "Business Branding & Promotion Pack",
+      "deliverables": "10 Custom Images For Posts",
+      "price_inr": 500,
+      "channels": "WhatsApp Status, Instagram Feed, Facebook, B2B Dealer Groups",
+      "friction_level": "ZERO (Client provides no assets upfront; delivered ready-to-post on WhatsApp)"
+    },
+    "reels_offer": {
+      "title": "Promotional Video Reels Pack",
+      "deliverables": "3 High-Retention Promotional Video Reels",
+      "price_inr": 1000,
+      "channels": "Instagram Reels, YouTube Shorts, WhatsApp Status"
+    },
+    "combo_offer": {
+      "title": "Complete Business Growth Booster",
+      "deliverables": "10 Custom Images + 3 Video Reels",
+      "price_inr": 1299
+    }
+  },
+  "target_market_tiers": [
+    {
+      "tier": "Tier 1: High-Velocity Impulse Closers",
+      "sectors": ["Sweets & Farsan", "Cafes & Restaurants", "Boutiques & Garments", "Jewellers", "Real Estate Brokers", "Clinics & Doctors"],
+      "why": "They have immediate daily customer-facing needs and actively post on WhatsApp status. A ₹500 decision requires zero committee approval.",
+      "turnaround_time": "Under 4 hours to payment"
+    },
+    {
+      "tier": "Tier 2: GIDC & Industrial MSMEs",
+      "sectors": ["Packaging", "Machinery Tools", "Chemicals", "Textile Traders", "Electrical Parts (Vatva, Odhav, Sanand, Changodar)"],
+      "why": "Busy owners who want professional product showcases for their wholesale dealer network without wasting employee hours.",
+      "turnaround_time": "24 hours"
+    },
+    {
+      "tier": "Tier 3: Professional Services",
+      "sectors": ["Chartered Accountants", "Tax Consultants", "Lawyers", "Architects & Interior Designers", "Immigration Agents"],
+      "why": "Need authority, trust badges, and compliance/informative post creatives.",
+      "turnaround_time": "1-2 days"
+    }
+  ],
+  "daily_bde_cadence": {
+    "morning_0930_1100": {
+      "activity": "Automated Email Outreach Dispatch",
+      "target_volume": "50 to 100 verified B2B leads daily",
+      "action": "Trigger via Sangeeta Infotech Outreach Dispatcher using the approved 45-word high-impact email."
+    },
+    "midday_1130_1330": {
+      "activity": "Targeted WhatsApp Pings",
+      "target_volume": "30 to 50 active mobile numbers",
+      "action": "Send 2-line Gujarati/English pitch with 1-click YES reply trigger."
+    },
+    "afternoon_1400_1600": {
+      "activity": "The 'Instant Sample' Closing Hammer",
+      "action": "For anyone who replies 'YES' or asks 'How will it look?': generate 1 branded custom sample post with Sangeeta Infotech preview watermark within 30 minutes. Send with UPI payment link."
+    },
+    "evening_1630_1830": {
+      "activity": "Payment Collection & Delivery Schedule Setup",
+      "action": "Enroll paid client into 'festival_clients.json' and schedule automatic WhatsApp deliveries."
+    }
+  },
+  "the_upselling_ladder": [
+    {
+      "step": 1,
+      "timing": "Day 0 (Acquisition)",
+      "product": "10 Custom Images For Posts",
+      "revenue": "₹500",
+      "goal": "Collect money, eliminate stranger risk, establish payment habit."
+    },
+    {
+      "step": 2,
+      "timing": "Day 3 (First Delivery Audit)",
+      "product": "Digital Asset Health Check",
+      "script": "Sir, your post creatives look brilliant on WhatsApp! When your customers search for your business on Google, your website is either missing or slow on mobile. Sangeeta Infotech can build a high-speed, mobile-ready website for your business.",
+      "target_service": "Professional 5-Page Business Website",
+      "revenue_range": "₹9,999 - ₹18,000"
+    },
+    {
+      "step": 3,
+      "timing": "Day 7 to 10 (Mid-Cycle Check-in)",
+      "product": "Custom IT & Automation",
+      "script": "How are you tracking the inquiries coming from these posts? We can link your WhatsApp with a 1-click Lead Management CRM so no customer inquiry is ever lost.",
+      "target_service": "Custom Web App / WhatsApp CRM / Billing Software",
+      "revenue_range": "₹25,000 - ₹75,000"
+    },
+    {
+      "step": 4,
+      "timing": "Day 30 (Retention)",
+      "product": "Annual Retainer / Dedicated Developer",
+      "revenue_range": "₹5,000/mo retainer or ₹450/hr dedicated custom development"
+    }
+  ],
+  "objection_handling_matrix": {
+    "objection_1": {
+      "client_says": "Ame potey Canva par banavi laiye chiye (We make it ourselves for free)",
+      "bde_rebuttal": "Bilkul barabar sir! But tamaro 1 kalak no time business chalavva mate ₹2,000 thi vadhu kimti che. Fakt ₹50 per post ma tamne agency-level finishing male che vagar koi samay bagadye."
+    },
+    "objection_2": {
+      "client_says": "Pehle sample moklo pachi vichariyu (Send sample first, then we will think)",
+      "bde_rebuttal": "Done sir! Tamara business mate 1 customised branded sample tamne 30 minute ma WhatsApp kariye chiye. Pasand aave toh j baki na 9 posts no order aapjo."
+    },
+    "objection_3": {
+      "client_says": "Aamathi mane client / dhandho malse? (Will this give me real clients?)",
+      "bde_rebuttal": "Sir, koi pan customer tamaro contact kare tyare pehla tamaru WhatsApp Status ane Profile jove che. Professional post joi ne customer ma trust 10x vadhi jaay che ane deal jaldi close thaay che."
+    }
+  }
+}
