@@ -288,22 +288,17 @@ def generate_offer_pitch(lead):
 
     wa_link = f"https://wa.me/{wa_target}?text={urllib.parse.quote(wa_pitch)}" if wa_target else ""
 
-    email_subject = f"Festive social media creatives for {biz_name} (10 HD Posts at ₹500)"
+    email_subject = f"Festive social media creatives for {biz_name} (10 Posts at ₹500)"
     email_body = (
         f"Hi Team {biz_name},\n\n"
-        f"With upcoming festive seasons approaching, keeping your social media active with high-quality festival greetings is essential to engage your clients.\n\n"
-        f"At Sangeeta Infotech, we are offering an exclusive Festive Social Media Pack:\n\n"
-        f"• 10 High-Resolution Festival Creatives: Only ₹500/-\n"
-        f"• 3 Viral Short Video Reels: Only ₹1,000/-\n"
-        f"• Festive Combo Booster (10 Posts + 3 Reels): Only ₹1,299/-\n\n"
-        f"Zero designing effort required on your end — everything is delivered ready-to-post directly to your WhatsApp on every festival morning.\n\n"
-        f"Would you like to see a quick sample? Simply reply 'YES' to this email or tap the WhatsApp button below.\n\n"
+        f"Festivals are around the corner! At **Sangeeta Infotech**, we have a festive branding special for your social media:\n\n"
+        f"• 10 High-Resolution Festival Creatives: ₹500/-\n"
+        f"• 3 Viral Short Video Reels: ₹1,000/-\n\n"
+        f"Everything is delivered ready-to-post on WhatsApp on festival mornings — zero designing effort on your end.\n\n"
+        f"Would you like to see a quick sample? Simply reply 'YES' or connect on WhatsApp below.\n\n"
         f"Warm regards,\n"
-        f"Business Development Team | Client Solutions Specialist\n"
-        f"Sangeeta Infotech — Engineering Intelligent Web & Mobile Solutions\n"
-        f"Phone/WhatsApp: +91 9106060400\n"
-        f"Email: info@sangeetainfotech.co.in | https://sangeetainfotech.co.in\n"
-        f"Location: Ahmedabad, Gujarat, India"
+        f"**Sangeeta Infotech Team** | +91 9106060400\n"
+        f"Ahmedabad, Gujarat"
     )
 
     mailto_link = f"mailto:{email}?subject={urllib.parse.quote(email_subject)}&body={urllib.parse.quote(email_body)}" if email else ""

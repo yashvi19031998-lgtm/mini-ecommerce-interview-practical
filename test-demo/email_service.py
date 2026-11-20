@@ -248,54 +248,23 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             html_styled
         )
 
-        # 3. Transform Festival Offer Bullets into a Sleek Modern Pricing / Offer Card
+        # 3. Transform Festival Offer Bullets into a Sleek Compact Highlight Card
         festive_offer_card_html = (
-            '<div style="margin: 20px 0; padding: 18px 22px; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); '
-            'border: 1.5px solid #f59e0b; border-radius: 14px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.12); '
-            'font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 580px;">'
-            '<div style="margin-bottom: 12px;">'
-            '<span style="background: #ea580c; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 10px; '
-            'border-radius: 12px; letter-spacing: 0.8px; text-transform: uppercase;">🎁 SPECIAL FESTIVE PACKAGES</span>'
+            '<div style="margin: 12px 0 14px 0; padding: 10px 14px; background: #fffbeb; '
+            'border-left: 4px solid #ea580c; border-radius: 6px; '
+            'font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
+            '<div style="font-size: 12px; font-weight: 800; color: #9a3412; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;">'
+            '🎁 Festive Social Media Special:'
             '</div>'
-            '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: separate; border-spacing: 0 8px;">'
-            '<tr>'
-            '<td style="padding: 10px 14px; background: #ffffff; border-radius: 10px; border: 1px solid #fde68a;">'
-            '<div style="font-size: 14px; font-weight: 700; color: #1e293b;">🎨 10 High-Resolution Festival Creatives</div>'
-            '<div style="font-size: 12px; color: #64748b; margin-top: 2px;">Customized with your Company Logo, Phone &amp; Address (1080×1080)</div>'
-            '</td>'
-            '<td style="padding: 10px 14px; background: #ffffff; border-radius: 10px; border: 1px solid #fde68a; text-align: right; vertical-align: middle; white-space: nowrap;">'
-            '<span style="font-size: 19px; font-weight: 900; color: #ea580c;">₹500</span>'
-            '<span style="font-size: 11px; color: #64748b; display: block;">(₹50 / post)</span>'
-            '</td>'
-            '</tr>'
-            '<tr>'
-            '<td style="padding: 10px 14px; background: #ffffff; border-radius: 10px; border: 1px solid #fde68a;">'
-            '<div style="font-size: 14px; font-weight: 700; color: #1e293b;">🎬 3 Viral Video Reels</div>'
-            '<div style="font-size: 12px; color: #64748b; margin-top: 2px;">Trending audio, smooth motion typography &amp; custom branding</div>'
-            '</td>'
-            '<td style="padding: 10px 14px; background: #ffffff; border-radius: 10px; border: 1px solid #fde68a; text-align: right; vertical-align: middle; white-space: nowrap;">'
-            '<span style="font-size: 19px; font-weight: 900; color: #7c3aed;">₹1,000</span>'
-            '<span style="font-size: 11px; color: #64748b; display: block;">(3 Reels)</span>'
-            '</td>'
-            '</tr>'
-            '<tr>'
-            '<td style="padding: 10px 14px; background: #ffffff; border-radius: 10px; border: 1px solid #fde68a;">'
-            '<div style="font-size: 14px; font-weight: 700; color: #1e293b;">🚀 Festive Combo Booster</div>'
-            '<div style="font-size: 12px; color: #64748b; margin-top: 2px;">10 Festival Creatives + 3 Video Reels + 1 Free Header Banner</div>'
-            '</td>'
-            '<td style="padding: 10px 14px; background: #ffffff; border-radius: 10px; border: 1px solid #fde68a; text-align: right; vertical-align: middle; white-space: nowrap;">'
-            '<span style="font-size: 19px; font-weight: 900; color: #16a34a;">₹1,299</span>'
-            '<span style="font-size: 11px; color: #16a34a; font-weight: 700; display: block;">Best Value</span>'
-            '</td>'
-            '</tr>'
-            '</table>'
-            '<div style="margin-top: 10px; font-size: 12px; color: #78350f; font-weight: 600;">'
-            '⚡ Delivered directly to your WhatsApp on every festival morning — zero designing hassle.'
+            '<div style="font-size: 13.5px; color: #1e293b; line-height: 1.6;">'
+            '• <strong>10 HD Festival Creatives:</strong> <span style="color: #ea580c; font-weight: 800; background: #ffedd5; padding: 1px 6px; border-radius: 4px;">₹500</span> (with your Logo &amp; Phone)<br/>'
+            '• <strong>3 Viral Video Reels:</strong> <span style="color: #7c3aed; font-weight: 800; background: #ede9fe; padding: 1px 6px; border-radius: 4px;">₹1,000</span> (with trending audio)<br/>'
+            '• <strong>Combo Booster:</strong> <span style="color: #16a34a; font-weight: 800; background: #dcfce7; padding: 1px 6px; border-radius: 4px;">₹1,299</span> (10 Posts + 3 Reels)'
             '</div>'
             '</div>'
         )
 
-        # Replace bullet points mentioning ₹500 / ₹1,000 festival packages with the styled Offer Card
+        # Replace bullet points mentioning ₹500 / ₹1,000 festival packages with the compact Highlight Card
         html_styled = re.sub(
             r'(?:[•\-\*]\s*.*?₹(?:500|1,000|1000).*?\n?){2,}',
             festive_offer_card_html,
@@ -303,22 +272,14 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             flags=re.IGNORECASE
         )
 
-        # High-Converting WhatsApp Action Box (Prominent & Mobile Responsive)
+        # Clean, Compact WhatsApp Action Button
         wa_card_html = (
-            '<div style="margin: 22px 0 16px 0; padding: 16px 20px; background: #f0fdf4; '
-            'border: 1.5px solid #86efac; border-radius: 12px; display: inline-block; max-width: 520px; '
-            'box-shadow: 0 4px 12px rgba(34, 197, 94, 0.08); font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
-            '<div style="font-size: 13.5px; font-weight: 700; color: #15803d; margin-bottom: 4px;">'
-            '💬 Quick question or project to discuss?'
-            '</div>'
-            '<div style="font-size: 12px; color: #166534; margin-bottom: 12px; line-height: 1.4;">'
-            'Connect directly with our solutions &amp; engineering team on WhatsApp:'
-            '</div>'
+            '<div style="margin: 14px 0 8px 0;">'
             '<a href="https://wa.me/919106060400?text=Hi%20Sangeeta%20Infotech%2C%20I%20got%20your%20email%20and%20would%20like%20to%20discuss." '
             'target="_blank" style="display: inline-block; background: #25D366; color: #ffffff !important; '
-            'text-decoration: none; padding: 10px 22px; border-radius: 50px; font-weight: 700; font-size: 13.5px; '
-            'box-shadow: 0 3px 8px rgba(37, 211, 102, 0.35); text-align: center;">'
-            '<span style="font-size: 15px; vertical-align: -1px; margin-right: 6px;">💬</span> Chat with us on WhatsApp'
+            'text-decoration: none; padding: 9px 18px; border-radius: 50px; font-weight: 700; font-size: 13px; '
+            'box-shadow: 0 2px 6px rgba(37, 211, 102, 0.3);">'
+            '<span style="font-size: 14px; margin-right: 5px;">💬</span> Chat with us on WhatsApp'
             '</a>'
             '</div>'
         )
