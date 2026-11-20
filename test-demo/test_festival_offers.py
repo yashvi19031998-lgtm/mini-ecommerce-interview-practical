@@ -6,6 +6,7 @@ import unittest
 import os
 import shutil
 import tempfile
+import settings_manager
 import festival_offers_engine as engine
 import cron_job_festival_dispatcher as cron
 
@@ -148,6 +149,25 @@ class TestFestivalOffersEngine(unittest.TestCase):
         strat = engine.get_bde_strategy()
         self.assertIn("Trojan Horse", strat.get("core_philosophy", {}).get("strategy_name", ""))
         self.assertEqual(len(strat.get("target_market_tiers", [])), 3)
+
+    def test_it_company_shield(self):
+        # Strict IT company exclusion test
+        self.assertTrue(settings_manager.is_it_company("TatvaSoft Technologies")[0])
+        self.assertTrue(settings_manager.is_it_company("Cybercom Creation Infotech")[0])
+        self.assertTrue(settings_manager.is_it_company("Simform Solutions Pvt Ltd")[0])
+        self.assertTrue(settings_manager.is_it_company("Citrusbug Technolabs")[0])
+        self.assertTrue(settings_manager.is_it_company("Web Development Agency")[0])
+        self.assertTrue(settings_manager.is_it_company("Fake Co", email="info@infolabz.in")[0])
+        self.assertTrue(settings_manager.is_it_company("Fake Co", website="https://instanceit.com")[0])
+        self.assertTrue(settings_manager.is_it_company("Fake Co", website="https://voygr.tech")[0])
+
+        # Non-IT local SME businesses must NEVER be blocked
+        self.assertFalse(settings_manager.is_it_company("Gokul Dairy Parlour")[0])
+        self.assertFalse(settings_manager.is_it_company("Radhe Krishna Sweets")[0])
+        self.assertFalse(settings_manager.is_it_company("Shreeji Jewellers")[0])
+        self.assertFalse(settings_manager.is_it_company("Dr. Mehta Dental Clinic")[0])
+        self.assertFalse(settings_manager.is_it_company("Amdavad Fitness Gym")[0])
+        self.assertFalse(settings_manager.is_it_company("Apex Packaging Industries")[0])
 
 if __name__ == "__main__":
     unittest.main()

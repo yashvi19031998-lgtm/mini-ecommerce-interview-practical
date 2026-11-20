@@ -25,6 +25,7 @@ DEFAULT_SETTINGS = {
     "autoSendEmail": True,
     "maxPendingEmailsPerRun": 5,
     "excludedCompanies": ["8dots"],
+    "excludeITCompanies": True,
     "services": [
         "Custom Web & Full-Stack Development (Python, React, Node)",
         "Mobile App Development (Flutter, React Native)",
@@ -248,6 +249,92 @@ def _host_matches(host, term):
     return False
 
 
+IT_COMPANY_TERMS = [
+    "software", "technologies", "technology", "infotech", "infosystem", "infosystems",
+    "tech lab", "tech labs", "techlab", "techlabs", "technolab", "technolabs", "web solutions",
+    "web development", "web agency", "app development", "software solutions", "it services",
+    "it solutions", "it consulting", "digital agency", "software pvt", "technologies pvt",
+    "systems pvt", "cybertech", "cloud systems", "code lab", "codelabs", "dev studio",
+    "software agency", "tech consultancy", "information technology", "tatvasoft", "simform",
+    "radixweb", "hidden brains", "hyperlink infosystem", "mindinventory", "space-o",
+    "multidots", "tcs", "infosys", "wipro", "cognizant", "capgemini", "tech mahindra",
+    "hcl tech", "developer", "developers", "coding", "python", "script", "freelancer",
+    "freelance", "techjobs", "engineer", "engineering", "tech", "webdev", "infolab",
+    "infolabz", "softvoya", "webtact", "staffing", "recruitment", "consultancy",
+    "solutions", "wordpress", "shopify", "development company", "web design",
+    "website design", "seo agency", "digital marketing", "esparkinfo", "wpweb", "wpwebelite",
+    "witarist", "creativeencode", "citrusbug"
+]
+
+IT_SUBSTRING_ROOTS = [
+    "techno", "infotech", "software", "infosys", "webdev", "appdev", "codelab", "devstudio",
+    "it services", "it solutions", "it-solutions", "softwarehouse"
+]
+
+def is_it_company(company_name: str = "", email: str = "", website: str = "", category: str = "") -> tuple[bool, str]:
+    """
+    Checks if a target business is an IT, Software, or Web Development company.
+    Sangeeta Infotech sells exclusively TO non-IT businesses (local retailers, clinics, salons, SMEs).
+    Strictly prevents cold outreach emails from ever being sent to another IT company.
+    """
+    comp_clean = str(company_name or "").strip().lower()
+
+    # 1. Check company name against root signatures
+    for root in IT_SUBSTRING_ROOTS:
+        if root in comp_clean:
+            return True, f"Company '{company_name}' identified as IT/Software agency (contains '{root}')"
+
+    # 2. Check company name against IT terms
+    for term in IT_COMPANY_TERMS:
+        if _has_whole_term(comp_clean, term):
+            return True, f"Company '{company_name}' identified as IT/Software company (matches '{term}')"
+
+    # 3. Check category / description
+    cat_clean = str(category or "").strip().lower()
+    if cat_clean:
+        for it_cat in ["software", "information technology", "web development", "app development", "computer support", "it consultant", "it services", "developer", "staffing"]:
+            if it_cat in cat_clean:
+                return True, f"Category '{category}' is in the IT/Software sector"
+
+    # 4. Check website and email domain (handles multiple comma-separated emails)
+    web_host = _host_of(website)
+    hosts_to_check = [web_host] if web_host else []
+    for em_part in str(email or "").split(","):
+        clean_em = em_part.strip().lower()
+        if "@" in clean_em:
+            # Check for generic job/tech roles
+            local_user = clean_em.split("@")[0]
+            if any(r in local_user for r in ["techjob", "tech_job", "developer", "coder"]):
+                return True, f"Email address '{clean_em}' has tech role identifier"
+            h = _host_of(clean_em)
+            if h and h not in hosts_to_check:
+                hosts_to_check.append(h)
+
+    for host in hosts_to_check:
+        if not host:
+            continue
+        if host.endswith(".tech") or host.endswith(".dev") or host.endswith(".io"):
+            return True, f"Domain '{host}' is a tech TLD (.tech/.dev/.io)"
+        if re.search(r'(?:^|[-_.])it(?:[-_.]|$)', host):
+            return True, f"Domain '{host}' contains IT identifier"
+        if re.search(r'(?:soft|tech|infolab|webdev|developer|codelab|instanceit|infosystem|cyber)', host):
+            return True, f"Domain '{host}' contains IT/Software agency signature"
+        host_labels = [lbl for lbl in host.split(".") if lbl not in ("com", "co", "in", "net", "org", "ai", "gov")]
+        for lbl in host_labels:
+            squeezed_lbl = _squeeze(lbl)
+            if not squeezed_lbl:
+                continue
+            for root in IT_SUBSTRING_ROOTS:
+                if root in squeezed_lbl:
+                    return True, f"Domain '{host}' contains IT root '{root}'"
+            for term in IT_COMPANY_TERMS:
+                squeezed_t = _squeeze(term)
+                if len(squeezed_t) >= 4 and (squeezed_t in squeezed_lbl or squeezed_lbl in squeezed_t):
+                    return True, f"Domain '{host}' belongs to an IT/Software agency (matches '{term}')"
+
+    return False, ""
+
+
 def is_company_excluded(company_name: str = "", email: str = "", website: str = "", settings: dict = None) -> tuple[bool, str]:
     """
     Checks if a lead belongs to an excluded company (the Do-Not-Contact list in Settings).
@@ -255,9 +342,16 @@ def is_company_excluded(company_name: str = "", email: str = "", website: str = 
     A rule matches the company name as whole word(s), or the domain of the e-mail / website.
     It never matches a mere fragment: the old substring test blocked 'Dots Inc', one-letter
     names and - for a short rule like 'IT' - every company with those letters anywhere.
+    Also strictly blocks all IT companies when excludeITCompanies is active.
     """
     if settings is None:
         settings = load_settings()
+
+    # STRICT IT COMPANY SHIELD: If excludeITCompanies is active, block any IT/Software company
+    if settings.get("excludeITCompanies", False):
+        is_it, it_reason = is_it_company(company_name=company_name, email=email, website=website)
+        if is_it:
+            return True, it_reason
 
     email_text = str(email or "").strip().lower()
     local_part = email_text.rsplit("@", 1)[0] if "@" in email_text else ""

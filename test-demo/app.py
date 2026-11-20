@@ -302,7 +302,7 @@ def patch_lead_status(lead_id):
 def _sent_log_fresh():
     """None when the local sent log now includes every mail sent elsewhere (GitHub); else an error response.
     Skipped in tests (no database calls from the test suite)."""
-    if app.config.get("TESTING"):
+    if app.config.get("TESTING") or app.testing or "unittest" in sys.modules:
         return None
     import email_service
     res = email_service.refresh_sent_from_db()
@@ -2820,6 +2820,17 @@ def get_bde_outreach_strategy():
         return jsonify({"success": True, "strategy": data}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/offers/dispatch-auto", methods=["POST"])
+def run_automated_sme_dispatch():
+    """Trigger automated SME dispatch cycle with strict IT company exclusion."""
+    import cron_job_sme_outreach as sme_cron
+    body = request.get_json(silent=True) or {}
+    limit = int(body.get("limit", 15))
+    dry_run = bool(body.get("dry_run", False))
+    res = sme_cron.run_sme_automated_dispatch(limit=limit, dry_run=dry_run)
+    return jsonify({"success": True, "result": res}), 200
 
 
 if __name__ == "__main__":
