@@ -34,30 +34,30 @@ _ensure_data_files()
 OFFERS = [
     {
         "id": "fest_10_pack",
-        "name": "Business Instagram Pack",
+        "name": "Business Post Pack",
         "tag": "MOST POPULAR",
         "price_inr": 500,
         "price_usd": 7,
-        "deliverables": "10 Custom Business Instagram Creatives",
-        "description": "10 high-converting business Instagram creatives (product spotlights, offers, service promos, customer trust posts) customized for your brand.",
+        "deliverables": "10 Custom Images For Posts",
+        "description": "10 high-converting custom images for business posts (product spotlights, offers, service promos, announcements) customized for your brand.",
         "features": [
-            "10 High-Converting Business & Promo Posts",
+            "10 High-Converting Business & Promo Images For Posts",
             "Custom company branding, typography & contact info",
-            "1080x1080 HD Square (Perfect for WhatsApp Status & Instagram Feed)",
+            "1080x1080 HD Square (Perfect for WhatsApp Status, Facebook & Social Media)",
             "Engaging captions & call-to-actions included",
             "Delivered ready-to-post directly on your WhatsApp"
         ]
     },
     {
         "id": "reels_3_pack",
-        "name": "Viral Business Reels Pack",
+        "name": "Promotional Video Reels Pack",
         "tag": "HIGH ENGAGEMENT",
         "price_inr": 1000,
         "price_usd": 14,
-        "deliverables": "3 High-Retention Business Video Reels",
-        "description": "3 viral short-form business video reels for Instagram & Facebook with engaging animations and call-to-actions.",
+        "deliverables": "3 High-Retention Promotional Video Reels",
+        "description": "3 promotional short-form video reels for WhatsApp Status, Instagram & Facebook with engaging animations and call-to-actions.",
         "features": [
-            "3 Custom Business Video Reels in 9:16 vertical format",
+            "3 Custom Promotional Video Reels in 9:16 vertical format",
             "Trending background music & copyright-safe audio",
             "Dynamic text animations & company branding",
             "Story/Reel cover poster included",
@@ -257,11 +257,11 @@ def generate_offer_pitch(lead):
 
     wa_pitch = (
         f"નમસ્તે {biz_name}!\n\n"
-        f"Instagram પર તમારા બિઝનેસનું પ્રમોશન અને કસ્ટમર્સ વધારવા માટેનું પ્લાનિંગ કરો છો?\n\n"
+        f"તમારા બિઝનેસના પ્રમોશન અને નવા કસ્ટમર્સ આકર્ષવા માટે સોશિયલ મીડિયા કે WhatsApp પર પોસ્ટ્સ મૂકવાનું પ્લાનિંગ કરો છો?\n\n"
         f"🚀 Sangeeta Infotech Business Growth Offer:\n"
-        f"✅ ૧૦ કસ્ટમ બિઝનેસ ઇન્સ્ટાગ્રામ પોસ્ટ્સ = માત્ર ₹500\n"
-        f"✅ ૩ એન્ગેજિંગ બિઝનેસ વિડીયો રીલ્સ = માત્ર ₹1,000\n"
-        f"✅ કૉમ્બો ગ્રોથ પેક (10 પોસ્ટ્સ + 3 રીલ્સ) = માત્ર ₹1,299\n\n"
+        f"✅ ૧૦ કસ્ટમ Images For Posts = માત્ર ₹500\n"
+        f"✅ ૩ પ્રોમોશનલ વિડીયો રીલ્સ = માત્ર ₹1,000\n"
+        f"✅ કૉમ્બો ગ્રોથ પેક (10 ઈમેજ + 3 રીલ્સ) = માત્ર ₹1,299\n\n"
         f"તમારે કોઈ ડિઝાઇનિંગ મહેનત કરવાની જરૂર નથી — રેડી-ટુ-પોસ્ટ તમારા WhatsApp પર મળી જશે.\n\n"
         f"જો તમારે એક સેમ્પલ જોવું હોય, તો ફક્ત 'YES' લખીને મોકલો.\n\n"
         f"Sangeeta Infotech | Ahmedabad"
@@ -269,10 +269,10 @@ def generate_offer_pitch(lead):
 
     wa_pitch_en = (
         f"Hello {biz_name} Team,\n\n"
-        f"Looking to grow {biz_name}'s reach and customers on Instagram?\n\n"
+        f"Looking to promote {biz_name} and attract more customers?\n\n"
         f"🚀 Sangeeta Infotech Business Growth Pack:\n"
-        f"• 10 Custom Business Instagram Creatives: Just ₹500\n"
-        f"• 3 Engaging Business Video Reels: Just ₹1,000\n\n"
+        f"• 10 Custom Images For Posts: Just ₹500\n"
+        f"• 3 Promotional Video Reels: Just ₹1,000\n\n"
         f"Zero designing hassle — delivered ready-to-post directly to your WhatsApp.\n\n"
         f"Would you like to see a quick sample? Simply reply 'YES'.\n\n"
         f"Sangeeta Infotech | Ahmedabad"
@@ -288,12 +288,12 @@ def generate_offer_pitch(lead):
 
     wa_link = f"https://wa.me/{wa_target}?text={urllib.parse.quote(wa_pitch)}" if wa_target else ""
 
-    email_subject = f"Custom Business Instagram Creatives for {biz_name} (10 Posts at ₹500)"
+    email_subject = f"Custom Images for Posts & Promotion for {biz_name} (10 Posts at ₹500)"
     email_body = (
         f"Hi Team {biz_name},\n\n"
-        f"Looking to grow {biz_name}'s reach and sales on Instagram? At **Sangeeta Infotech**, we design high-converting, branded social media posts:\n\n"
-        f"• 10 Custom Business Instagram Creatives: ₹500\n"
-        f"• 3 Engaging Business Video Reels: ₹1,000\n\n"
+        f"Looking to promote {biz_name} and attract more customers? At **Sangeeta Infotech**, we design high-converting, branded posts for your business:\n\n"
+        f"• 10 Custom Images For Posts: ₹500\n"
+        f"• 3 Promotional Video Reels: ₹1,000\n\n"
         f"Delivered ready-to-post on WhatsApp — zero effort for you.\n\n"
         f"Would you like to see a quick sample? Simply reply 'YES' or connect on WhatsApp below.\n\n"
         f"Warm regards,\n"
