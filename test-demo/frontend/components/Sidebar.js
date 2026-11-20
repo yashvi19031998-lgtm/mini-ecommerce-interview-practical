@@ -8,7 +8,7 @@ import {
   ShoppingCart, Globe, MessageCircle, House, Network, Factory, Phone, Wrench, Ship, Store,
   Landmark, BadgeCheck, Receipt, Contact, Globe2, MailCheck, PhoneCall, FileUp, Bug, Link2, TextSearch, ListTree,
   FolderUp, Gauge, CalendarClock, MailSearch, Sparkles, CheckSquare, Eraser, Wand2, BarChart3, Laptop,
-  Sun, Layers, Wrench as ToolsIcon
+  Sun, Layers, Wrench as ToolsIcon, Gift
 } from 'lucide-react';
 import { REPORT_SECTIONS } from './Reports';
 
@@ -102,6 +102,7 @@ function buildMenu({ totalLeads, isScraperRunning }) {
       items: [
         { id: 'today', label: 'Today', icon: Sun },
         { id: 'pipeline', label: 'CRM Pipeline', icon: LayoutDashboard },
+        { id: 'offers', label: 'Special Offers', icon: Gift },
         { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
         { id: 'leads', label: 'Leads', icon: Database, badge: totalLeads > 0 ? totalLeads.toLocaleString() : null },
         { id: 'followups', label: 'Follow-ups', icon: History }

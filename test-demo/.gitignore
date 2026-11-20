@@ -33,4 +33,5 @@ logs/cron/
 logs/daily_reports/
 logs/whatsapp_session/
 logs/*.before_test_cleanup.csv
+data/*.svg
 testing_cron.txt

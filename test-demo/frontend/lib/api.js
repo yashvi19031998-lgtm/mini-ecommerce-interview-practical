@@ -797,3 +797,44 @@ export async function fetchBdeNegotiation(params) {
     body: JSON.stringify(params)
   });
 }
+
+// Digital Media & Festival Offers APIs
+export async function fetchFestivalOffers() {
+  return await apiFetch('/api/offers');
+}
+
+export async function fetchFestivalClients() {
+  return await apiFetch('/api/offers/clients');
+}
+
+export async function saveFestivalClient(clientData) {
+  return await apiFetch('/api/offers/clients', {
+    method: 'POST',
+    body: JSON.stringify(clientData)
+  });
+}
+
+export async function fetchFestivalOfferPitch(lead) {
+  return await apiFetch('/api/offers/pitch', {
+    method: 'POST',
+    body: JSON.stringify(lead)
+  });
+}
+
+export async function fetchFestivalCreative(client, festivalId) {
+  return await apiFetch('/api/offers/creative', {
+    method: 'POST',
+    body: JSON.stringify({ client, festival_id: festivalId })
+  });
+}
+
+export async function fetchFestivalSchedules() {
+  return await apiFetch('/api/offers/schedules');
+}
+
+export async function scheduleFestivalDispatch(clientId, festivalId, dispatchDate) {
+  return await apiFetch('/api/offers/schedules', {
+    method: 'POST',
+    body: JSON.stringify({ client_id: clientId, festival_id: festivalId, dispatch_date: dispatchDate })
+  });
+}

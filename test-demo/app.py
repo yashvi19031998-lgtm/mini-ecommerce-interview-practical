@@ -2744,6 +2744,72 @@ def bde_qualify_lead():
     return jsonify(res), 200
 
 
+# DIGITAL MEDIA & FESTIVAL BRANDING OFFERS ENDPOINTS
+@app.route("/api/offers", methods=["GET"])
+def get_festival_offers():
+    """List active packages, festival calendar, and digital media metrics."""
+    import festival_offers_engine as offers_engine
+    return jsonify({
+        "success": True,
+        "offers": offers_engine.OFFERS,
+        "calendar": offers_engine.FESTIVAL_CALENDAR,
+        "stats": offers_engine.get_stats()
+    }), 200
+
+
+@app.route("/api/offers/clients", methods=["GET", "POST"])
+def manage_festival_clients():
+    """List or enroll clients for festival digital media packages."""
+    import festival_offers_engine as offers_engine
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        if not data.get("business_name"):
+            return jsonify({"success": False, "error": "business_name is required"}), 400
+        saved = offers_engine.save_client(data)
+        return jsonify({"success": True, "client": saved}), 200
+
+    clients = offers_engine.get_all_clients()
+    return jsonify({"success": True, "clients": clients}), 200
+
+
+@app.route("/api/offers/pitch", methods=["POST"])
+def generate_festival_offer_pitch():
+    """Generate high-converting WhatsApp & Email pitch for any lead."""
+    import festival_offers_engine as offers_engine
+    lead = request.get_json(silent=True) or {}
+    pitch = offers_engine.generate_offer_pitch(lead)
+    return jsonify({"success": True, "pitch": pitch}), 200
+
+
+@app.route("/api/offers/creative", methods=["POST"])
+def generate_festival_creative():
+    """Generate branded SVG creative for client + festival."""
+    import festival_offers_engine as offers_engine
+    body = request.get_json(silent=True) or {}
+    client = body.get("client") or {}
+    festival_id = body.get("festival_id") or "diwali_new_year"
+    svg = offers_engine.generate_festival_creative_svg(client, festival_id)
+    return jsonify({"success": True, "svg": svg, "festival_id": festival_id}), 200
+
+
+@app.route("/api/offers/schedules", methods=["GET", "POST"])
+def manage_festival_schedules():
+    """List or create scheduled festival dispatches."""
+    import festival_offers_engine as offers_engine
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        client_id = body.get("client_id")
+        festival_id = body.get("festival_id")
+        date_val = body.get("dispatch_date")
+        if not client_id or not festival_id:
+            return jsonify({"success": False, "error": "client_id and festival_id are required"}), 400
+        res = offers_engine.schedule_festival_dispatch(client_id, festival_id, date_val)
+        return jsonify(res), 200 if res.get("success") else 400
+
+    schedules = offers_engine.get_all_schedules()
+    return jsonify({"success": True, "schedules": schedules}), 200
+
+
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", "5000"))
     print("\n" + "=" * 60)
