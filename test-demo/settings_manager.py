@@ -52,12 +52,10 @@ DEFAULT_SETTINGS = {
     "min_lead_score": 4,
     "signatureTemplate": (
         "Warm regards,\n"
-        "{senderName} | {senderRole}\n"
-        "**{companyName}** — {tagline}\n"
-        "💡 Dedicated Developers Starting from **₹450/- INR / hour**\n"
-        "Phone/WhatsApp: {phone}\n"
-        "Email: {email} | {website}\n"
-        "Location: {address}"
+        "**{companyName}**\n"
+        "{phone} | {email}\n"
+        "{website}\n"
+        "{address}"
     ),
     "defaultSubject": "Software development help for {company}",
     "default_subject": "Software development help for {company}",
@@ -163,16 +161,21 @@ def format_signature(settings=None):
     cta = whatsapp_cta(settings)
     if cta and "wa.me/" not in tpl:
         tpl = tpl + "\n" + cta
+    company = settings.get("companyName") or settings.get("company_name", "Sangeeta Infotech")
+    email = settings.get("email") or settings.get("contact_email", "info@sangeetainfotech.co.in")
+    website = settings.get("website", "https://sangeetainfotech.co.in")
+    phone = settings.get("phone", "+91 9106060400")
+    address = settings.get("address", "Ahmedabad, Gujarat")
     return (
         tpl.replace("{senderName}", settings.get("senderName", ""))
            .replace("{senderRole}", settings.get("senderRole", ""))
-           .replace("{companyName}", settings.get("companyName", ""))
+           .replace("{companyName}", company)
            .replace("{tagline}", settings.get("tagline", ""))
-           .replace("{email}", settings.get("email", ""))
-           .replace("{phone}", settings.get("phone", ""))
-           .replace("{whatsapp}", settings.get("whatsapp", ""))
-           .replace("{website}", settings.get("website", ""))
-           .replace("{address}", settings.get("address", ""))
+           .replace("{email}", email)
+           .replace("{phone}", phone)
+           .replace("{whatsapp}", settings.get("whatsapp", phone))
+           .replace("{website}", website)
+           .replace("{address}", address)
            .replace("{companyDescription}", settings.get("companyDescription", settings.get("company_description", "")))
     )
 

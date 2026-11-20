@@ -21,12 +21,9 @@ from typing import Dict, Any, Tuple, Optional
 from settings_manager import load_settings, format_signature, DEFAULT_SETTINGS
 
 DEFAULT_SIGNATURE = """Warm regards,
-Business Development Team | Client Solutions Specialist
-**Sangeeta Infotech** — Engineering Intelligent Web & Mobile Solutions
-💡 Dedicated Developers Starting from **₹450/- INR / hour**
-Phone/WhatsApp: +91 9106060400
-Email: info@sangeetainfotech.co.in | https://sangeetainfotech.co.in
-Location: Ahmedabad, Gujarat, India"""
+**Sangeeta Infotech**
++91 9106060400 | info@sangeetainfotech.co.in
+Ahmedabad, Gujarat"""
 
 
 def clean_company_and_role(title: str, comp_hint: str = "") -> Tuple[str, str]:

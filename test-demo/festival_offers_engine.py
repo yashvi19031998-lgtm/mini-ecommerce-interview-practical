@@ -292,12 +292,13 @@ def generate_offer_pitch(lead):
     email_body = (
         f"Hi Team {biz_name},\n\n"
         f"Festivals are around the corner! At **Sangeeta Infotech**, we have a festive branding special for your social media:\n\n"
-        f"• 10 High-Resolution Festival Creatives: ₹500/-\n"
-        f"• 3 Viral Short Video Reels: ₹1,000/-\n\n"
+        f"• 10 High-Resolution Festival Creatives: ₹500\n"
+        f"• 3 Viral Short Video Reels: ₹1,000\n\n"
         f"Everything is delivered ready-to-post on WhatsApp on festival mornings — zero designing effort on your end.\n\n"
         f"Would you like to see a quick sample? Simply reply 'YES' or connect on WhatsApp below.\n\n"
         f"Warm regards,\n"
-        f"**Sangeeta Infotech Team** | +91 9106060400\n"
+        f"Sangeeta Infotech\n"
+        f"+91 9106060400 | info@sangeetainfotech.co.in\n"
         f"Ahmedabad, Gujarat"
     )
 
