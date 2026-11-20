@@ -288,17 +288,18 @@ def generate_offer_pitch(lead):
 
     wa_link = f"https://wa.me/{wa_target}?text={urllib.parse.quote(wa_pitch)}" if wa_target else ""
 
-    email_subject = f"Festive social media creatives for {biz_name} (₹500 for 10 posts)"
+    email_subject = f"આવનારા તહેવારો માટે સોશિયલ મીડિયા પોસ્ટ્સ - {biz_name} (૧૦ ઈમેજ માત્ર ₹500)"
     email_body = (
-        f"Hi Team {biz_name},\n\n"
-        f"Festive seasons are right around the corner, and keeping your social media active with high-quality festival greetings can be time-consuming.\n\n"
-        f"At Sangeeta Infotech, we provide a complete Festive Social Media Pack:\n"
-        f"• 10 High-Resolution Festival Creatives for just ₹500/-\n"
-        f"• 3 Viral Video Reels for ₹1,000/-\n\n"
-        f"Zero designing effort required on your end — everything is delivered ready-to-post directly to your WhatsApp on every festival morning.\n\n"
-        f"Would you like to see a quick sample? Simply reply 'YES' to this email or tap the WhatsApp button below.\n\n"
+        f"નમસ્તે {biz_name} Team,\n\n"
+        f"આવનારા તહેવારોમાં તમારા ગ્રાહકો સુધી પહોંચવા માટે સુંદર ફેસ્ટિવલ પોસ્ટ્સની જરૂર છે?\n\n"
+        f"સંગીતા ઇન્ફોટેક (અમદાવાદ) તરફથી ખાસ ફેસ્ટિવલ ઑફર:\n"
+        f"• ૧૦ પ્રીમિયમ તહેવારની HD ઈમેજીસ = માત્ર ₹500/-\n"
+        f"• ૩ વાયરલ વિડીયો રીલ્સ = માત્ર ₹1,000/-\n\n"
+        f"તમારે કોઈ ડિઝાઇનિંગ મહેનત કરવાની જરૂર નથી — દરેક તહેવારના દિવસે સવારે તૈયાર પોસ્ટ તમારા WhatsApp પર મળી જશે.\n\n"
+        f"જો તમારે એક ફ્રી સેમ્પલ જોવું હોય, તો ફક્ત 'YES' લખીને આ મેઈલનો રિપ્લાય આપો અથવા નીચે આપેલા બટનથી WhatsApp પર વાત કરો.\n\n"
         f"Warm regards,\n"
         f"Sangeeta Infotech Team\n"
+        f"Phone/WhatsApp: +91 9106060400\n"
         f"Ahmedabad, Gujarat"
     )
 
