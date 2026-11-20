@@ -263,10 +263,9 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             '<div style="font-size: 12px; font-weight: 800; color: #9a3412; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;">'
             '🎁 Festive Social Media Special:'
             '</div>'
-            '<div style="font-size: 13.5px; color: #1e293b; line-height: 1.6;">'
-            '• <strong>10 HD Festival Creatives:</strong> <span style="color: #ea580c; font-weight: 800; background: #ffedd5; padding: 1px 6px; border-radius: 4px;">₹500</span> (with your Logo &amp; Phone)<br/>'
-            '• <strong>3 Viral Video Reels:</strong> <span style="color: #7c3aed; font-weight: 800; background: #ede9fe; padding: 1px 6px; border-radius: 4px;">₹1,000</span> (with trending audio)<br/>'
-            '• <strong>Combo Booster:</strong> <span style="color: #16a34a; font-weight: 800; background: #dcfce7; padding: 1px 6px; border-radius: 4px;">₹1,299</span> (10 Posts + 3 Reels)'
+            '<div style="font-size: 13.5px; color: #1e293b; line-height: 1.8;">'
+            '• <strong>10 HD Festival Creatives:</strong> <span style="color: #ea580c; font-weight: 800; background: #ffedd5; padding: 1px 6px; border-radius: 4px;">₹500</span><br/>'
+            '• <strong>3 Viral Video Reels:</strong> <span style="color: #7c3aed; font-weight: 800; background: #ede9fe; padding: 1px 6px; border-radius: 4px;">₹1,000</span>'
             '</div>'
             '</div>'
         )

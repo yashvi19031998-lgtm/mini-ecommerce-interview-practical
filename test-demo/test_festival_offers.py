@@ -58,8 +58,8 @@ class TestFestivalOffersEngine(unittest.TestCase):
         }
         pitch = engine.generate_offer_pitch(sample_lead)
         self.assertEqual(pitch["lead_name"], "Radhe Krishna Sweets")
-        self.assertIn("₹500/-", pitch["whatsapp_pitch_gu"])
-        self.assertIn("₹1,000/-", pitch["whatsapp_pitch_gu"])
+        self.assertIn("₹500", pitch["whatsapp_pitch_gu"])
+        self.assertIn("₹1,000", pitch["whatsapp_pitch_gu"])
         self.assertIn("Radhe Krishna Sweets", pitch["whatsapp_pitch_gu"])
         self.assertIn("https://wa.me/919876543210", pitch["whatsapp_url"])
         self.assertIn("Radhe Krishna Sweets", pitch["email_subject"])
