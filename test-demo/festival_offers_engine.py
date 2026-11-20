@@ -256,6 +256,17 @@ def generate_offer_pitch(lead):
         ""
     ).strip()
 
+    # A person's name gets "ji"; a shop name does not ("Radhe Krishna Sweets ji" reads oddly).
+    owner = str(
+        lead.get("contact_name") or lead.get("owner_name") or lead.get("contact_person") or
+        lead.get("Contact Person") or ""
+    ).strip()
+    if owner.lower() in ("nan", "none", "n/a"):
+        owner = ""
+    hi_gu = f"નમસ્તે {owner}જી" if owner else "નમસ્તે"
+    hi_gl = f"Namaste {owner} ji" if owner else "Namaste"
+    hi_en = f"Hi {owner}" if owner else f"Hello {biz_name} team"
+
     clean_phone = phone.lstrip("+")
     if clean_phone.startswith("91") and len(clean_phone) > 10:
         wa_target = clean_phone
@@ -266,8 +277,8 @@ def generate_offer_pitch(lead):
 
     # 1. Primary WhatsApp Pitch (2 Free Samples Hook)
     wa_pitch = (
-        f"નમસ્તે {biz_name}!\n\n"
-        f"તમારા બિઝનેસના પ્રમોશન માટે સોશિયલ મીડિયા અને WhatsApp Status પર પોસ્ટ્સ મૂકવાનું પ્લાનિંગ કરો છો?\n\n"
+        f"{hi_gu} 🙏\n\n"
+        f"{biz_name} ના પ્રમોશન માટે સોશિયલ મીડિયા અને WhatsApp Status પર પોસ્ટ્સ મૂકવાનું પ્લાનિંગ કરો છો?\n\n"
         f"🎁 Sangeeta Infotech Special Offer:\n"
         f"અમે તમારા લોગો અને બિઝનેસ નામ સાથે ૨ સેમ્પલ પોસ્ટ્સ તદ્દન FREE બનાવી આપીશું.\n"
         f"જો તમને ગમે તો જ ૧૦ પોસ્ટ્સ નો પેક ફક્ત ₹500 (ઇન્ટ્રોડક્ટરી ઑફર).\n\n"
@@ -276,8 +287,8 @@ def generate_offer_pitch(lead):
     )
 
     wa_pitch_en = (
-        f"Hello {biz_name} Team,\n\n"
-        f"Planning your business promotions for WhatsApp & social media?\n\n"
+        f"{hi_en},\n\n"
+        f"Planning {biz_name}'s promotions for WhatsApp & social media?\n\n"
         f"🎁 Sangeeta Infotech Intro Offer:\n"
         f"We will design 2 custom sample posts with your logo completely FREE.\n"
         f"If you like them, grab our 10-post business pack for just ₹500.\n\n"
@@ -286,7 +297,7 @@ def generate_offer_pitch(lead):
     )
 
     wa_pitch_gujlish = (
-        f"Namaste {biz_name} ji,\n\n"
+        f"{hi_gl},\n\n"
         f"{biz_name} na WhatsApp ane social media promotion mate ame tamara logo sathe "
         f"2 sample posts FREE banavi aapishu.\n"
         f"Game to j 10 posts no pack fakt ₹500 (introductory offer, aa mahine).\n\n"
@@ -299,52 +310,42 @@ def generate_offer_pitch(lead):
     wa_link_gujlish = f"https://wa.me/{wa_target}?text={urllib.parse.quote(wa_pitch_gujlish)}" if wa_target else ""
 
     # 2. Multi-Touch WhatsApp Follow-Up Cadence (Day 1, Day 3, Day 6)
-    fu_day1_gu = f"નમસ્તે {biz_name}જી, તમારા બિઝનેસ માટે ૨ પોસ્ટ્સ તમારા લોગો સાથે ફ્રી બનાવી આપું? આજે જ મોકલી દઈશ 🙂"
-    fu_day1_en = f"Hi {biz_name} Team, I reached out about 2 free sample posts with your logo. Shall I design them for you today?"
-    fu_day1_gujlish = f"Namaste {biz_name} ji, {biz_name} mate 2 posts tamara logo sathe free banavi daun? Aaje j mokli dais 🙂"
-
-    fu_day3_gu = f"નમસ્તે {biz_name}જી, આવી પોસ્ટ અમે અમદાવાદના બીજા એક જાણીતા બિઝનેસ માટે બનાવી. {biz_name} માટે પણ એક ફ્રી સેમ્પલ બનાવી દઉં?"
-    fu_day3_en = f"Hi {biz_name} Team, this is what we designed for another business in Ahmedabad. Want one like this for {biz_name}, completely free?"
-    fu_day3_gujlish = f"Namaste {biz_name} ji, aavi post ame Ahmedabad na bija business mate banavi. {biz_name} mate pan ek free banavi daun?"
-
-    fu_day6_gu = f"છેલ્લો મેસેજ {biz_name}જી – અત્યારે પોસ્ટ્સની જરૂર ન હોય તો કોઈ વાંધો નહીં! આવતા મહિને યાદ કરાવું?"
-    fu_day6_en = f"Last message from me, {biz_name} Team – if posts are not a priority right now, no problem at all! Should I check back next month?"
-    fu_day6_gujlish = f"Chhello message {biz_name} ji – abhi jarur na hoy to koi vandho nahi. Aavta mahine yaad karavu?"
-
-    followups = {
+    texts = {
         "day1": {
-            "gu": fu_day1_gu,
-            "en": fu_day1_en,
-            "gujlish": fu_day1_gujlish,
-            "wa_url_gu": f"https://wa.me/{wa_target}?text={urllib.parse.quote(fu_day1_gu)}" if wa_target else "",
-            "wa_url_en": f"https://wa.me/{wa_target}?text={urllib.parse.quote(fu_day1_en)}" if wa_target else ""
+            "gu": f"{hi_gu}, {biz_name} માટે તમારા લોગો સાથે ૨ પોસ્ટ્સ ફ્રી બનાવી આપું? આજે જ મોકલી દઈશ 🙂",
+            "gujlish": f"{hi_gl}, {biz_name} mate tamara logo sathe 2 posts free banavi daun? Aaje j mokli dais 🙂",
+            "en": f"{hi_en}, I wrote about 2 free sample posts with your logo for {biz_name}. Shall I make them today?",
         },
         "day3": {
-            "gu": fu_day3_gu,
-            "en": fu_day3_en,
-            "gujlish": fu_day3_gujlish,
-            "wa_url_gu": f"https://wa.me/{wa_target}?text={urllib.parse.quote(fu_day3_gu)}" if wa_target else "",
-            "wa_url_en": f"https://wa.me/{wa_target}?text={urllib.parse.quote(fu_day3_en)}" if wa_target else ""
+            "gu": f"{hi_gu}, આવી પોસ્ટ અમે અમદાવાદના બીજા બિઝનેસ માટે બનાવી. {biz_name} માટે પણ એક ફ્રી બનાવી દઉં?",
+            "gujlish": f"{hi_gl}, aavi post ame Ahmedabad na bija business mate banavi. {biz_name} mate pan ek free banavi daun?",
+            "en": f"{hi_en}, this is what we made for another business in Ahmedabad. Want one like this for {biz_name}, free?",
         },
         "day6": {
-            "gu": fu_day6_gu,
-            "en": fu_day6_en,
-            "gujlish": fu_day6_gujlish,
-            "wa_url_gu": f"https://wa.me/{wa_target}?text={urllib.parse.quote(fu_day6_gu)}" if wa_target else "",
-            "wa_url_en": f"https://wa.me/{wa_target}?text={urllib.parse.quote(fu_day6_en)}" if wa_target else ""
-        }
+            "gu": f"છેલ્લો મેસેજ – અત્યારે પોસ્ટ્સની જરૂર ન હોય તો કોઈ વાંધો નહીં. આવતા મહિને યાદ કરાવું?",
+            "gujlish": "Chhello message – abhi jarur na hoy to koi vandho nahi. Aavta mahine yaad karavu?",
+            "en": "Last message from me – if posts are not a priority now, no problem. Shall I check back next month?",
+        },
     }
+    # Day 3 only works with a picture: the BDE attaches one sample from the lead's category in WhatsApp.
+    notes = {"day3": "Attach one sample image from their category in WhatsApp before sending."}
+    followups = {}
+    for day, langs in texts.items():
+        item = dict(langs)
+        for lang, text in langs.items():
+            item[f"wa_url_{lang}"] = f"https://wa.me/{wa_target}?text={urllib.parse.quote(text)}" if wa_target else ""
+        item["note"] = notes.get(day, "")
+        followups[day] = item
 
     # 3. High-Converting Email Pitch (~70 words, 2 Free Samples Hook)
     email_subject = f"2 Free Custom Sample Posts for {biz_name}?"
     email_body = (
-        f"Namaste {biz_name} Team,\n\n"
+        f"{hi_en},\n\n"
         f"Looking to promote {biz_name} and attract more customers on WhatsApp & social media?\n\n"
-        f"At **Sangeeta Infotech**, we will design 2 custom sample posts with your logo and business details completely FREE:\n\n"
+        f"At **Sangeeta Infotech**, we make ready-to-post designs with your logo and business details:\n\n"
         f"• 2 Custom Sample Posts: FREE\n"
-        f"• 10 High-Quality Business Posts Pack: ₹500 (Introductory Offer)\n"
-        f"• 3 Promotional Video Reels: ₹1,000\n\n"
-        f"Delivered ready-to-post on WhatsApp — zero effort for you.\n\n"
+        f"• 10 Business Posts Pack, only if you like the samples: ₹500 (introductory offer)\n\n"
+        f"Delivered on WhatsApp — zero effort for you.\n\n"
         f"Want to see your 2 free samples? Simply reply 'YES' to this email or connect on WhatsApp below.\n\n"
         f"Warm regards,\n"
         f"**Sangeeta Infotech**\n"

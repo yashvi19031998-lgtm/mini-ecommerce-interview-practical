@@ -189,7 +189,7 @@ export default function GoogleMaps({ onLeadsSaved }) {
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
 
         {/* 1-Click Gujarat SME Niche Presets */}
-        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', marginBottom: '14px' }}>
+        <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '12px', marginBottom: '14px' }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span>⚡ 1-Click Gujarat SME Lead Presets:</span>
             <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)' }}>(Auto-fill high-converting local niches for Ahmedabad)</span>
@@ -213,8 +213,8 @@ export default function GoogleMaps({ onLeadsSaved }) {
                   setWebsite('any');
                 }}
                 style={{
-                  background: 'var(--bg-card, #fff)',
-                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-white)',
+                  border: '1px solid var(--border-light)',
                   borderRadius: '6px',
                   padding: '5px 10px',
                   fontSize: '12px',

@@ -265,19 +265,20 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             '</div>'
             '<div style="font-size: 13.5px; color: #1e293b; line-height: 1.8;">'
             '• <strong>2 Custom Sample Posts:</strong> <span style="color: #16a34a; font-weight: 800; background: #dcfce7; padding: 1px 6px; border-radius: 4px;">FREE</span><br/>'
-            '• <strong>10 Business Posts Pack:</strong> <span style="color: #2563eb; font-weight: 800; background: #dbeafe; padding: 1px 6px; border-radius: 4px;">₹500</span><br/>'
-            '• <strong>3 Promotional Video Reels:</strong> <span style="color: #7c3aed; font-weight: 800; background: #ede9fe; padding: 1px 6px; border-radius: 4px;">₹1,000</span>'
+            '• <strong>10 Business Posts Pack</strong> (only if you like the samples): <span style="color: #2563eb; font-weight: 800; background: #dbeafe; padding: 1px 6px; border-radius: 4px;">₹500</span>'
             '</div>'
             '</div>'
         )
 
         # Replace bullet points mentioning FREE / ₹500 / ₹1,000 packages with the compact Highlight Card
-        html_styled = re.sub(
-            r'\n*(?:[•\-\*]\s*.*?(?:FREE|₹500|₹1,000|1000).*?\n?){2,}\n*',
-            f'\n{business_offer_card_html}\n',
-            html_styled,
-            flags=re.IGNORECASE
-        )
+        # Only for the post-pack offer mail (it names ₹500); "FREE" must be the whole upper-case word,
+        # so IT mails with bullets like "Freelance developers" or "1000+ users" are left alone.
+        if "₹500" in message_body:
+            html_styled = re.sub(
+                r'\n*(?:[•\-\*][^\n]*?(?:\bFREE\b|₹500|₹1,000|₹1000)[^\n]*\n?){2,}\n*',
+                f'\n{business_offer_card_html}\n',
+                html_styled
+            )
 
         # Ensure distinct paragraph spacing that email clients like Gmail cannot collapse
         html_styled = re.sub(r'\n{2,}', '<div style="height: 14px;"></div>', html_styled)

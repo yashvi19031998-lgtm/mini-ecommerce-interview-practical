@@ -46,6 +46,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
   const [selectedLead, setSelectedLead] = useState(null);
   const [pitchData, setPitchData] = useState(null);
   const [generatingPitch, setGeneratingPitch] = useState(false);
+  const [fuLang, setFuLang] = useState('gu'); // language of the WhatsApp follow-ups
 
   // Client Onboarding Form state
   const [showClientModal, setShowClientModal] = useState(false);
@@ -302,8 +303,8 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
             <button
               onClick={loadAll}
               style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-light)',
                 color: 'var(--text-primary)',
                 borderRadius: '8px',
                 padding: '10px 14px',
@@ -320,19 +321,19 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
 
         {/* Quick Metrics */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginTop: '20px' }}>
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 16px' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '12px 16px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Enrolled Clients</div>
             <div style={{ fontSize: '22px', fontWeight: '700', color: '#ea580c' }}>{stats.total_clients || 0}</div>
           </div>
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 16px' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '12px 16px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Active Deliveries</div>
             <div style={{ fontSize: '22px', fontWeight: '700', color: '#10b981' }}>{stats.active_clients || 0}</div>
           </div>
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 16px' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '12px 16px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Revenue Collected</div>
             <div style={{ fontSize: '22px', fontWeight: '700', color: '#8b5cf6' }}>₹{(stats.total_revenue_inr || 0).toLocaleString()}</div>
           </div>
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 16px' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '12px 16px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Scheduled Dispatches</div>
             <div style={{ fontSize: '22px', fontWeight: '700', color: '#3b82f6' }}>{stats.total_schedules || schedules.length}</div>
           </div>
@@ -344,7 +345,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
         {/* Card 1: 500 Pack */}
         <div
           style={{
-            background: 'var(--bg-card, #fff)',
+            background: 'var(--bg-white)',
             border: '2px solid rgba(234, 88, 12, 0.4)',
             borderRadius: '14px',
             padding: '20px',
@@ -395,8 +396,8 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
         {/* Card 2: 1000 Pack */}
         <div
           style={{
-            background: 'var(--bg-card, #fff)',
-            border: '1px solid var(--border-color)',
+            background: 'var(--bg-white)',
+            border: '1px solid var(--border-light)',
             borderRadius: '14px',
             padding: '20px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
@@ -445,8 +446,8 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
         {/* Card 3: 1299 Combo */}
         <div
           style={{
-            background: 'var(--bg-card, #fff)',
-            border: '1px solid var(--border-color)',
+            background: 'var(--bg-white)',
+            border: '1px solid var(--border-light)',
             borderRadius: '14px',
             padding: '20px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
@@ -494,7 +495,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
       </div>
 
       {/* Sub Tabs Navigation */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid var(--border-color)', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid var(--border-light)', marginBottom: '20px' }}>
         {[
           { id: 'pitch', label: '1. Outreach & Pitches', icon: Send },
           { id: 'clients', label: `2. Enrolled Clients (${clients.length})`, icon: Building },
@@ -533,7 +534,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
       {activeSubTab === 'pitch' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px' }}>
           {/* Left: Lead Selection */}
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '18px' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '18px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Search size={16} /> Select Lead to Pitch Offer
             </h3>
@@ -546,7 +547,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 width: '100%',
                 padding: '10px 12px',
                 borderRadius: '8px',
-                border: '1px solid var(--border-color)',
+                border: '1px solid var(--border-light)',
                 marginBottom: '14px',
                 fontSize: '13px',
                 boxSizing: 'border-box'
@@ -567,8 +568,8 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                     style={{
                       padding: '12px',
                       borderRadius: '8px',
-                      border: isSelected ? '2px solid #ea580c' : '1px solid var(--border-color)',
-                      background: isSelected ? 'rgba(234, 88, 12, 0.05)' : 'var(--bg-secondary)',
+                      border: isSelected ? '2px solid #ea580c' : '1px solid var(--border-light)',
+                      background: isSelected ? 'rgba(234, 88, 12, 0.05)' : 'var(--bg-subtle)',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease'
                     }}
@@ -588,7 +589,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
           </div>
 
           {/* Right: Pitch Flyout */}
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '18px' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '18px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 12px 0' }}>
               {selectedLead ? `Personalized Offer Pitch for ${selectedLead.company_name || selectedLead['Company Name']}` : 'Personalized Pitch Preview'}
             </h3>
@@ -678,94 +679,57 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   )}
                 </div>
 
-                {/* WhatsApp Multi-Touch Follow-Up Cadence */}
+                {/* WhatsApp follow-ups for leads who did not reply: day 1, day 3, day 6 */}
                 {pitchData.followups && (
-                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                      <Phone size={14} color="#16a34a" />
-                      <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
-                        Multi-Touch WhatsApp Cadence (Unresponsive Leads)
+                  <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: '13px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Phone size={14} color="var(--success)" /> WhatsApp follow-ups (no reply)
                       </strong>
+                      <div role="group" aria-label="Follow-up language" style={{ display: 'flex', gap: '4px' }}>
+                        {[['gu', 'ગુજરાતી'], ['gujlish', 'Gujlish'], ['en', 'English']].map(([code, label]) => (
+                          <button key={code} type="button" onClick={() => setFuLang(code)} aria-pressed={fuLang === code}
+                            className={`btn btn-sm ${fuLang === code ? 'btn-primary' : 'btn-secondary'}`}
+                            style={{ fontSize: '11px', padding: '3px 8px' }}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {/* Day 1 */}
-                      <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#2563eb' }}>DAY 1: 24h NUDGE</span>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button
-                              onClick={() => copyToClipboard(pitchData.followups.day1.gu, 'Day 1 Follow-up')}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted)' }}
-                            >
-                              Copy
-                            </button>
-                            {pitchData.followups.day1.wa_url_gu && (
-                              <a
-                                href={pitchData.followups.day1.wa_url_gu}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}
-                              >
-                                Send WhatsApp
-                              </a>
+                      {[
+                        ['day1', 'Day 1 · 24h nudge', 'var(--primary-blue)'],
+                        ['day3', 'Day 3 · show a sample', 'var(--warning)'],
+                        ['day6', 'Day 6 · polite close', 'var(--text-muted)'],
+                      ].map(([day, title, color]) => {
+                        const fu = pitchData.followups[day];
+                        if (!fu) return null;
+                        const text = fu[fuLang] || fu.gu;
+                        const url = fu[`wa_url_${fuLang}`] || fu.wa_url_gu;
+                        return (
+                          <div key={day} style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', gap: '8px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: '800', color, textTransform: 'uppercase' }}>{title}</span>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <button type="button" onClick={() => copyToClipboard(text, `${title} follow-up`)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  Copy
+                                </button>
+                                {url && (
+                                  <a href={url} target="_blank" rel="noopener noreferrer"
+                                    style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}>
+                                    Send WhatsApp
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{text}</div>
+                            {fu.note && (
+                              <div style={{ fontSize: '11px', color: 'var(--warning)', marginTop: '6px', fontWeight: 600 }}>📎 {fu.note}</div>
                             )}
                           </div>
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{pitchData.followups.day1.gu}</div>
-                      </div>
-
-                      {/* Day 3 */}
-                      <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#ea580c' }}>DAY 3: SAMPLE SHOWCASE</span>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button
-                              onClick={() => copyToClipboard(pitchData.followups.day3.gu, 'Day 3 Follow-up')}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted)' }}
-                            >
-                              Copy
-                            </button>
-                            {pitchData.followups.day3.wa_url_gu && (
-                              <a
-                                href={pitchData.followups.day3.wa_url_gu}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}
-                              >
-                                Send WhatsApp
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{pitchData.followups.day3.gu}</div>
-                      </div>
-
-                      {/* Day 6 */}
-                      <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b' }}>DAY 6: POLITE CLOSE</span>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button
-                              onClick={() => copyToClipboard(pitchData.followups.day6.gu, 'Day 6 Follow-up')}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted)' }}
-                            >
-                              Copy
-                            </button>
-                            {pitchData.followups.day6.wa_url_gu && (
-                              <a
-                                href={pitchData.followups.day6.wa_url_gu}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}
-                              >
-                                Send WhatsApp
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{pitchData.followups.day6.gu}</div>
-                      </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -783,7 +747,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
 
       {/* ======================= TAB 2: ENROLLED CLIENTS ======================= */}
       {activeSubTab === 'clients' && (
-        <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px' }}>
+        <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>
               Paying Clients ({clients.length})
@@ -816,7 +780,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                  <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left', color: 'var(--text-muted)' }}>
                     <th style={{ padding: '10px 8px' }}>Business Name</th>
                     <th style={{ padding: '10px 8px' }}>Owner / Contact</th>
                     <th style={{ padding: '10px 8px' }}>Pack</th>
@@ -827,7 +791,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 </thead>
                 <tbody>
                   {clients.map((c) => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <tr key={c.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                       <td style={{ padding: '12px 8px' }}>
                         <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{c.business_name}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{c.address}</div>
@@ -856,8 +820,8 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                             setActiveSubTab('studio');
                           }}
                           style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-subtle)',
+                            border: '1px solid var(--border-light)',
                             borderRadius: '4px',
                             padding: '4px 8px',
                             fontSize: '11px',
@@ -880,7 +844,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
       {activeSubTab === 'studio' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px' }}>
           {/* Controls */}
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '18px' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '18px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 14px 0' }}>🎨 Creative Customizer</h3>
 
             <div style={{ marginBottom: '14px' }}>
@@ -890,7 +854,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
               <select
                 value={selectedFestival}
                 onChange={(e) => setSelectedFestival(e.target.value)}
-                style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+                style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid var(--border-light)', fontSize: '13px' }}
               >
                 {(offersData?.calendar || []).map((f) => (
                   <option key={f.id} value={f.id}>
@@ -909,7 +873,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   const found = clients.find((c) => c.id === e.target.value);
                   if (found) setStudioClient(found);
                 }}
-                style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+                style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid var(--border-light)', fontSize: '13px' }}
               >
                 <option value="">-- Choose Client --</option>
                 {clients.map((c) => (
@@ -927,7 +891,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   type="text"
                   value={studioClient.business_name || ''}
                   onChange={(e) => setStudioClient({ ...studioClient, business_name: e.target.value })}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-light)', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -937,7 +901,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   type="text"
                   value={studioClient.tagline || ''}
                   onChange={(e) => setStudioClient({ ...studioClient, tagline: e.target.value })}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-light)', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -947,7 +911,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   type="text"
                   value={studioClient.phone || ''}
                   onChange={(e) => setStudioClient({ ...studioClient, phone: e.target.value })}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-light)', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -957,7 +921,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   type="text"
                   value={studioClient.address || ''}
                   onChange={(e) => setStudioClient({ ...studioClient, address: e.target.value })}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-light)', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -1008,7 +972,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
           </div>
 
           {/* Live SVG Preview */}
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '18px', textAlign: 'center' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '18px', textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>HD Publication Preview (1:1 Square)</h3>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>1080 × 1080 px</span>
@@ -1033,7 +997,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
 
       {/* ======================= TAB 4: SCHEDULED DELIVERIES ======================= */}
       {activeSubTab === 'schedules' && (
-        <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px' }}>
+        <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '20px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 16px 0' }}>
             Scheduled Automated Festival Dispatches ({schedules.length})
           </h3>
@@ -1046,7 +1010,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                  <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left', color: 'var(--text-muted)' }}>
                     <th style={{ padding: '10px 8px' }}>Client Name</th>
                     <th style={{ padding: '10px 8px' }}>Festival</th>
                     <th style={{ padding: '10px 8px' }}>Dispatch Date</th>
@@ -1056,7 +1020,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 </thead>
                 <tbody>
                   {schedules.map((s) => (
-                    <tr key={s.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                       <td style={{ padding: '12px 8px', fontWeight: '600' }}>{s.client_name}</td>
                       <td style={{ padding: '12px 8px' }}>
                         <strong>{s.festival_name}</strong> ({s.gujarati_name})
@@ -1121,7 +1085,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
               🎯 Target Market Tiers (Prioritized by Conversion Speed)
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-              <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '16px' }}>
                 <span style={{ background: '#ffedd5', color: '#ea580c', fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '10px' }}>
                   TIER 1 (FASTEST CLOSE)
                 </span>
@@ -1129,12 +1093,12 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
                   Sweets & Farsan, Cafes, Boutiques, Jewellers, Real Estate Brokers, Clinics & Doctors.
                 </p>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-subtle)', padding: '8px 10px', borderRadius: '6px' }}>
                   ⚡ <strong>Speed:</strong> Closes in &lt; 4 hours. Decisions made on the spot via UPI.
                 </div>
               </div>
 
-              <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '16px' }}>
                 <span style={{ background: '#dbeafe', color: '#2563eb', fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '10px' }}>
                   TIER 2 (GIDC / MSMEs)
                 </span>
@@ -1142,12 +1106,12 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
                   Packaging, Machinery Tools, Chemicals, Textiles (Vatva, Odhav, Sanand, Changodar).
                 </p>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-subtle)', padding: '8px 10px', borderRadius: '6px' }}>
                   🏭 <strong>Need:</strong> Professional posts for dealer/distributor WhatsApp status.
                 </div>
               </div>
 
-              <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '16px' }}>
                 <span style={{ background: '#ede9fe', color: '#7c3aed', fontSize: '11px', fontWeight: '800', padding: '3px 8px', borderRadius: '10px' }}>
                   TIER 3 (AUTHORITY)
                 </span>
@@ -1155,7 +1119,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
                   Chartered Accountants, Lawyers, Architects, Interior Designers, Visa Consultants.
                 </p>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-subtle)', padding: '8px 10px', borderRadius: '6px' }}>
                   📈 <strong>Need:</strong> High-trust educational post designs & compliance updates.
                 </div>
               </div>
@@ -1165,7 +1129,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
           {/* Daily 100 Cadence & Upsell Ladder */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '16px' }}>
             {/* Daily Cadence */}
-            <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px' }}>
+            <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '18px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 14px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Clock size={16} color="#ea580c" /> Daily 100 Lead Cadence (BDE Routine)
               </h3>
@@ -1190,21 +1154,21 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
             </div>
 
             {/* Upsell Ladder */}
-            <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px' }}>
+            <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '18px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 14px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={16} color="#10b981" /> The Upselling Ladder (₹500 ➔ ₹50,000)
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px' }}>
-                <div style={{ background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                <div style={{ background: 'var(--bg-subtle)', padding: '8px 10px', borderRadius: '6px' }}>
                   <strong>Day 0 (Acquisition):</strong> 10 Images For Posts @ ₹500. Goal: Build payment trust.
                 </div>
-                <div style={{ background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                <div style={{ background: 'var(--bg-subtle)', padding: '8px 10px', borderRadius: '6px' }}>
                   <strong>Day 3 (Website Audit):</strong> Pitch high-speed mobile website revamps (₹9,999 - ₹18,000).
                 </div>
-                <div style={{ background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                <div style={{ background: 'var(--bg-subtle)', padding: '8px 10px', borderRadius: '6px' }}>
                   <strong>Day 7-10 (Custom IT):</strong> Pitch WhatsApp Lead CRM & Billing Software (₹25,000 - ₹75,000).
                 </div>
-                <div style={{ background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '6px' }}>
+                <div style={{ background: 'var(--bg-subtle)', padding: '8px 10px', borderRadius: '6px' }}>
                   <strong>Day 30 (Retention):</strong> Monthly retainer (₹5,000/mo) or ₹450/hr dedicated developer.
                 </div>
               </div>
@@ -1212,12 +1176,12 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
           </div>
 
           {/* Winning Objection Handlers */}
-          <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px' }}>
+          <div style={{ background: 'var(--bg-white)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '18px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 14px 0' }}>
               💬 Gujarati / Indian SME Objection Handling Matrix
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '12px' }}>
                 <div style={{ fontSize: '12px', fontWeight: '700', color: '#ea580c', marginBottom: '4px' }}>
                   &ldquo;Ame potey Canva par banavi laiye chiye (We make it ourselves)&rdquo;
                 </div>
@@ -1226,7 +1190,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 </div>
               </div>
 
-              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '12px' }}>
                 <div style={{ fontSize: '12px', fontWeight: '700', color: '#ea580c', marginBottom: '4px' }}>
                   &ldquo;Pehle sample moklo pachi vichariyu (Send sample first)&rdquo;
                 </div>
@@ -1235,7 +1199,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 </div>
               </div>
 
-              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '12px' }}>
                 <div style={{ fontSize: '12px', fontWeight: '700', color: '#ea580c', marginBottom: '4px' }}>
                   &ldquo;Aamathi mane client / dhandho malse? (Will this bring sales?)&rdquo;
                 </div>
@@ -1264,7 +1228,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
         >
           <div
             style={{
-              background: 'var(--bg-card, #fff)',
+              background: 'var(--bg-white)',
               borderRadius: '16px',
               maxWidth: '520px',
               width: '100%',
@@ -1288,7 +1252,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   placeholder="e.g. Radhe Krishna Sweets"
                   value={clientForm.business_name}
                   onChange={(e) => setClientForm({ ...clientForm, business_name: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1300,7 +1264,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                     placeholder="e.g. Ramesh Patel"
                     value={clientForm.owner_name}
                     onChange={(e) => setClientForm({ ...clientForm, owner_name: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
@@ -1311,7 +1275,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                     placeholder="+91 98980XXXXX"
                     value={clientForm.phone}
                     onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -1323,7 +1287,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   placeholder="e.g. Pure Desi Ghee Sweets & Farsan"
                   value={clientForm.tagline}
                   onChange={(e) => setClientForm({ ...clientForm, tagline: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1334,7 +1298,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                   placeholder="e.g. Ashram Road, Ahmedabad"
                   value={clientForm.address}
                   onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1348,7 +1312,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                       const price = val === 'fest_10_pack' ? 500 : val === 'reels_3_pack' ? 1000 : 1299;
                       setClientForm({ ...clientForm, pack: val, paid_amount: price });
                     }}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', boxSizing: 'border-box' }}
                   >
                     <option value="fest_10_pack">10 Festival Posts (₹500)</option>
                     <option value="reels_3_pack">3 Video Reels (₹1,000)</option>
@@ -1361,7 +1325,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                     type="number"
                     value={clientForm.paid_amount}
                     onChange={(e) => setClientForm({ ...clientForm, paid_amount: Number(e.target.value) })}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -1370,7 +1334,7 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                 <button
                   type="button"
                   onClick={() => setShowClientModal(false)}
-                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer' }}
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-light)', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>

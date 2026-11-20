@@ -65,7 +65,16 @@ class TestFestivalOffersEngine(unittest.TestCase):
         self.assertIn("Radhe Krishna Sweets", pitch["email_subject"])
         self.assertIn("YES", pitch["email_body"])
         self.assertIn("followups", pitch)
-        self.assertIn("day1", pitch["followups"])
+        for day in ("day1", "day3", "day6"):
+            for lang in ("gu", "gujlish", "en"):
+                self.assertTrue(pitch["followups"][day][lang])
+                self.assertIn("https://wa.me/919876543210", pitch["followups"][day][f"wa_url_{lang}"])
+        self.assertTrue(pitch["followups"]["day3"]["note"])          # attach a sample picture
+        self.assertNotIn("Sweets ji", pitch["whatsapp_pitch_gujlish"])  # no "ji" after a shop name
+        self.assertNotIn("₹1,000", pitch["email_body"])                # one offer per mail
+        self.assertEqual(pitch["email_body"].count("FREE"), 1)
+        with_owner = engine.generate_offer_pitch({**sample_lead, "contact_name": "Ramesh"})
+        self.assertIn("Ramesh ji", with_owner["whatsapp_pitch_gujlish"])
 
     def test_client_crud(self):
         client_data = {
