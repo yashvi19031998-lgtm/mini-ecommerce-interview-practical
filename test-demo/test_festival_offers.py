@@ -209,7 +209,12 @@ class TestFestivalOffersEngine(unittest.TestCase):
             {"company_name": "Code Infotech", "email": "c@codeinfo.in", "source": "Google Maps (Software Development Company in Surat)", "location": "Surat", "lead_type": ""},
             {"company_name": "Acme Inc", "email": "d@acme.com", "source": "Hacker News (Who is hiring?)", "location": "Ahmedabad", "lead_type": "HN Hiring Post"},
             {"company_name": "Already Mailed", "email": "e@mailed.in", "source": "IndiaMART", "location": "Rajkot", "lead_type": ""},
+            # a web search gave another company's site and address: never mailed
+            {"company_name": "Surya Chavana & Sweet Mart", "email": "consumercare@surya.in", "website": "https://surya.co.in/",
+             "source": "Indian Directories (Sulekha)", "location": "Maninagar, Ahmedabad", "lead_type": ""},
         ]
+        for r in rows:
+            r.setdefault("website", "")
         path = _os.path.join(tempfile.mkdtemp(), "leads.csv")
         with open(path, "w", newline="", encoding="utf-8") as f:
             w = _csv.DictWriter(f, fieldnames=list(rows[0]))
@@ -221,6 +226,7 @@ class TestFestivalOffersEngine(unittest.TestCase):
         self.assertEqual([c["company_name"] for c in got], ["Shreeji Jewellers"])
         self.assertEqual(skipped["already_mailed"], 1)
         self.assertEqual(skipped["it_company"], 1)
+        self.assertEqual(skipped["email_not_theirs"], 1)
 
 if __name__ == "__main__":
     unittest.main()

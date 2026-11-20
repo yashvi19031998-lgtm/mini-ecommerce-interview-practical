@@ -75,14 +75,60 @@ NICHES = [
 CITIES = ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar"]
 NICHES_PER_RUN = 2
 MAX_LOOKUPS = 40   # website + e-mail look-ups per run (about 5 s each)
+# Every run searches the next (city, niches) of this plan, so a second run the same day finds new businesses.
+SEARCH_PLAN = [(city, NICHES[i:i + NICHES_PER_RUN]) for city in CITIES for i in range(0, len(NICHES), NICHES_PER_RUN)]
+
+# What earlier runs learned, so a run does not repeat them (logs/*.json is not committed).
+STATE_FILE = os.path.join(BASE_DIR, "logs", "sme_outreach_state.json")
+LOOKUP_AGAIN_DAYS = 30   # a business whose website / e-mail was not found is looked up again after this
+VERIFY_AGAIN_DAYS = 7    # an address whose mailbox could not be verified is tried again after this
+VERBOSE = False          # True (--verbose) shows every page the scrapers fetch
 
 
-def todays_search(day=None):
-    """(city, niches) for the day: the niches move on every day, the city after all niches had a turn."""
-    n = (day or datetime.date.today()).toordinal()
-    rounds = len(NICHES) // NICHES_PER_RUN
-    start = (n % rounds) * NICHES_PER_RUN
-    return CITIES[(n // rounds) % len(CITIES)], NICHES[start:start + NICHES_PER_RUN]
+def _load_state():
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            st = json.load(f)
+        return st if isinstance(st, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_state(st):
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    tmp = STATE_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(st, f)
+    os.replace(tmp, STATE_FILE)
+
+
+def _recent(date_text, days):
+    try:
+        return (datetime.date.today() - datetime.date.fromisoformat(date_text)).days < days
+    except (TypeError, ValueError):
+        return False
+
+
+def todays_search(state=None):
+    """The (city, niches) the next run searches."""
+    st = _load_state() if state is None else state
+    return SEARCH_PLAN[int(st.get("next", 0)) % len(SEARCH_PLAN)]
+
+
+class _Quiet:
+    """Hides the scrapers' per-page prints ('LIVE FETCH ...') unless VERBOSE."""
+    def __enter__(self):
+        if not VERBOSE:
+            import contextlib
+            import io
+            self._ctx = contextlib.redirect_stdout(io.StringIO())
+            self._ctx.__enter__()
+        return self
+
+    def __exit__(self, *exc):
+        if not VERBOSE:
+            self._ctx.__exit__(*exc)
+        return False
 
 
 def _norm(name):
@@ -163,14 +209,16 @@ def _search_listings(city, niches):
     for sid in ("sulekha", "indiamart", "tradeindia", "exportersindia"):
         name = indian_directories.SOURCES[sid]["name"]
         try:
-            res = indian_directories.search({"keywords": niches, "state": "Gujarat", "city": city, "sources": [sid]})
+            with _Quiet():
+                res = indian_directories.search({"keywords": niches, "state": "Gujarat", "city": city, "sources": [sid]})
             found += [(indian_directories.result_to_raw_lead(r), r.get("category") or "") for r in res["results"]]
             notes.append(f"{name} {len(res['results'])}")
         except Exception as e:  # noqa: BLE001 - one source failing must not stop the run
             notes.append(f"{name} failed: {str(e)[:60]}")
     map_sources = ["osm"] + (["google_places"] if maps_sources.source_status("google_places") == "available" else [])
     try:
-        res = maps_sources.search({"keywords": niches, "state": "Gujarat", "city": city, "sources": map_sources})
+        with _Quiet():
+            res = maps_sources.search({"keywords": niches, "state": "Gujarat", "city": city, "sources": map_sources})
         found += [(maps_sources.result_to_raw_lead(r), r.get("category") or "") for r in res["results"]]
         for s in res["sources"].values():
             notes.append(f"{s['name']} {s['count']}" + (f" ({s['errors'][0][:60]})" if s["errors"] and not s["count"] else ""))
@@ -195,11 +243,17 @@ def find_new_smes(city, niches, max_lookups=None, save=True):
         pass
 
     print(f"[*] Finding: {', '.join(niches)} in {city}")
+    state = _load_state()
+    looked_before = state.get("looked", {})
     known = _known_companies()
-    new, seen = [], set()
+    new, seen, checked_before = [], set(), 0
     for raw, category in _search_listings(city, niches):
         key = _norm(raw.get("company_name"))
         if not key or key in known or key in seen:
+            continue
+        if _recent(looked_before.get(key), LOOKUP_AGAIN_DAYS):
+            checked_before += 1      # looked up lately and nothing found: no need to search again
+            seen.add(key)
             continue
         seen.add(key)
         if settings_manager.is_it_company(raw.get("company_name"), raw.get("email"), raw.get("website"), category)[0]:
@@ -216,8 +270,10 @@ def find_new_smes(city, niches, max_lookups=None, save=True):
         if looked >= max_lookups:
             break
         looked += 1
+        looked_before[_norm(raw["company_name"])] = datetime.date.today().isoformat()
         try:
-            out = deep_search.enrich({"company": raw["company_name"], "website": raw.get("website", "")}, engine, False, city)
+            with _Quiet():
+                out = deep_search.enrich({"company": raw["company_name"], "website": raw.get("website", "")}, engine, False, city)
         except Exception:  # noqa: BLE001 - one bad site must not stop the run
             continue
         site = raw.get("website") or out.get("website") or ""
@@ -231,8 +287,13 @@ def find_new_smes(city, niches, max_lookups=None, save=True):
         if own:
             raw["email"] = own[0]
             with_email += 1
-    print(f"[+] {len(new)} new businesses, {looked} looked up, {wrong_site} wrong websites ignored, "
-          f"{with_email} with their own e-mail")
+            print(f"       [E-MAIL FOUND] {raw['company_name']} ({settings_manager._host_of(site)})")
+    keep_from = (datetime.date.today() - datetime.timedelta(days=LOOKUP_AGAIN_DAYS)).isoformat()
+    state = _load_state()
+    state["looked"] = {k: d for k, d in looked_before.items() if d >= keep_from}
+    _save_state(state)
+    print(f"[+] {len(new)} new businesses ({checked_before} skipped: looked up in the last {LOOKUP_AGAIN_DAYS} days), "
+          f"{looked} looked up, {wrong_site} wrong websites ignored, {with_email} with their own e-mail")
 
     # A name and an area alone cannot be contacted: keep only leads with a phone, e-mail or own website.
     reachable = [r for r in new if r.get("email") or r.get("mobile_number") or r.get("website")]
@@ -259,7 +320,8 @@ def candidate_sme_leads(region="gujarat"):
     """Local SME leads that may get the offer, in file order. Returns (candidates, skipped_counts)."""
     sent = {e.lower() for e in email_service.get_already_sent_emails()}
     region_rx = REGIONS.get(region, REGIONS["gujarat"])
-    skipped = {"not_local_source": 0, "other_region": 0, "it_company": 0, "no_email": 0, "already_mailed": 0}
+    skipped = {"not_local_source": 0, "other_region": 0, "it_company": 0, "no_email": 0, "already_mailed": 0,
+               "email_not_theirs": 0}
     out, seen = [], set()
     if not os.path.exists(LEADS_MASTER):
         return out, skipped
@@ -285,6 +347,11 @@ def candidate_sme_leads(region="gujarat"):
                 continue
             if email in sent or email in seen:
                 skipped["already_mailed"] += 1
+                continue
+            # Sulekha lists no websites: the site and e-mail came from a web search, which can return another
+            # business ('surya.co.in' for Surya Chavana & Sweet Mart). Check them again before mailing.
+            if "sulekha" in source.lower() and not (site_belongs_to(company, website) and email_belongs_to(email, website)):
+                skipped["email_not_theirs"] += 1
                 continue
             seen.add(email)
             out.append({"company_name": company, "email": email, "phone": _s(r.get("mobile_number")),
@@ -322,8 +389,12 @@ def run_sme_automated_dispatch(limit: int = 15, dry_run: bool = False, region: s
 
     found = None
     if find:
-        day_city, day_niches = todays_search()
-        found = find_new_smes(city or day_city, niches or day_niches)
+        plan_city, plan_niches = todays_search()
+        found = find_new_smes(city or plan_city, niches or plan_niches)
+        if found.get("status") == "OK" and not (city or niches):
+            state = _load_state()
+            state["next"] = int(state.get("next", 0)) + 1     # the next run searches something else
+            _save_state(state)
 
     candidates, skipped = candidate_sme_leads(region)
     print(f"[+] {len(candidates)} local SME leads can get the offer. Not eligible: {skipped}")
@@ -336,31 +407,45 @@ def run_sme_automated_dispatch(limit: int = 15, dry_run: bool = False, region: s
         print(f"[*] Today's limit of {limit} is already used. Next run tomorrow.")
         return {"dispatched": 0, "failed": 0, "eligible": len(candidates), "skipped": skipped, "found": found, "status": "LIMIT_REACHED"}
 
-    dispatched = failed = 0
+    state = _load_state()
+    unverified = state.get("unverified", {})
+    dispatched = failed = waiting = 0
     for lead in candidates:
         if dispatched >= left:
             break
+        if _recent(unverified.get(lead["email"]), VERIFY_AGAIN_DAYS):
+            waiting += 1         # its mailbox could not be checked lately; try again after a few days
+            continue
         name = lead["company_name"] or "your business"
         pitch = offers_engine.generate_offer_pitch(lead)
         if dry_run:
             print(f"       [DRY RUN] {name} | {lead['source'][:60]}")
             dispatched += 1
             continue
-        res = email_service.send_smtp_email(
-            to_email=lead["email"], subject=pitch["email_subject"], message_body=pitch["email_body"],
-            company_name=lead["company_name"], website=lead["website"], verify="strict",
-        )
+        with _Quiet():
+            res = email_service.send_smtp_email(
+                to_email=lead["email"], subject=pitch["email_subject"], message_body=pitch["email_body"],
+                company_name=lead["company_name"], website=lead["website"], verify="strict",
+            )
         if res.get("success"):
             print(f"       [SENT] {name}")
             dispatched += 1
             _add_sent_today(1)
             time.sleep(1.5)
         else:
-            why = "blocked (same company / do-not-contact)" if res.get("blocked") else res.get("error")
-            print(f"       [NOT SENT] {name}: {why}")
+            why = "blocked (same company / do-not-contact)" if res.get("blocked") else str(res.get("error") or "")
+            if "not verified" in why:
+                unverified[lead["email"]] = datetime.date.today().isoformat()
+                why = why.split(":")[0] + f" - tried again after {VERIFY_AGAIN_DAYS} days"
+            print(f"       [NOT SENT] {name}: {why[:140]}")
             failed += 1
+    if not dry_run:
+        state = _load_state()
+        state["unverified"] = {e: d for e, d in unverified.items() if _recent(d, VERIFY_AGAIN_DAYS)}
+        _save_state(state)
 
-    print(f"[*] Done. {'Would send' if dry_run else 'Sent'}: {dispatched} | not sent: {failed}")
+    print(f"[*] Done. {'Would send' if dry_run else 'Sent'}: {dispatched} | not sent: {failed}"
+          + (f" | waiting (mailbox not verifiable lately): {waiting}" if waiting else ""))
     return {"dispatched": dispatched, "failed": failed, "eligible": len(candidates), "skipped": skipped,
             "found": found, "status": "DRY_RUN" if dry_run else "COMPLETED"}
 
@@ -373,6 +458,8 @@ if __name__ == "__main__":
     parser.add_argument("--no-find", action="store_true", help="skip finding new businesses; only mail")
     parser.add_argument("--city", default="", help="city to search (default: today's turn)")
     parser.add_argument("--niche", action="append", help="business type to search, e.g. --niche dentist (repeatable)")
+    parser.add_argument("--verbose", action="store_true", help="show every page the scrapers fetch")
     args = parser.parse_args()
+    VERBOSE = args.verbose
     run_sme_automated_dispatch(limit=args.limit, dry_run=args.dry_run, region=args.region,
                                find=not args.no_find, city=args.city, niches=args.niche)
