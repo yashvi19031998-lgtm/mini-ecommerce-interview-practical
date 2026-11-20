@@ -61,12 +61,12 @@ def _s(v):
 # ---------------------------------------------------------------------------
 
 # Businesses that post a lot and can pay (see docs/SME_500_OFFER_PLAYBOOK.md). Two a day, in turn.
-# In pairs: the first of each pair has listings on Sulekha (checked 20 Nov 2026), the second only on maps
-# (OpenStreetMap / Google Places), so each day has at least one source that answers.
+# In pairs: the first of each pair has listings on Sulekha, the second on IndiaMART or the maps sources
+# (checked 20 Nov 2026), so each day has at least one source that answers.
 NICHES = [
-    "dentist", "jewellers", "gym", "salon", "restaurant", "bakery", "real estate agent", "boutique",
-    "physiotherapist", "cafe", "sweet shop", "beauty parlour", "yoga classes", "furniture shop",
-    "packers and movers", "optician", "wedding planners", "interior designer",
+    "dentist", "furniture", "gym", "sweets", "restaurant", "jewellers", "real estate agent", "bakery",
+    "physiotherapist", "salon", "sweet shop", "boutique", "yoga classes", "beauty parlour",
+    "packers and movers", "cafe", "wedding planners", "optician",
 ]
 CITIES = ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar"]
 NICHES_PER_RUN = 2
@@ -148,12 +148,16 @@ def _search_listings(city, niches):
     import indian_directories
     import maps_sources
     found, notes = [], []
-    try:
-        res = indian_directories.search({"keywords": niches, "state": "Gujarat", "city": city, "sources": ["sulekha"]})
-        found += [(indian_directories.result_to_raw_lead(r), r.get("category") or "") for r in res["results"]]
-        notes.append(f"Sulekha {len(res['results'])}")
-    except Exception as e:  # noqa: BLE001 - one source failing must not stop the run
-        notes.append(f"Sulekha failed: {str(e)[:80]}")
+    # Directories that answer automated requests (Justdial does not). None shows e-mails; IndiaMART shows
+    # phones (its call-forwarding numbers), Sulekha mostly names. E-mails come from the business's own site.
+    for sid in ("sulekha", "indiamart", "tradeindia", "exportersindia"):
+        name = indian_directories.SOURCES[sid]["name"]
+        try:
+            res = indian_directories.search({"keywords": niches, "state": "Gujarat", "city": city, "sources": [sid]})
+            found += [(indian_directories.result_to_raw_lead(r), r.get("category") or "") for r in res["results"]]
+            notes.append(f"{name} {len(res['results'])}")
+        except Exception as e:  # noqa: BLE001 - one source failing must not stop the run
+            notes.append(f"{name} failed: {str(e)[:60]}")
     map_sources = ["osm"] + (["google_places"] if maps_sources.source_status("google_places") == "available" else [])
     try:
         res = maps_sources.search({"keywords": niches, "state": "Gujarat", "city": city, "sources": map_sources})
