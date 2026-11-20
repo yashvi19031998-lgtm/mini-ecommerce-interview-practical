@@ -63,7 +63,7 @@ class TestFestivalOffersEngine(unittest.TestCase):
         self.assertIn("Radhe Krishna Sweets", pitch["whatsapp_pitch_gu"])
         self.assertIn("https://wa.me/919876543210", pitch["whatsapp_url"])
         self.assertIn("Radhe Krishna Sweets", pitch["email_subject"])
-        self.assertIn("DEMO", pitch["email_body"])
+        self.assertIn("YES", pitch["email_body"])
 
     def test_client_crud(self):
         client_data = {

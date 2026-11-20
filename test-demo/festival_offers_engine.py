@@ -257,25 +257,25 @@ def generate_offer_pitch(lead):
 
     wa_pitch = (
         f"નમસ્તે {biz_name}!\n\n"
-        f"આવનારા તહેવારોમાં તમારા કસ્ટમર્સ સુધી પહોંચવા માટે તમારા પોતાના લોગો અને ફોન નંબર સાથેની પ્રોફેશનલ HD પોસ્ટ્સ જોઈએ છે?\n\n"
+        f"આવનારા તહેવારોમાં તમારા કસ્ટમર્સ માટે સોશિયલ મીડિયા પોસ્ટ્સનું પ્લાનિંગ થઈ ગયું છે?\n\n"
         f"🌟 Sangeeta Infotech Festive Special Offer:\n"
-        f"✅ ૧૦ પ્રીમિયમ તહેવારની HD ઈમેજીસ (તમારા લોગો અને કોન્ટેક્ટ સાથે) = માત્ર ₹500/-\n"
-        f"✅ ૩ વાયરલ વિડીયો રીલ્સ (ટ્રેન્ડિંગ ઑડિયો અને એનિમેશન સાથે) = માત્ર ₹1,000/-\n"
+        f"✅ ૧૦ પ્રીમિયમ તહેવારની HD ઈમેજીસ = માત્ર ₹500/-\n"
+        f"✅ ૩ વાયરલ વિડીયો રીલ્સ = માત્ર ₹1,000/-\n"
         f"✅ કૉમ્બો બૂસ્ટર (10 ઈમેજ + 3 રીલ્સ) = માત્ર ₹1,299/-\n\n"
-        f"🎁 ફ્રી સેમ્પલ: {biz_name} માટે ૧ ડેમો સેમ્પલ પોસ્ટ ફ્રીમાં જોવા માટે અહીં 'DEMO' લખીને મોકલો.\n\n"
-        f"📞 Sangeeta Infotech: +91 9106060400\n"
-        f"🌐 info@sangeetainfotech.co.in | Ahmedabad"
+        f"તમારે કોઈ ડિઝાઇનિંગ મહેનત કરવાની જરૂર નથી — તહેવારના દિવસે રેડી-ટુ-પોસ્ટ તમારા WhatsApp પર મળી જશે.\n\n"
+        f"જો તમારે એક સેમ્પલ જોવું હોય, તો ફક્ત 'YES' લખીને મોકલો.\n\n"
+        f"Sangeeta Infotech | Ahmedabad"
     )
 
     wa_pitch_en = (
         f"Hello {biz_name} Team,\n\n"
-        f"Looking for branded social media posts for upcoming festive seasons?\n\n"
-        f"🌟 Sangeeta Infotech Exclusive Festive Pack:\n"
-        f"• 10 High-Resolution Festival Creatives (with your Logo & Contact info): Just ₹500/-\n"
-        f"• 3 Viral Short Video Reels (with trending audio & motion): Just ₹1,000/-\n"
-        f"• Festive Combo Booster (10 Images + 3 Reels): Just ₹1,299/-\n\n"
-        f"🎁 Free Sample: Reply 'DEMO' to see a free branded sample creative for {biz_name}.\n\n"
-        f"Regards,\nSangeeta Infotech | +91 9106060400"
+        f"Planning your festive social media posts for upcoming festivals?\n\n"
+        f"🌟 Sangeeta Infotech Festive Pack:\n"
+        f"• 10 High-Resolution Festival Creatives: Just ₹500/-\n"
+        f"• 3 Viral Short Video Reels: Just ₹1,000/-\n\n"
+        f"Zero designing hassle — delivered ready-to-post directly to your WhatsApp on every festival morning.\n\n"
+        f"Would you like to see a quick sample? Simply reply 'YES'.\n\n"
+        f"Sangeeta Infotech | Ahmedabad"
     )
 
     clean_phone = phone.lstrip("+")
@@ -288,19 +288,18 @@ def generate_offer_pitch(lead):
 
     wa_link = f"https://wa.me/{wa_target}?text={urllib.parse.quote(wa_pitch)}" if wa_target else ""
 
-    email_subject = f"Exclusive: 10 Branded Festival Posts for {biz_name} at just ₹500"
+    email_subject = f"Festive social media creatives for {biz_name} (₹500 for 10 posts)"
     email_body = (
         f"Hi Team {biz_name},\n\n"
-        f"Managing social media during busy festive seasons is challenging for growing businesses.\n\n"
-        f"At Sangeeta Infotech, we are offering an exclusive Festive Branding Pack:\n"
-        f"• 10 High-Resolution Festival Creatives custom-branded with your logo & contact details: Only ₹500/-\n"
-        f"• 3 Trending Short Video Reels for Instagram/WhatsApp Status: Only ₹1,000/-\n"
-        f"• Festive Combo (10 Posts + 3 Reels): Only ₹1,299/-\n\n"
-        f"Delivered directly to your WhatsApp on every festival morning.\n\n"
-        f"Would you like to see a free branded demo creative for {biz_name}? Simply reply 'DEMO' to this email.\n\n"
+        f"Festive seasons are right around the corner, and keeping your social media active with high-quality festival greetings can be time-consuming.\n\n"
+        f"At Sangeeta Infotech, we provide a complete Festive Social Media Pack:\n"
+        f"• 10 High-Resolution Festival Creatives for just ₹500/-\n"
+        f"• 3 Viral Video Reels for ₹1,000/-\n\n"
+        f"Zero designing effort required on your end — everything is delivered ready-to-post directly to your WhatsApp on every festival morning.\n\n"
+        f"Would you like to see a quick sample? Simply reply 'YES' to this email or tap the WhatsApp button below.\n\n"
         f"Warm regards,\n"
         f"Sangeeta Infotech Team\n"
-        f"+91 9106060400 | info@sangeetainfotech.co.in | Ahmedabad, Gujarat"
+        f"Ahmedabad, Gujarat"
     )
 
     mailto_link = f"mailto:{email}?subject={urllib.parse.quote(email_subject)}&body={urllib.parse.quote(email_body)}" if email else ""
