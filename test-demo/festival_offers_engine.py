@@ -298,7 +298,8 @@ def generate_offer_pitch(lead):
         f"Would you like to see a quick sample? Simply reply 'YES' or connect on WhatsApp below.\n\n"
         f"Warm regards,\n"
         f"**Sangeeta Infotech**\n"
-        f"+91 9106060400 | info@sangeetainfotech.co.in\n"
+        f"+91 9106060400\n"
+        f"info@sangeetainfotech.co.in\n"
         f"https://sangeetainfotech.co.in\n"
         f"Ahmedabad, Gujarat"
     )

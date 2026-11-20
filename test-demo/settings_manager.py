@@ -53,7 +53,8 @@ DEFAULT_SETTINGS = {
     "signatureTemplate": (
         "Warm regards,\n"
         "**{companyName}**\n"
-        "{phone} | {email}\n"
+        "{phone}\n"
+        "{email}\n"
         "{website}\n"
         "{address}"
     ),

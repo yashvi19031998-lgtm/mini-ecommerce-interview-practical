@@ -22,7 +22,9 @@ from settings_manager import load_settings, format_signature, DEFAULT_SETTINGS
 
 DEFAULT_SIGNATURE = """Warm regards,
 **Sangeeta Infotech**
-+91 9106060400 | info@sangeetainfotech.co.in
++91 9106060400
+info@sangeetainfotech.co.in
+https://sangeetainfotech.co.in
 Ahmedabad, Gujarat"""
 
 
