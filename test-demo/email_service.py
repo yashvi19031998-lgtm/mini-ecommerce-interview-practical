@@ -261,18 +261,19 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             'border-left: 4px solid #2563eb; border-radius: 6px; '
             'font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
             '<div style="font-size: 12px; font-weight: 800; color: #1d4ed8; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;">'
-            '🚀 Business Branding & Promotion Pack:'
+            '🎁 Special Introductory Offer:'
             '</div>'
             '<div style="font-size: 13.5px; color: #1e293b; line-height: 1.8;">'
-            '• <strong>10 Custom Images For Posts:</strong> <span style="color: #2563eb; font-weight: 800; background: #dbeafe; padding: 1px 6px; border-radius: 4px;">₹500</span><br/>'
+            '• <strong>2 Custom Sample Posts:</strong> <span style="color: #16a34a; font-weight: 800; background: #dcfce7; padding: 1px 6px; border-radius: 4px;">FREE</span><br/>'
+            '• <strong>10 Business Posts Pack:</strong> <span style="color: #2563eb; font-weight: 800; background: #dbeafe; padding: 1px 6px; border-radius: 4px;">₹500</span><br/>'
             '• <strong>3 Promotional Video Reels:</strong> <span style="color: #7c3aed; font-weight: 800; background: #ede9fe; padding: 1px 6px; border-radius: 4px;">₹1,000</span>'
             '</div>'
             '</div>'
         )
 
-        # Replace bullet points mentioning ₹500 / ₹1,000 packages with the compact Highlight Card
+        # Replace bullet points mentioning FREE / ₹500 / ₹1,000 packages with the compact Highlight Card
         html_styled = re.sub(
-            r'\n*(?:[•\-\*]\s*.*?₹(?:500|1,000|1000).*?\n?){2,}\n*',
+            r'\n*(?:[•\-\*]\s*.*?(?:FREE|₹500|₹1,000|1000).*?\n?){2,}\n*',
             f'\n{business_offer_card_html}\n',
             html_styled,
             flags=re.IGNORECASE

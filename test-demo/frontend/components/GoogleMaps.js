@@ -187,6 +187,48 @@ export default function GoogleMaps({ onLeadsSaved }) {
           </div>
         </div>
         {optsError && <div role="alert" className="jp-alert jp-alert-error"><AlertTriangle size={14} /> {optsError}</div>}
+
+        {/* 1-Click Gujarat SME Niche Presets */}
+        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', marginBottom: '14px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>⚡ 1-Click Gujarat SME Lead Presets:</span>
+            <span style={{ fontSize: '11px', fontWeight: '500', color: 'var(--text-muted)' }}>(Auto-fill high-converting local niches for Ahmedabad)</span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {[
+              { label: '🏥 Dental & Skin Clinics', kw: ['dental clinic', 'skin clinic'] },
+              { label: '💇 Salons & Beauty Spas', kw: ['beauty parlour', 'hair salon'] },
+              { label: '🏋️ Fitness Gyms & Yoga', kw: ['fitness gym', 'yoga studio'] },
+              { label: '💍 Jewellers & Boutiques', kw: ['jewellers', 'designer boutique'] },
+              { label: '🍰 Sweets, Bakery & Cafes', kw: ['sweets shop', 'bakery cafe'] },
+              { label: '🏢 Real Estate & Builders', kw: ['real estate agent', 'property consultant'] }
+            ].map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setKeywords(p.kw);
+                  setCity('Ahmedabad');
+                  setState('Gujarat');
+                  setWebsite('any');
+                }}
+                style={{
+                  background: 'var(--bg-card, #fff)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <MiningForm
           idPrefix="gm" onSubmit={submit} busy={searching} disabled={!!deepRun || !!optsError || !opts}
           busyHint="Searching map sources..."

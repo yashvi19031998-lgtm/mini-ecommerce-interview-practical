@@ -677,6 +677,98 @@ export default function OffersAndCreatives({ leads = [], onEmail, onWhatsApp, no
                     </a>
                   )}
                 </div>
+
+                {/* WhatsApp Multi-Touch Follow-Up Cadence */}
+                {pitchData.followups && (
+                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                      <Phone size={14} color="#16a34a" />
+                      <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                        Multi-Touch WhatsApp Cadence (Unresponsive Leads)
+                      </strong>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {/* Day 1 */}
+                      <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#2563eb' }}>DAY 1: 24h NUDGE</span>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                              onClick={() => copyToClipboard(pitchData.followups.day1.gu, 'Day 1 Follow-up')}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted)' }}
+                            >
+                              Copy
+                            </button>
+                            {pitchData.followups.day1.wa_url_gu && (
+                              <a
+                                href={pitchData.followups.day1.wa_url_gu}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}
+                              >
+                                Send WhatsApp
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{pitchData.followups.day1.gu}</div>
+                      </div>
+
+                      {/* Day 3 */}
+                      <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#ea580c' }}>DAY 3: SAMPLE SHOWCASE</span>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                              onClick={() => copyToClipboard(pitchData.followups.day3.gu, 'Day 3 Follow-up')}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted)' }}
+                            >
+                              Copy
+                            </button>
+                            {pitchData.followups.day3.wa_url_gu && (
+                              <a
+                                href={pitchData.followups.day3.wa_url_gu}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}
+                              >
+                                Send WhatsApp
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{pitchData.followups.day3.gu}</div>
+                      </div>
+
+                      {/* Day 6 */}
+                      <div style={{ background: 'var(--bg-card, #fff)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b' }}>DAY 6: POLITE CLOSE</span>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                              onClick={() => copyToClipboard(pitchData.followups.day6.gu, 'Day 6 Follow-up')}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-muted)' }}
+                            >
+                              Copy
+                            </button>
+                            {pitchData.followups.day6.wa_url_gu && (
+                              <a
+                                href={pitchData.followups.day6.wa_url_gu}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}
+                              >
+                                Send WhatsApp
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{pitchData.followups.day6.gu}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
