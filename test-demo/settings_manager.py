@@ -25,7 +25,7 @@ DEFAULT_SETTINGS = {
     "autoSendEmail": True,
     "maxPendingEmailsPerRun": 5,
     "excludedCompanies": ["8dots"],
-    "excludeITCompanies": True,
+    "excludeITCompanies": False,  # True also blocks IT companies in the main outreach
     "services": [
         "Custom Web & Full-Stack Development (Python, React, Node)",
         "Mobile App Development (Flutter, React Native)",
@@ -249,21 +249,21 @@ def _host_matches(host, term):
     return False
 
 
+# Words that mark a software / IT company. Not 'engineering', 'solutions', 'consultancy' or
+# 'technology': 'Shreeji Engineering Works' and 'Shree Packaging Solutions' are local SMEs.
 IT_COMPANY_TERMS = [
-    "software", "technologies", "technology", "infotech", "infosystem", "infosystems",
-    "tech lab", "tech labs", "techlab", "techlabs", "technolab", "technolabs", "web solutions",
-    "web development", "web agency", "app development", "software solutions", "it services",
-    "it solutions", "it consulting", "digital agency", "software pvt", "technologies pvt",
-    "systems pvt", "cybertech", "cloud systems", "code lab", "codelabs", "dev studio",
-    "software agency", "tech consultancy", "information technology", "tatvasoft", "simform",
-    "radixweb", "hidden brains", "hyperlink infosystem", "mindinventory", "space-o",
-    "multidots", "tcs", "infosys", "wipro", "cognizant", "capgemini", "tech mahindra",
-    "hcl tech", "developer", "developers", "coding", "python", "script", "freelancer",
-    "freelance", "techjobs", "engineer", "engineering", "tech", "webdev", "infolab",
-    "infolabz", "softvoya", "webtact", "staffing", "recruitment", "consultancy",
-    "solutions", "wordpress", "shopify", "development company", "web design",
-    "website design", "seo agency", "digital marketing", "esparkinfo", "wpweb", "wpwebelite",
-    "witarist", "creativeencode", "citrusbug"
+    "software", "technologies", "infotech", "infosystem", "infosystems", "tech lab", "tech labs",
+    "techlab", "techlabs", "technolab", "technolabs", "web solutions", "web development",
+    "web agency", "app development", "software solutions", "it services", "it solutions",
+    "it consulting", "digital agency", "software pvt", "technologies pvt", "systems pvt",
+    "cybertech", "cloud systems", "code lab", "codelabs", "dev studio", "software agency",
+    "tech consultancy", "information technology", "tatvasoft", "simform", "radixweb",
+    "hidden brains", "hyperlink infosystem", "mindinventory", "space-o", "multidots", "tcs",
+    "infosys", "wipro", "cognizant", "capgemini", "tech mahindra", "hcl tech", "developer",
+    "developers", "coding", "python", "freelancer", "freelance", "techjobs", "tech", "webdev",
+    "infolab", "infolabz", "softvoya", "webtact", "development company", "web design",
+    "website design", "seo agency", "esparkinfo", "wpweb", "wpwebelite", "witarist",
+    "creativeencode", "citrusbug"
 ]
 
 IT_SUBSTRING_ROOTS = [
@@ -292,7 +292,7 @@ def is_it_company(company_name: str = "", email: str = "", website: str = "", ca
     # 3. Check category / description
     cat_clean = str(category or "").strip().lower()
     if cat_clean:
-        for it_cat in ["software", "information technology", "web development", "app development", "computer support", "it consultant", "it services", "developer", "staffing"]:
+        for it_cat in ["software", "information technology", "web development", "app development", "computer support", "it consultant", "it services", "developer"]:
             if it_cat in cat_clean:
                 return True, f"Category '{category}' is in the IT/Software sector"
 
@@ -329,7 +329,7 @@ def is_it_company(company_name: str = "", email: str = "", website: str = "", ca
                     return True, f"Domain '{host}' contains IT root '{root}'"
             for term in IT_COMPANY_TERMS:
                 squeezed_t = _squeeze(term)
-                if len(squeezed_t) >= 4 and (squeezed_t in squeezed_lbl or squeezed_lbl in squeezed_t):
+                if len(squeezed_t) >= 5 and squeezed_t in squeezed_lbl:
                     return True, f"Domain '{host}' belongs to an IT/Software agency (matches '{term}')"
 
     return False, ""

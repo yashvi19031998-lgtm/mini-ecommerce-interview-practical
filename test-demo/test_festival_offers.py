@@ -168,6 +168,55 @@ class TestFestivalOffersEngine(unittest.TestCase):
         self.assertFalse(settings_manager.is_it_company("Dr. Mehta Dental Clinic")[0])
         self.assertFalse(settings_manager.is_it_company("Amdavad Fitness Gym")[0])
         self.assertFalse(settings_manager.is_it_company("Apex Packaging Industries")[0])
+        self.assertFalse(settings_manager.is_it_company("Shreeji Engineering Works")[0])
+        self.assertFalse(settings_manager.is_it_company("Shree Packaging Solutions")[0])
+        self.assertFalse(settings_manager.is_it_company("Patel Tax Consultancy")[0])
+        self.assertFalse(settings_manager.is_it_company("Kapda Store", email="hi@kapda.myshopify.com")[0])
+
+    def test_it_shield_is_off_for_the_main_outreach(self):
+        # The main outreach sells developers to companies, many of them tech companies.
+        self.assertFalse(settings_manager.DEFAULT_SETTINGS["excludeITCompanies"])
+        self.assertFalse(settings_manager.is_company_excluded("TatvaSoft Technologies", settings={"excludedCompanies": ["8dots"]})[0])
+        self.assertTrue(settings_manager.is_company_excluded("TatvaSoft Technologies", settings={"excludeITCompanies": True})[0])
+
+    def test_sme_finder_rejects_other_businesses_websites(self):
+        import cron_job_sme_outreach as sme
+        # wrong sites a search engine returned in a live test (20 Nov 2026)
+        self.assertFalse(sme.site_belongs_to("National Dental Supply Co.", "https://nationalinsurance.nic.co.in/"))
+        self.assertFalse(sme.site_belongs_to("Shrey Aesthetica Dental", "https://www.shreysports.in/"))
+        self.assertFalse(sme.site_belongs_to("Step 2 Well", "https://step.thehindu.com/"))
+        self.assertFalse(sme.site_belongs_to("Universal Gym & Fitness Centre", "https://www.universalorlando.com/"))
+        self.assertTrue(sme.site_belongs_to("Akash Dental Poly Clinic", "https://akashdentalclinic.com/"))
+        self.assertTrue(sme.site_belongs_to("Shreeji Jewellers", "https://www.shreejijewellers.co.in"))
+        self.assertTrue(sme.email_belongs_to("info@akashdentalclinic.com", "https://akashdentalclinic.com"))
+        self.assertTrue(sme.email_belongs_to("akashdental@gmail.com", "https://akashdentalclinic.com"))
+        self.assertFalse(sme.email_belongs_to("hello@webdesignerxyz.com", "https://akashdentalclinic.com"))
+        city, niches = sme.todays_search()
+        self.assertIn(city, sme.CITIES)
+        self.assertEqual(len(niches), sme.NICHES_PER_RUN)
+
+    def test_sme_outreach_picks_only_local_non_it_leads(self):
+        import tempfile, csv as _csv, os as _os
+        from unittest.mock import patch
+        import cron_job_sme_outreach as sme
+        rows = [
+            {"company_name": "Shreeji Jewellers", "email": "a@shreeji.in", "source": "Google Maps (Jewellers in Ahmedabad)", "location": "CG Road, Ahmedabad", "lead_type": "Registered Company"},
+            {"company_name": "Pune Sweets", "email": "b@punesweets.in", "source": "Google Maps (Sweets in Pune)", "location": "Anand Park, Pune", "lead_type": ""},
+            {"company_name": "Code Infotech", "email": "c@codeinfo.in", "source": "Google Maps (Software Development Company in Surat)", "location": "Surat", "lead_type": ""},
+            {"company_name": "Acme Inc", "email": "d@acme.com", "source": "Hacker News (Who is hiring?)", "location": "Ahmedabad", "lead_type": "HN Hiring Post"},
+            {"company_name": "Already Mailed", "email": "e@mailed.in", "source": "IndiaMART", "location": "Rajkot", "lead_type": ""},
+        ]
+        path = _os.path.join(tempfile.mkdtemp(), "leads.csv")
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            w = _csv.DictWriter(f, fieldnames=list(rows[0]))
+            w.writeheader()
+            w.writerows(rows)
+        with patch.object(sme, "LEADS_MASTER", path), \
+             patch.object(sme.email_service, "get_already_sent_emails", return_value={"e@mailed.in"}):
+            got, skipped = sme.candidate_sme_leads("gujarat")
+        self.assertEqual([c["company_name"] for c in got], ["Shreeji Jewellers"])
+        self.assertEqual(skipped["already_mailed"], 1)
+        self.assertEqual(skipped["it_company"], 1)
 
 if __name__ == "__main__":
     unittest.main()

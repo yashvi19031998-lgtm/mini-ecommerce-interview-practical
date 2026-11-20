@@ -302,7 +302,7 @@ def patch_lead_status(lead_id):
 def _sent_log_fresh():
     """None when the local sent log now includes every mail sent elsewhere (GitHub); else an error response.
     Skipped in tests (no database calls from the test suite)."""
-    if app.config.get("TESTING") or app.testing or "unittest" in sys.modules:
+    if app.config.get("TESTING"):
         return None
     import email_service
     res = email_service.refresh_sent_from_db()
@@ -2824,12 +2824,16 @@ def get_bde_outreach_strategy():
 
 @app.route("/api/offers/dispatch-auto", methods=["POST"])
 def run_automated_sme_dispatch():
-    """Trigger automated SME dispatch cycle with strict IT company exclusion."""
+    """SME post-pack outreach. A dry run unless the body says {"dry_run": false} - a stray call must not mail."""
     import cron_job_sme_outreach as sme_cron
     body = request.get_json(silent=True) or {}
-    limit = int(body.get("limit", 15))
-    dry_run = bool(body.get("dry_run", False))
-    res = sme_cron.run_sme_automated_dispatch(limit=limit, dry_run=dry_run)
+    try:
+        limit = max(1, min(int(body.get("limit", 15)), 50))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "limit must be a number"}), 400
+    dry_run = body.get("dry_run", True) is not False
+    region = body.get("region") if body.get("region") in sme_cron.REGIONS else "gujarat"
+    res = sme_cron.run_sme_automated_dispatch(limit=limit, dry_run=dry_run, region=region)
     return jsonify({"success": True, "result": res}), 200
 
 
