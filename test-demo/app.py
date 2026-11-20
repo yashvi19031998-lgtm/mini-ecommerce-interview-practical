@@ -455,7 +455,7 @@ def _run_bulk_job(job, lead_ids, subject_tpl, message_tpl, delay_ms, use_ai=Fals
             import run_all_scrapers as _r
             daily_cap, sent_today = _r.MAX_EMAILS_PER_DAY, _r.emails_sent_today()
         except Exception:
-            daily_cap, sent_today = 50, 0  # never unlimited, even when the limit cannot be read
+            daily_cap, sent_today = 0, 0  # 0 = no daily limit
         failures_in_row = 0
         for idx, lid in enumerate(lead_ids):
             try:
@@ -757,12 +757,12 @@ _scheduler_thread = None
 
 
 def _daily_mail_limit() -> int:
-    """The daily Gmail limit in force (run_all_scrapers.MAX_EMAILS_PER_DAY: at most 50)."""
+    """The daily mail limit in force (run_all_scrapers.MAX_EMAILS_PER_DAY); 0 = no limit."""
     try:
         import run_all_scrapers
         return int(run_all_scrapers.MAX_EMAILS_PER_DAY)
     except Exception:  # noqa: BLE001
-        return 50
+        return 0
 
 
 @app.route("/api/scheduler/trigger", methods=["POST"])

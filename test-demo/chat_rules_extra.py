@@ -115,13 +115,13 @@ def answer(msg: str, ctx: Dict[str, Any], lang: str) -> Optional[Dict[str, Any]]
         r = tools.t_mail_flow(ctx, date_from=d_from or "", date_to=d_to or "")
         days = ", ".join(f"{k[5:]}: {v}" for k, v in r["mails_sent_per_day"].items()) or t("none", "ek pan nahi")
         return {"reply": t(
-            f"Mail flow: {r['schedule']} Limit {r['daily_limit']} a day ({r['prospect_daily_limit']} for prospects), "
-            f"minimum AI score {r['min_ai_score_for_auto_mail']}. Today {r['sent_today']} sent, {r['left_today']} left. "
+            f"Mail flow: {r['schedule']} {'No daily limit' if r['daily_limit'] == 'no limit' else 'Limit ' + str(r['daily_limit']) + ' a day'} ({r['prospect_daily_limit']} a day for prospects), "
+            f"minimum AI score {r['min_ai_score_for_auto_mail']}. Today {r['sent_today']} sent{'' if r['left_today'] == 'no limit' else ', ' + str(r['left_today']) + ' left'}. "
             f"{r['in_queue_now']} leads are in the queue. {r['range']['from']} to {r['range']['to']}: {r['mails_sent_in_range']} sent "
             f"({days}), {r['replies_in_range']} replies, {r['bounces_in_range']} bounces. "
             f"{r['mailed_but_not_called']} mailed leads have a phone but were never called - call or WhatsApp them (Today > Mailed – now call).",
-            f"Mail flow: {r['schedule']} Roj ni limit {r['daily_limit']} ({r['prospect_daily_limit']} prospect mate), "
-            f"AI score ochha ma ochho {r['min_ai_score_for_auto_mail']}. Aaje {r['sent_today']} gaya, {r['left_today']} baki. "
+            f"Mail flow: {r['schedule']} {'Roj ni koi limit nathi' if r['daily_limit'] == 'no limit' else 'Roj ni limit ' + str(r['daily_limit'])} ({r['prospect_daily_limit']} prospect mate), "
+            f"AI score ochha ma ochho {r['min_ai_score_for_auto_mail']}. Aaje {r['sent_today']} gaya{'' if r['left_today'] == 'no limit' else ', ' + str(r['left_today']) + ' baki'}. "
             f"Queue ma {r['in_queue_now']} leads che. {r['range']['from']} thi {r['range']['to']}: {r['mails_sent_in_range']} mail ({days}), "
             f"{r['replies_in_range']} reply, {r['bounces_in_range']} bounce. {r['mailed_but_not_called']} leads ne mail gayo pan phone nathi thayo - "
             f"Today > Mailed – now call ma thi call/WhatsApp karo.")}

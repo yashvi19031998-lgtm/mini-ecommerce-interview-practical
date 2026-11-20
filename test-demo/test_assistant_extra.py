@@ -82,7 +82,7 @@ class NoKeyAnswers(unittest.TestCase):
 
     def test_flow_questions(self):
         self.assertIn("leads need you today", self.ask("What should I do today?")["reply"])
-        self.assertIn("Limit", self.ask("How does the mail flow work?")["reply"])
+        self.assertIn("limit", self.ask("How does the mail flow work?")["reply"].lower())
         r = self.ask("Show mailed leads I have not called")
         self.assertEqual(r["table"]["rows"][0]["lead_id"], "A")
         self.assertIn("2026-11-17: 2 new leads", self.ask("What happened on 17 nov?")["reply"])

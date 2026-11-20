@@ -70,7 +70,7 @@ jobs:
           # --- settings (Settings -> Secrets and variables -> Actions -> Variables) ---
           AUTO_SEND_EMAIL: ${{ vars.AUTO_SEND_EMAIL || 'true' }}
           MAX_PENDING_EMAILS_PER_RUN: ${{ vars.MAX_PENDING_EMAILS_PER_RUN || '0' }}
-          MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '50' }}  # hard Gmail limit: never more than 50
+          MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '0' }}  # 0 = no daily limit (set a number to limit)
           MIN_AI_SCORE_FOR_AUTO_EMAIL: ${{ vars.MIN_AI_SCORE_FOR_AUTO_EMAIL || '4' }}
           # Prospects (companies with no request yet): short intro mail, after all real buyers,
           # at most MAX_PROSPECT_EMAILS_PER_DAY of them (counted inside MAX_EMAILS_PER_DAY)
