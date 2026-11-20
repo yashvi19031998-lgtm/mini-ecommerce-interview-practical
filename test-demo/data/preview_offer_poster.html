@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <title>Sangeeta Infotech - Festive Offer Poster Preview</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px;
+      background: #0b0813;
+      color: #fff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header-bar {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .btn {
+      background: #ea580c;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    .poster-box {
+      max-width: 580px;
+      width: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+      border: 1px solid rgba(255,215,0,0.3);
+    }
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-bar">
+    <h1 style="color: #ffd700; margin: 0 0 6px 0;">Sangeeta Infotech - Digital Media Festive Offer Poster</h1>
+    <p style="color: #a0aec0; margin: 0;">₹500 for 10 HD Festival Creatives | ₹1,000 for 3 Video Reels | ₹1,299 Combo</p>
+    <button class="btn" onclick="downloadPoster()">⬇️ Download High-Res Poster (PNG)</button>
+  </div>
+
+  <div class="poster-box" id="posterContainer">
+    <!-- Embed the SVG -->
+    <iframe src="sangeeta_infotech_festive_offer_poster.svg" style="width: 100%; height: 720px; border: none;"></iframe>
+  </div>
+
+  <script>
+    function downloadPoster() {
+      window.open('sangeeta_infotech_festive_offer_poster.svg', '_blank');
+    }
+  </script>
+</body>
+</html>

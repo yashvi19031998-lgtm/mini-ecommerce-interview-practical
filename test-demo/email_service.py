@@ -227,7 +227,10 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
         msg["Subject"] = subject
 
         # Plain text
-        part_text = MIMEText(message_body, "plain", "utf-8")
+        plain_body = message_body
+        if "wa.me/" not in plain_body:
+            plain_body += "\n\n💬 Chat on WhatsApp (+91 9106060400): https://wa.me/919106060400?text=Hi%20Sangeeta%20Infotech%2C%20I%20got%20your%20email%20and%20would%20like%20to%20discuss."
+        part_text = MIMEText(plain_body, "plain", "utf-8")
         msg.attach(part_text)
 
         # HTML formatting with bold highlights & key label styling
@@ -245,13 +248,34 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             html_styled
         )
 
-        # The wa.me link from the signature becomes a green "Chat on WhatsApp" button
-        html_styled = re.sub(
-            r'💬 Chat on WhatsApp: (https://wa\.me/[^\s<]+)',
-            r'<a href="\1" style="display:inline-block;margin-top:6px;padding:8px 16px;border-radius:999px;'
-            r'background:#1fa855;color:#ffffff;text-decoration:none;font-weight:600;">💬 Chat on WhatsApp</a>',
-            html_styled
+        # High-Converting WhatsApp Action Box (Prominent & Mobile Responsive)
+        wa_card_html = (
+            '<div style="margin: 22px 0 16px 0; padding: 16px 20px; background: #f0fdf4; '
+            'border: 1.5px solid #86efac; border-radius: 12px; display: inline-block; max-width: 520px; '
+            'box-shadow: 0 4px 12px rgba(34, 197, 94, 0.08); font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
+            '<div style="font-size: 13.5px; font-weight: 700; color: #15803d; margin-bottom: 6px;">'
+            '💬 Quick question or requirement to discuss?'
+            '</div>'
+            '<div style="font-size: 12px; color: #166534; margin-bottom: 12px; line-height: 1.4;">'
+            'Connect directly with our solutions &amp; engineering team on WhatsApp.'
+            '</div>'
+            '<a href="https://wa.me/919106060400?text=Hi%20Sangeeta%20Infotech%2C%20I%20got%20your%20email%20and%20would%20like%20to%20discuss." '
+            'target="_blank" style="display: inline-block; background: #25D366; color: #ffffff !important; '
+            'text-decoration: none; padding: 10px 22px; border-radius: 50px; font-weight: 700; font-size: 13.5px; '
+            'box-shadow: 0 3px 8px rgba(37, 211, 102, 0.35); text-align: center;">'
+            '<span style="font-size: 15px; vertical-align: -1px; margin-right: 6px;">🟢</span> Chat with us on WhatsApp (+91 9106060400)'
+            '</a>'
+            '</div>'
         )
+
+        if "wa.me/" in html_styled:
+            html_styled = re.sub(
+                r'💬 Chat on WhatsApp: https://wa\.me/[^\s<]+',
+                wa_card_html,
+                html_styled
+            )
+        else:
+            html_styled += "<br/>" + wa_card_html
 
         html_content = f"""<html>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #222; max-width: 650px; margin: 0 auto; padding: 20px;">

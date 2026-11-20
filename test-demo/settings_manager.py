@@ -15,7 +15,7 @@ DEFAULT_SETTINGS = {
     "smtp_host": "smtp.gmail.com",
     "smtp_port": 587,
     "phone": "+91 9106060400",
-    "whatsapp": "+91 9426738067",
+    "whatsapp": "+91 9106060400",
     "website": "https://sangeetainfotech.co.in",
     "address": "Ahmedabad, Gujarat, India",
     "companyDescription": "Sangeeta Infotech is an industry-leading software engineering company based in Ahmedabad, Gujarat, specializing in high-performance web applications, mobile apps, AI integrations, and dedicated engineering teams for global businesses.",
