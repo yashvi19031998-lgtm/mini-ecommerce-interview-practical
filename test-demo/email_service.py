@@ -229,7 +229,7 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
         # Plain text
         plain_body = message_body
         if "wa.me/" not in plain_body:
-            plain_body += "\n\n💬 Chat on WhatsApp (+91 9106060400): https://wa.me/919106060400?text=Hi%20Sangeeta%20Infotech%2C%20I%20got%20your%20email%20and%20would%20like%20to%20discuss."
+            plain_body += "\n\n💬 Chat with us on WhatsApp: https://wa.me/919106060400?text=Hi%20Sangeeta%20Infotech%2C%20I%20got%20your%20email%20and%20would%20like%20to%20discuss."
         part_text = MIMEText(plain_body, "plain", "utf-8")
         msg.attach(part_text)
 
@@ -263,7 +263,7 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             'target="_blank" style="display: inline-block; background: #25D366; color: #ffffff !important; '
             'text-decoration: none; padding: 10px 22px; border-radius: 50px; font-weight: 700; font-size: 13.5px; '
             'box-shadow: 0 3px 8px rgba(37, 211, 102, 0.35); text-align: center;">'
-            '<span style="font-size: 15px; vertical-align: -1px; margin-right: 6px;">🟢</span> Chat with us on WhatsApp (+91 9106060400)'
+            '<span style="font-size: 15px; vertical-align: -1px; margin-right: 6px;">💬</span> Chat with us on WhatsApp'
             '</a>'
             '</div>'
         )
