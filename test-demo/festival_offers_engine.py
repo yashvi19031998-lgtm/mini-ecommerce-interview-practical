@@ -34,30 +34,30 @@ _ensure_data_files()
 OFFERS = [
     {
         "id": "fest_10_pack",
-        "name": "Festival Brand Pack",
+        "name": "Business Instagram Pack",
         "tag": "MOST POPULAR",
         "price_inr": 500,
         "price_usd": 7,
-        "deliverables": "10 High-Resolution Festival Creatives",
-        "description": "10 HD festival creatives customized with your company logo, phone number, address, and festive greeting. Delivered directly to your WhatsApp on every festival morning.",
+        "deliverables": "10 Custom Business Instagram Creatives",
+        "description": "10 high-converting business Instagram creatives (product spotlights, offers, service promos, customer trust posts) customized for your brand.",
         "features": [
-            "10 Major Festivals covered across the year",
-            "Custom company logo & contact info on every post",
-            "1080x1080 HD Square (Perfect for WhatsApp Status & Instagram)",
-            "Ready-to-post Gujarati & English captions included",
-            "Delivered automatically on festival morning (8:00 AM)"
+            "10 High-Converting Business & Promo Posts",
+            "Custom company branding, typography & contact info",
+            "1080x1080 HD Square (Perfect for WhatsApp Status & Instagram Feed)",
+            "Engaging captions & call-to-actions included",
+            "Delivered ready-to-post directly on your WhatsApp"
         ]
     },
     {
         "id": "reels_3_pack",
-        "name": "Viral Reels Pack",
+        "name": "Viral Business Reels Pack",
         "tag": "HIGH ENGAGEMENT",
         "price_inr": 1000,
         "price_usd": 14,
-        "deliverables": "3 High-Retention Video Reels",
-        "description": "3 viral short-form video reels for Instagram, Facebook, and WhatsApp Status with trending audio, smooth motion typography, and custom branding.",
+        "deliverables": "3 High-Retention Business Video Reels",
+        "description": "3 viral short-form business video reels for Instagram & Facebook with engaging animations and call-to-actions.",
         "features": [
-            "3 Custom Video Reels in 9:16 vertical format",
+            "3 Custom Business Video Reels in 9:16 vertical format",
             "Trending background music & copyright-safe audio",
             "Dynamic text animations & company branding",
             "Story/Reel cover poster included",
@@ -257,23 +257,23 @@ def generate_offer_pitch(lead):
 
     wa_pitch = (
         f"નમસ્તે {biz_name}!\n\n"
-        f"આવનારા તહેવારોમાં તમારા કસ્ટમર્સ માટે સોશિયલ મીડિયા પોસ્ટ્સનું પ્લાનિંગ થઈ ગયું છે?\n\n"
-        f"🌟 Sangeeta Infotech Festive Special Offer:\n"
-        f"✅ ૧૦ પ્રીમિયમ તહેવારની HD ઈમેજીસ = માત્ર ₹500\n"
-        f"✅ ૩ વાયરલ વિડીયો રીલ્સ = માત્ર ₹1,000\n"
-        f"✅ કૉમ્બો બૂસ્ટર (10 ઈમેજ + 3 રીલ્સ) = માત્ર ₹1,299\n\n"
-        f"તમારે કોઈ ડિઝાઇનિંગ મહેનત કરવાની જરૂર નથી — તહેવારના દિવસે રેડી-ટુ-પોસ્ટ તમારા WhatsApp પર મળી જશે.\n\n"
+        f"Instagram પર તમારા બિઝનેસનું પ્રમોશન અને કસ્ટમર્સ વધારવા માટેનું પ્લાનિંગ કરો છો?\n\n"
+        f"🚀 Sangeeta Infotech Business Growth Offer:\n"
+        f"✅ ૧૦ કસ્ટમ બિઝનેસ ઇન્સ્ટાગ્રામ પોસ્ટ્સ = માત્ર ₹500\n"
+        f"✅ ૩ એન્ગેજિંગ બિઝનેસ વિડીયો રીલ્સ = માત્ર ₹1,000\n"
+        f"✅ કૉમ્બો ગ્રોથ પેક (10 પોસ્ટ્સ + 3 રીલ્સ) = માત્ર ₹1,299\n\n"
+        f"તમારે કોઈ ડિઝાઇનિંગ મહેનત કરવાની જરૂર નથી — રેડી-ટુ-પોસ્ટ તમારા WhatsApp પર મળી જશે.\n\n"
         f"જો તમારે એક સેમ્પલ જોવું હોય, તો ફક્ત 'YES' લખીને મોકલો.\n\n"
         f"Sangeeta Infotech | Ahmedabad"
     )
 
     wa_pitch_en = (
         f"Hello {biz_name} Team,\n\n"
-        f"Planning your festive social media posts for upcoming festivals?\n\n"
-        f"🌟 Sangeeta Infotech Festive Pack:\n"
-        f"• 10 High-Resolution Festival Creatives: Just ₹500\n"
-        f"• 3 Viral Short Video Reels: Just ₹1,000\n\n"
-        f"Zero designing hassle — delivered ready-to-post directly to your WhatsApp on every festival morning.\n\n"
+        f"Looking to grow {biz_name}'s reach and customers on Instagram?\n\n"
+        f"🚀 Sangeeta Infotech Business Growth Pack:\n"
+        f"• 10 Custom Business Instagram Creatives: Just ₹500\n"
+        f"• 3 Engaging Business Video Reels: Just ₹1,000\n\n"
+        f"Zero designing hassle — delivered ready-to-post directly to your WhatsApp.\n\n"
         f"Would you like to see a quick sample? Simply reply 'YES'.\n\n"
         f"Sangeeta Infotech | Ahmedabad"
     )
@@ -288,13 +288,13 @@ def generate_offer_pitch(lead):
 
     wa_link = f"https://wa.me/{wa_target}?text={urllib.parse.quote(wa_pitch)}" if wa_target else ""
 
-    email_subject = f"Festive social media creatives for {biz_name} (10 Posts at ₹500)"
+    email_subject = f"Custom Business Instagram Creatives for {biz_name} (10 Posts at ₹500)"
     email_body = (
         f"Hi Team {biz_name},\n\n"
-        f"Festivals are around the corner! At **Sangeeta Infotech**, we have a festive branding special for your social media:\n\n"
-        f"• 10 High-Resolution Festival Creatives: ₹500\n"
-        f"• 3 Viral Short Video Reels: ₹1,000\n\n"
-        f"Delivered ready-to-post on WhatsApp — zero effort.\n\n"
+        f"Looking to grow {biz_name}'s reach and sales on Instagram? At **Sangeeta Infotech**, we design high-converting, branded social media posts:\n\n"
+        f"• 10 Custom Business Instagram Creatives: ₹500\n"
+        f"• 3 Engaging Business Video Reels: ₹1,000\n\n"
+        f"Delivered ready-to-post on WhatsApp — zero effort for you.\n\n"
         f"Would you like to see a quick sample? Simply reply 'YES' or connect on WhatsApp below.\n\n"
         f"Warm regards,\n"
         f"**Sangeeta Infotech**\n"

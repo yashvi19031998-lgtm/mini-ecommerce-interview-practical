@@ -255,25 +255,25 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             html_styled
         )
 
-        # 3. Transform Festival Offer Bullets into a Sleek Compact Highlight Card
-        festive_offer_card_html = (
-            '<div style="margin: 12px 0 14px 0; padding: 10px 14px; background: #fffbeb; '
-            'border-left: 4px solid #ea580c; border-radius: 6px; '
+        # 3. Transform Business Offer Bullets into a Sleek Compact Highlight Card
+        business_offer_card_html = (
+            '<div style="margin: 12px 0 14px 0; padding: 10px 14px; background: #eff6ff; '
+            'border-left: 4px solid #2563eb; border-radius: 6px; '
             'font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
-            '<div style="font-size: 12px; font-weight: 800; color: #9a3412; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;">'
-            '🎁 Festive Social Media Special:'
+            '<div style="font-size: 12px; font-weight: 800; color: #1d4ed8; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;">'
+            '🚀 Instagram Business Growth Pack:'
             '</div>'
             '<div style="font-size: 13.5px; color: #1e293b; line-height: 1.8;">'
-            '• <strong>10 HD Festival Creatives:</strong> <span style="color: #ea580c; font-weight: 800; background: #ffedd5; padding: 1px 6px; border-radius: 4px;">₹500</span><br/>'
-            '• <strong>3 Viral Video Reels:</strong> <span style="color: #7c3aed; font-weight: 800; background: #ede9fe; padding: 1px 6px; border-radius: 4px;">₹1,000</span>'
+            '• <strong>10 Custom Business Creatives:</strong> <span style="color: #2563eb; font-weight: 800; background: #dbeafe; padding: 1px 6px; border-radius: 4px;">₹500</span><br/>'
+            '• <strong>3 Engaging Business Reels:</strong> <span style="color: #7c3aed; font-weight: 800; background: #ede9fe; padding: 1px 6px; border-radius: 4px;">₹1,000</span>'
             '</div>'
             '</div>'
         )
 
-        # Replace bullet points mentioning ₹500 / ₹1,000 festival packages with the compact Highlight Card
+        # Replace bullet points mentioning ₹500 / ₹1,000 packages with the compact Highlight Card
         html_styled = re.sub(
             r'(?:[•\-\*]\s*.*?₹(?:500|1,000|1000).*?\n?){2,}',
-            festive_offer_card_html,
+            business_offer_card_html,
             html_styled,
             flags=re.IGNORECASE
         )
