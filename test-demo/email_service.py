@@ -257,7 +257,7 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
 
         # 3. Transform Business Offer Bullets into a Sleek Compact Highlight Card
         business_offer_card_html = (
-            '<div style="margin: 12px 0 14px 0; padding: 10px 14px; background: #eff6ff; '
+            '<div style="margin: 16px 0 16px 0; padding: 12px 16px; background: #eff6ff; '
             'border-left: 4px solid #2563eb; border-radius: 6px; '
             'font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
             '<div style="font-size: 12px; font-weight: 800; color: #1d4ed8; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase;">'
@@ -272,15 +272,18 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
 
         # Replace bullet points mentioning ₹500 / ₹1,000 packages with the compact Highlight Card
         html_styled = re.sub(
-            r'(?:[•\-\*]\s*.*?₹(?:500|1,000|1000).*?\n?){2,}',
-            business_offer_card_html,
+            r'\n*(?:[•\-\*]\s*.*?₹(?:500|1,000|1000).*?\n?){2,}\n*',
+            f'\n{business_offer_card_html}\n',
             html_styled,
             flags=re.IGNORECASE
         )
 
+        # Ensure distinct paragraph spacing that email clients like Gmail cannot collapse
+        html_styled = re.sub(r'\n{2,}', '<div style="height: 14px;"></div>', html_styled)
+
         # Clean, Compact WhatsApp Action Button
         wa_card_html = (
-            '<div style="margin: 14px 0 8px 0;">'
+            '<div style="margin: 16px 0 12px 0;">'
             '<a href="https://wa.me/919106060400?text=Hi%20Sangeeta%20Infotech%2C%20I%20got%20your%20email%20and%20would%20like%20to%20discuss." '
             'target="_blank" style="display: inline-block; background: #25D366; color: #ffffff !important; '
             'text-decoration: none; padding: 9px 18px; border-radius: 50px; font-weight: 700; font-size: 13px; '
