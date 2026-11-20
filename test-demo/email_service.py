@@ -248,6 +248,13 @@ def send_smtp_email(to_email: str, subject: str, message_body: str, bypass_dupli
             html_styled
         )
 
+        # Auto-link website URL in signature cleanly
+        html_styled = re.sub(
+            r'(?<!href=")(https?://(?:www\.)?sangeetainfotech\.co\.in[^\s<]*)',
+            r'<a href="\1" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 500;">\1</a>',
+            html_styled
+        )
+
         # 3. Transform Festival Offer Bullets into a Sleek Compact Highlight Card
         festive_offer_card_html = (
             '<div style="margin: 12px 0 14px 0; padding: 10px 14px; background: #fffbeb; '
